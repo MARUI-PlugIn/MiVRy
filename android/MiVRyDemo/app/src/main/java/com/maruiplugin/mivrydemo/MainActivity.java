@@ -31,12 +31,16 @@ public class MainActivity extends AppCompatActivity {
     private ButtonListenerRecord button_listener_record;
     private ButtonListenerCreate button_listener_create;
     private ButtonListenerFinish button_listener_finish;
+    private ButtonListenerReset  button_listener_reset;
+    private ButtonListenerQuit   button_listener_quit;
     private TrainingListener     training_listener;
 
     private static ConstraintLayout layout_main;
     private static Button button_record;
     private static Button button_create;
     private static Button button_finish;
+    private static Button button_reset;
+    private static Button button_quit;
     private static TextView textview_message;
     private static TextView textview_keyword;
     private static TextView textview_gesturelist;
@@ -68,11 +72,8 @@ public class MainActivity extends AppCompatActivity {
     static private Random prng = null;
 
     private String getRandomCodeword() {
-        if (codewords == null) {
-            codewords = new ArrayList<String>();
-            for (int i=0; i<codewords_sourcelist.length; i++) {
-                codewords.add(codewords_sourcelist[i]);
-            }
+        if (codewords == null || codewords.size() == 0) {
+            return "[ERROR]: No more codewords - please add more";
         }
         int i = prng.nextInt(codewords.size());
         String c = codewords.get(i);
@@ -89,6 +90,15 @@ public class MainActivity extends AppCompatActivity {
         save_gesture_database_path = getExternalFilesDir(null).getAbsolutePath();
         prng = new Random();
         mivry = new MiVRy(this);
+
+        this.init();
+    }
+
+    private void init() {
+        this.codewords = new ArrayList<String>();
+        for (int i=0; i<codewords_sourcelist.length; i++) {
+            codewords.add(codewords_sourcelist[i]);
+        }
         String c = this.getRandomCodeword();
         this.recording_gesture_id = mivry.CreateGesture(c);
 
@@ -120,6 +130,18 @@ public class MainActivity extends AppCompatActivity {
         button_finish.setVisibility(View.INVISIBLE);
         button_finish.setEnabled(false);
 
+        button_reset = findViewById(R.id.button_reset);
+        this.button_listener_reset = new ButtonListenerReset();
+        button_reset.setOnTouchListener(this.button_listener_reset);
+        button_reset.setVisibility(View.VISIBLE);
+        button_reset.setEnabled(true);
+
+        button_quit = findViewById(R.id.button_quit);
+        this.button_listener_quit = new ButtonListenerQuit();
+        button_quit.setOnTouchListener(this.button_listener_quit);
+        button_quit.setVisibility(View.VISIBLE);
+        button_quit.setEnabled(true);
+
         this.training_listener = new TrainingListener();
         mivry.SetTrainingListener(this.training_listener);
     }
@@ -131,7 +153,15 @@ public class MainActivity extends AppCompatActivity {
             switch (action) {
                 case MotionEvent.ACTION_DOWN:
                     mivry.StartGesture(recording_gesture_id);
-                    button_record.setBackgroundColor(0xFFFF0000);
+                    button_record.setBackgroundResource(R.drawable.custom_button_active);
+                    button_finish.setEnabled(false);
+                    button_finish.setVisibility(View.INVISIBLE);
+                    button_create.setEnabled(false);
+                    button_create.setVisibility(View.INVISIBLE);
+                    button_reset.setEnabled(false);
+                    button_reset.setVisibility(View.INVISIBLE);
+                    button_quit.setEnabled(false);
+                    button_quit.setVisibility(View.INVISIBLE);
                     return true;
                 case MotionEvent.ACTION_MOVE:
                     final Rect r = new Rect();
@@ -140,7 +170,7 @@ public class MainActivity extends AppCompatActivity {
                     final float y = event.getY() + r.top;
                     if (!r.contains((int) x, (int) y)) {
                         mivry.CancelGesture();
-                        button_record.setBackgroundColor(0xFFCCCCCC);
+                        button_record.setBackgroundResource(R.drawable.custom_button);
                     }
                     return true;
                 case MotionEvent.ACTION_UP:
@@ -149,17 +179,20 @@ public class MainActivity extends AppCompatActivity {
                     return true; // ignore other events
             }
             // if we arrive here, then a gesture was finished
-            button_record.setBackgroundColor(0xFFCCCCCC);
+            button_record.setBackgroundResource(R.drawable.custom_button);
             MiVRy.GestureRecognitionResult ret = mivry.EndGesture();
             if (recording_gesture_id >= 0) {
                 int n = mivry.GetGestureNumberOfSamples(recording_gesture_id);
                 String c = mivry.GetGestureName(recording_gesture_id);
                 textview_message.setText("Recording gestures for keyword:\n" + c);
                 textview_keyword.setText(String.format("Number of recorded samples: %d", n));
-                if (n >= 1) { // TODO: minimum number of samples enforced?
+                if (n >= 10) { // minimum number of samples
                     button_finish.setEnabled(true);
                     button_finish.setVisibility(View.VISIBLE);
                     button_finish.setText("Finish recording&\nStart training");
+                    button_create.setEnabled(true);
+                    button_create.setVisibility(View.VISIBLE);
+                    button_create.setText("Tap to record\nanother gesture");
                 }
             } else {
                 if (ret.gesture_id >=0 ) {
@@ -169,7 +202,15 @@ public class MainActivity extends AppCompatActivity {
                     textview_message.setText("Failed to identify gesture.");
                     textview_keyword.setText("Error " + (-ret.gesture_id));
                 }
+                button_finish.setEnabled(true);
+                button_finish.setVisibility(View.VISIBLE);
+                button_create.setEnabled(true);
+                button_create.setVisibility(View.VISIBLE);
             }
+            button_reset.setEnabled(true);
+            button_reset.setVisibility(View.VISIBLE);
+            button_quit.setEnabled(true);
+            button_quit.setVisibility(View.VISIBLE);
             return true;
         }
     }
@@ -236,6 +277,32 @@ public class MainActivity extends AppCompatActivity {
 
             button_finish.setEnabled(false);
             button_finish.setVisibility(View.INVISIBLE);
+            return true;
+        }
+    }
+
+    public class ButtonListenerReset implements View.OnTouchListener {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            int action = event.getActionMasked();
+            if (action != MotionEvent.ACTION_UP) {
+                return true;
+            }
+            mivry.DeleteAllGestures();
+            init();
+            return true;
+        }
+    }
+
+    public class ButtonListenerQuit implements View.OnTouchListener {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            int action = event.getActionMasked();
+            if (action != MotionEvent.ACTION_UP) {
+                return true;
+            }
+            android.os.Process.killProcess(android.os.Process.myPid());
+            System.exit(1);
             return true;
         }
     }
