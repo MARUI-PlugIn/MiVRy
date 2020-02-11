@@ -1,9 +1,9 @@
-package com.maruiplugin.mivrydemocontinuous;
+package com.maruiplugin.mivrydemo;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
-import android.content.res.Resources;
+import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,24 +13,22 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.maruiplugin.mivry.MiVRy;
-import com.maruiplugin.mivry.MiVRyContinuousIdentificationListener;
 import com.maruiplugin.mivry.MiVRyTrainingListener;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.lang.Runnable;
 
-public class MainActivity extends AppCompatActivity implements MiVRyContinuousIdentificationListener {
-
+public class BasicGestures extends AppCompatActivity
+{
     private ButtonListenerRecord button_listener_record;
     private ButtonListenerCreate button_listener_create;
     private ButtonListenerFinish button_listener_finish;
-    private ButtonListenerReset  button_listener_reset;
-    private ButtonListenerQuit   button_listener_quit;
-    private TrainingListener     training_listener;
+    private ButtonListenerReset button_listener_reset;
+    private ButtonListenerQuit button_listener_quit;
+    private TrainingListener training_listener;
 
-    private static ConstraintLayout layout_main;
+    private static ConstraintLayout layout_basic;
     private static Button button_record;
     private static Button button_create;
     private static Button button_finish;
@@ -38,16 +36,31 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
     private static Button button_quit;
     private static TextView textview_message;
     private static TextView textview_keyword;
+    private static TextView textview_performance;
     private static TextView textview_gesturelist;
-    private static TextView textview_buildstamp;
 
     private static MiVRy mivry;
     private static int recording_gesture_id;
     private static double recognition_preformance;
     private static String save_gesture_database_path;
-    private static final String[] codewords_sourcelist = {
-        "red", "blue", "green", "yellow", "orange", "teal", "grey"
+    private static final String[] codewords_sourcelist_abstract = {
+            "tycoon", "peasant", "police", "discover", "construct",
+            "skip", "nuclear", "defeat", "shoot", "vote", "sell",
+            "wife", "brother", "mail", "forget", "health", "future",
+            "minority", "moment", "layer", "stealth", "joy", "inheritance",
+            "fireball", "relief", "panik", "monster", "peace"
     };
+    private static final String[] codewords_sourcelist_shapes = {
+            "triangle", "rectangle", "circle", "line down", "line up", "swipe left", "swipe right", "plus sign", "x sign", "infinite sign",
+            "shake sideways", "pick up", "put down", "swipe arm", "rotate right", "rotate left", "bank left", "bank right"
+    };
+    private static final String[] codewords_sourcelist_characters = {
+            "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+            "A", "B", "C", "D", "D", "E", "F", "G", "H", "I", "J", "K",
+            "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W",
+            "X", "Y", "Z"
+    };
+    private static int which_codewords_sourcelist = 0;
 
     private List<String> codewords = null;
 
@@ -66,39 +79,49 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.basic_gestures);
 
         //save_gesture_database_path = getFilesDir().getAbsolutePath();
         save_gesture_database_path = getExternalFilesDir(null).getAbsolutePath();
         prng = new Random();
         mivry = new MiVRy(this);
-        mivry.SetContinuousIdentificationPeriod(1000);
-        mivry.SetContinuousIdentificationSmoothing(3);
 
         this.init();
     }
 
     private void init() {
         this.codewords = new ArrayList<String>();
+        String[] codewords_sourcelist = null;
+        switch (which_codewords_sourcelist) {
+            case 0:
+                codewords_sourcelist = codewords_sourcelist_abstract;
+                which_codewords_sourcelist = 1; // for next time
+                break;
+            case 1:
+                codewords_sourcelist = codewords_sourcelist_shapes;
+                which_codewords_sourcelist = 2; // for next time
+                break;
+            default:
+                codewords_sourcelist = codewords_sourcelist_characters;
+                which_codewords_sourcelist = 0; // for next time
+
+        }
         for (int i=0; i<codewords_sourcelist.length; i++) {
             codewords.add(codewords_sourcelist[i]);
         }
-
         String c = this.getRandomCodeword();
         this.recording_gesture_id = mivry.CreateGesture(c);
 
         this.textview_message = findViewById(R.id.text_message);
-        textview_message.setText("Use the button below\nto record gestures.");
+        textview_message.setText("Welcome to MiVRy! Use the button below\nto record gestures. Your keyword is:");
         this.textview_keyword = findViewById(R.id.text_keyword);
-        textview_keyword.setText("Your keyword is: "+c);
+        textview_keyword.setText(c);
+        this.textview_performance = findViewById(R.id.text_performance);
+        textview_performance.setText("");
         this.textview_gesturelist = findViewById(R.id.text_gesturelist);
         textview_gesturelist.setVisibility(View.INVISIBLE);
-        this.textview_buildstamp = findViewById(R.id.text_buildstamp);
-        textview_buildstamp.setText("Version: "+BuildConfig.BUILD_STAMP);
 
-        layout_main = findViewById(R.id.layout_main);
-        Resources resources = getResources();
-        layout_main.setBackgroundColor(resources.getColor(resources.getIdentifier(c, "color", getPackageName())));
+        layout_basic = findViewById(R.id.layout_basic);
 
         button_record = findViewById(R.id.button_record);
         this.button_listener_record = new ButtonListenerRecord();
@@ -140,7 +163,6 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
             switch (action) {
                 case MotionEvent.ACTION_DOWN:
                     mivry.StartGesture(recording_gesture_id);
-                    mivry.SetContinuousIdentificationListener(MainActivity.this);
                     button_record.setBackgroundResource(R.drawable.custom_button_active);
                     button_finish.setEnabled(false);
                     button_finish.setVisibility(View.INVISIBLE);
@@ -158,7 +180,6 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
                     final float y = event.getY() + r.top;
                     if (!r.contains((int) x, (int) y)) {
                         mivry.CancelGesture();
-                        mivry.SetContinuousIdentificationListener(null);
                         button_record.setBackgroundResource(R.drawable.custom_button);
                     }
                     return true;
@@ -169,14 +190,14 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
             }
             // if we arrive here, then a gesture was finished
             button_record.setBackgroundResource(R.drawable.custom_button);
-            mivry.SetContinuousIdentificationListener(null);
-            mivry.CancelGesture();
+            MiVRy.GestureRecognitionResult ret = mivry.EndGesture();
             if (recording_gesture_id >= 0) {
                 int n = mivry.GetGestureNumberOfSamples(recording_gesture_id);
                 String c = mivry.GetGestureName(recording_gesture_id);
-                textview_message.setText("Recording gestures for keyword:\n" + c);
-                textview_keyword.setText(String.format("Number of recorded samples: %d", n));
-                if (n >= 10) { // minimum number of samples enforced
+                textview_message.setText("Recording gestures for keyword:");
+                textview_keyword.setText(c);
+                textview_performance.setText(String.format("Number of recorded samples: %d", n));
+                if (n >= 10) { // minimum number of samples
                     button_finish.setEnabled(true);
                     button_finish.setVisibility(View.VISIBLE);
                     button_finish.setText("Finish recording&\nStart training");
@@ -185,6 +206,15 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
                     button_create.setText("Tap to record\nanother gesture");
                 }
             } else {
+                if (ret.gesture_id >=0 ) {
+                    textview_message.setText("Identified gesture:");
+                    textview_keyword.setText(mivry.GetGestureName(ret.gesture_id));
+                    textview_performance.setText(String.format("(Confidence: %.1f%%)", ret.similarity * 100.0));
+                } else {
+                    textview_message.setText("Failed to identify gesture.");
+                    textview_keyword.setText("Error " + (-ret.gesture_id));
+                    textview_performance.setText("");
+                }
                 button_finish.setEnabled(true);
                 button_finish.setVisibility(View.VISIBLE);
                 button_create.setEnabled(true);
@@ -210,6 +240,7 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
                 recording_gesture_id = -1;
                 textview_message.setText("Training stopped.\nFinal performance:");
                 textview_keyword.setText(String.format("(%.1f%%)", mivry.RecognitionScore()*100.0));
+                textview_performance.setText("");
                 button_record.setEnabled(true);
                 button_record.setVisibility(View.VISIBLE);
                 button_record.setText("Touch and hold\nand move phone\nto perform gesture");
@@ -225,6 +256,7 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
                 recording_gesture_id = -1;
                 textview_message.setText("Training...");
                 textview_keyword.setText(String.format("(%.1f%%)", 0.0));
+                textview_performance.setText("");
                 button_record.setEnabled(false);
                 button_record.setVisibility(View.INVISIBLE);
                 button_create.setEnabled(false);
@@ -249,13 +281,12 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
             String c = getRandomCodeword();
             recording_gesture_id = mivry.CreateGesture(c);
 
-            textview_message.setText("Recording new gesture.\nKeyword: "+c);
-            textview_keyword.setText("\"Number of recorded samples: 0");
+            textview_message.setText("Recording new gesture.\nKeyword:");
+            textview_keyword.setText(c);
+            textview_performance.setText("Number of recorded samples: 0");
             button_record.setEnabled(true);
             button_record.setVisibility(View.VISIBLE);
             button_record.setText("Touch and hold\nand move phone\nto record gesture sample");
-            Resources resources = getResources();
-            layout_main.setBackgroundColor(resources.getColor(resources.getIdentifier(c, "color", getPackageName())));
 
             button_create.setEnabled(false);
             button_create.setVisibility(View.INVISIBLE);
@@ -265,7 +296,6 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
             return true;
         }
     }
-
 
     public class ButtonListenerReset implements View.OnTouchListener {
         @Override
@@ -287,8 +317,7 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
             if (action != MotionEvent.ACTION_UP) {
                 return true;
             }
-            android.os.Process.killProcess(android.os.Process.myPid());
-            System.exit(1);
+            finish();
             return true;
         }
     }
@@ -302,7 +331,6 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
                 textview_keyword.setText(String.format("(%.1f%%)", recognition_preformance * 100.0));
             }});
         }
-        @Override
         public void trainingFinishCallback(double performance)
         {
             android.text.format.DateFormat df = new android.text.format.DateFormat();
@@ -316,6 +344,7 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
             runOnUiThread(new Runnable() { public void run() {
                 textview_message.setText("Training finished!\nFinal performance:");
                 textview_keyword.setText(String.format("%.1f%%",recognition_preformance * 100.0));
+                textview_performance.setText("");
                 button_finish.setVisibility(View.VISIBLE);
                 button_finish.setEnabled(true);
                 button_finish.setText("Restart training");
@@ -331,28 +360,7 @@ public class MainActivity extends AppCompatActivity implements MiVRyContinuousId
                 }
                 textview_gesturelist.setText(gesture_list);
                 textview_gesturelist.setVisibility(View.VISIBLE);
-                Resources resources = getResources();
-                layout_main.setBackgroundColor(resources.getColor(resources.getIdentifier("white", "color", getPackageName())));
             }});
         }
-    }
-
-    @Override
-    public void continuousIdentificationCallback(MiVRy.GestureRecognitionResult result)
-    {
-        String gesture_name = mivry.GetGestureName(result.gesture_id);
-        textview_message.setText("Identifying gesture:\n" + gesture_name);
-        textview_keyword.setText(String.format("(Confidence: %.1f%%)", result.similarity * 100.0));
-        if (result.gesture_id >= 0) {
-            Resources resources = getResources();
-            layout_main.setBackgroundColor(resources.getColor(resources.getIdentifier(gesture_name, "color", getPackageName())));
-        }
-    }
-
-    @Override
-    public void continuousRecordingCallback(int gesture_id, int samples_recorded)
-    {
-        textview_message.setText("Recoding gesture:\n" + mivry.GetGestureName(gesture_id));
-        textview_keyword.setText("(" + samples_recorded + " samples recorded)");
     }
 }

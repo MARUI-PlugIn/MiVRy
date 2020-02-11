@@ -2,10 +2,11 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/layout_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".BasicGestures"
+    android:id="@+id/layout_basic">
+
 
     <Button
         android:id="@+id/button_record"
@@ -20,10 +21,23 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <Button
+        android:id="@+id/button_finish"
+        android:layout_width="320dp"
+        android:layout_height="55dp"
+        android:background="@drawable/custom_button"
+        android:text="Touch to finish recording\nAnd start training"
+        app:layout_constraintBottom_toTopOf="@+id/button_create"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.929" />
+
+    <Button
         android:id="@+id/button_create"
         android:layout_width="320dp"
         android:layout_height="60dp"
-        android:layout_marginBottom="96dp"
+        android:layout_marginBottom="104dp"
         android:background="@drawable/custom_button"
         android:text="Touch to create a new Gesture\nand start recording samples"
         app:layout_constraintBottom_toTopOf="@+id/button_record"
@@ -35,48 +49,24 @@
         android:id="@+id/text_message"
         android:layout_width="350dp"
         android:layout_height="40dp"
-        android:layout_marginTop="20dp"
         android:text="Welcome to MiVRY!\nYour gesture keyword is:"
         android:textAlignment="center"
+        android:gravity="end|center"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.459"
+        app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_create" />
 
-    <Button
-        android:id="@+id/button_reset"
-        android:layout_width="170dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="16dp"
-        android:background="@drawable/custom_button"
-        android:text="Reset &amp; restart"
-        app:layout_constraintBottom_toTopOf="@+id/button_finish"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.807" />
-
-    <Button
-        android:id="@+id/button_finish"
-        android:layout_width="320dp"
-        android:layout_height="55dp"
-        android:background="@drawable/custom_button"
-        android:text="Touch to finish recording\nAnd start training"
-        app:layout_constraintBottom_toTopOf="@+id/button_create"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.917" />
-
     <TextView
         android:id="@+id/text_keyword"
-        android:layout_width="351dp"
-        android:layout_height="19dp"
+        android:layout_width="350dp"
+        android:layout_height="40dp"
         android:text="KEYWORD"
         android:textAlignment="center"
+        android:textSize="30sp"
+        android:textStyle="bold"
         app:layout_constraintBottom_toTopOf="@+id/button_record"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.466"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_message"
         app:layout_constraintVertical_bias="0.0" />
@@ -94,17 +84,18 @@
         app:layout_constraintTop_toBottomOf="@+id/button_record"
         app:layout_constraintVertical_bias="0.142" />
 
-    <TextView
-        android:id="@+id/text_buildstamp"
-        android:layout_width="381dp"
-        android:layout_height="27dp"
-        android:text="BUILDSTAMP"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+    <Button
+        android:id="@+id/button_reset"
+        android:layout_width="170dp"
+        android:layout_height="50dp"
+        android:background="@drawable/custom_button"
+        android:text="Reset &amp; restart"
+        app:layout_constraintBottom_toTopOf="@+id/button_finish"
+        app:layout_constraintEnd_toStartOf="@+id/button_quit"
+        app:layout_constraintHorizontal_bias="0.285"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_gesturelist"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.875" />
 
     <Button
         android:id="@+id/button_quit"
@@ -112,13 +103,22 @@
         android:layout_height="50dp"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
-        android:text="Quit"
         android:background="@drawable/custom_button"
+        android:text="Return"
         app:layout_constraintBottom_toTopOf="@+id/button_finish"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@+id/button_reset"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.796" />
+        app:layout_constraintVertical_bias="0.875" />
+
+    <TextView
+        android:id="@+id/text_performance"
+        android:layout_width="350dp"
+        android:layout_height="25dp"
+        android:text="PERFORMANCE"
+        android:textAlignment="center"
+        app:layout_constraintBottom_toTopOf="@+id/button_record"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_keyword" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

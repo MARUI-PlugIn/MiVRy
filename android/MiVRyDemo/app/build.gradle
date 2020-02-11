@@ -9,7 +9,6 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField 'String', 'BUILD_STAMP', 'new java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.getDefault()).format(new java.util.Date(' + System.currentTimeMillis() +'L))'
     }
     buildTypes {
         release {
