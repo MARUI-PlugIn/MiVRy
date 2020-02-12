@@ -12,13 +12,14 @@
         android:id="@+id/button_record"
         android:layout_width="260dp"
         android:layout_height="175dp"
-        android:layout_marginBottom="200dp"
-        android:text="Press and Hold\nand move phone\nto perform gesture"
         android:background="@drawable/custom_button"
+        android:text="Press and Hold\nand move phone\nto perform gesture"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.631" />
 
     <Button
         android:id="@+id/button_finish"

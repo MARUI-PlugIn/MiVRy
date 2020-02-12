@@ -17,8 +17,10 @@
         android:text="Press and Hold\nand move phone\nto perform gesture"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0" />
 
     <Button
         android:id="@+id/button_create"
@@ -114,7 +116,7 @@
     <SeekBar
         android:id="@+id/seekbar_smoothing_positional"
         android:layout_width="300dp"
-        android:layout_height="wrap_content"
+        android:layout_height="20dp"
         android:background="@drawable/custom_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/text_smoothing_positional"
@@ -134,8 +136,8 @@
 
     <TextView
         android:id="@+id/text_smoothing"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="20dp"
         android:text="Smoothing:"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -145,8 +147,8 @@
 
     <TextView
         android:id="@+id/text_smoothing_positional"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="20dp"
         android:text="Accelerometer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.018"
@@ -155,8 +157,8 @@
 
     <TextView
         android:id="@+id/text_smoothing_continuous"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="100dp"
+        android:layout_height="20dp"
         android:text="Continuous"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -169,15 +171,15 @@
         android:id="@+id/seekbar_smoothing_continuous"
         style="@style/Widget.AppCompat.SeekBar.Discrete"
         android:layout_width="300dp"
-        android:layout_height="wrap_content"
+        android:layout_height="20dp"
         android:background="@drawable/custom_button"
         android:max="6"
         android:progress="3"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.868"
+        app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintStart_toEndOf="@+id/text_smoothing_continuous"
         app:layout_constraintTop_toBottomOf="@+id/seekbar_smoothing_positional"
-        app:layout_constraintVertical_bias="0.081" />
+        app:layout_constraintVertical_bias="0.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
