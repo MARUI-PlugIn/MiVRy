@@ -12,10 +12,12 @@
         android:layout_width="300dp"
         android:layout_height="40dp"
         android:background="@drawable/custom_button"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/text_smoothing_positional"
-        app:layout_constraintTop_toBottomOf="@+id/text_smoothing" />
+        app:layout_constraintHorizontal_bias="0.6"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.582" />
 
     <TextView
         android:id="@+id/text_sensorinfo"
@@ -39,21 +41,22 @@
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.019"
+        app:layout_constraintHorizontal_bias="0.054"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.468" />
+        app:layout_constraintVertical_bias="0.483" />
 
     <TextView
         android:id="@+id/text_smoothing_positional"
         android:layout_width="100dp"
         android:layout_height="20dp"
-        android:layout_marginTop="12dp"
         android:text="Accelerometer"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.019"
+        app:layout_constraintHorizontal_bias="0.054"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_smoothing" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.524" />
 
     <TextView
         android:id="@+id/text_smoothing_continuous"
@@ -62,10 +65,10 @@
         android:text="Continuous"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.019"
+        app:layout_constraintHorizontal_bias="0.072"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_smoothing_positional"
-        app:layout_constraintVertical_bias="0.08" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.637" />
 
     <SeekBar
         android:id="@+id/seekbar_smoothing_continuous"
@@ -77,14 +80,14 @@
         android:progress="3"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/text_smoothing_continuous"
-        app:layout_constraintTop_toBottomOf="@+id/seekbar_smoothing_positional"
-        app:layout_constraintVertical_bias="0.032" />
+        app:layout_constraintHorizontal_bias="0.603"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.697" />
 
     <EditText
         android:id="@+id/number_gestureperiod"
-        android:layout_width="150dp"
+        android:layout_width="100dp"
         android:layout_height="40dp"
         android:ems="10"
         android:inputType="numberDecimal"
@@ -97,7 +100,7 @@
 
     <EditText
         android:id="@+id/number_recognitioninterval"
-        android:layout_width="150dp"
+        android:layout_width="100dp"
         android:layout_height="40dp"
         android:ems="10"
         android:inputType="numberDecimal"

@@ -9,7 +9,7 @@
 
     <Button
         android:id="@+id/button_basic_gestures"
-        android:layout_width="320dp"
+        android:layout_width="300dp"
         android:layout_height="60dp"
         android:background="@drawable/custom_button"
         android:text="Basic Gestures"
@@ -21,7 +21,7 @@
 
     <Button
         android:id="@+id/button_continuous_gestures"
-        android:layout_width="320dp"
+        android:layout_width="300dp"
         android:layout_height="60dp"
         android:background="@drawable/custom_button"
         android:text="Continuous Gestures"
@@ -32,7 +32,7 @@
 
     <TextView
         android:id="@+id/text_message"
-        android:layout_width="350dp"
+        android:layout_width="300dp"
         android:layout_height="40dp"
         android:text="Welcome to MiVRY Demo!\nPlease choose mode"
         android:textAlignment="center"
@@ -45,13 +45,15 @@
 
     <TextView
         android:id="@+id/text_buildstamp"
-        android:layout_width="381dp"
-        android:layout_height="27dp"
+        android:layout_width="300dp"
+        android:layout_height="30dp"
         android:text="BUILDSTAMP"
+        android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.974" />
 
     <Button
         android:id="@+id/button_quit"
@@ -64,9 +66,9 @@
         android:text="Quit"
         app:layout_constraintBottom_toTopOf="@+id/text_message"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.977"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.076" />
+        app:layout_constraintVertical_bias="0.263" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

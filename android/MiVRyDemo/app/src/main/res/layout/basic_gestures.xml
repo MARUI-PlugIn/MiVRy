@@ -2,42 +2,41 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_basic"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".BasicGestures"
-    android:id="@+id/layout_basic">
+    tools:context=".BasicGestures">
 
 
     <Button
         android:id="@+id/button_record"
         android:layout_width="260dp"
-        android:layout_height="175dp"
+        android:layout_height="170dp"
         android:background="@drawable/custom_button"
         android:text="Press and Hold\nand move phone\nto perform gesture"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.631" />
+        app:layout_constraintVertical_bias="0.658" />
 
     <Button
         android:id="@+id/button_finish"
-        android:layout_width="320dp"
-        android:layout_height="55dp"
+        android:layout_width="300dp"
+        android:layout_height="45dp"
         android:background="@drawable/custom_button"
         android:text="Touch to finish recording\nAnd start training"
         app:layout_constraintBottom_toTopOf="@+id/button_create"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintHorizontal_bias="0.495"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.929" />
+        app:layout_constraintVertical_bias="0.954" />
 
     <Button
         android:id="@+id/button_create"
-        android:layout_width="320dp"
-        android:layout_height="60dp"
+        android:layout_width="300dp"
+        android:layout_height="45dp"
         android:layout_marginBottom="104dp"
         android:background="@drawable/custom_button"
         android:text="Touch to create a new Gesture\nand start recording samples"
@@ -50,9 +49,9 @@
         android:id="@+id/text_message"
         android:layout_width="350dp"
         android:layout_height="40dp"
+        android:gravity="end|center"
         android:text="Welcome to MiVRY!\nYour gesture keyword is:"
         android:textAlignment="center"
-        android:gravity="end|center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintStart_toStartOf="parent"
@@ -74,8 +73,8 @@
 
     <TextView
         android:id="@+id/text_gesturelist"
-        android:layout_width="394dp"
-        android:layout_height="143dp"
+        android:layout_width="300dp"
+        android:layout_height="120dp"
         android:text="GESTURE LIST"
         android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -87,29 +86,30 @@
 
     <Button
         android:id="@+id/button_reset"
-        android:layout_width="170dp"
-        android:layout_height="50dp"
+        android:layout_width="150dp"
+        android:layout_height="30dp"
         android:background="@drawable/custom_button"
         android:text="Reset &amp; restart"
         app:layout_constraintBottom_toTopOf="@+id/button_finish"
-        app:layout_constraintEnd_toStartOf="@+id/button_quit"
-        app:layout_constraintHorizontal_bias="0.285"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.061"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.875" />
+        app:layout_constraintVertical_bias="0.949" />
 
     <Button
         android:id="@+id/button_quit"
-        android:layout_width="170dp"
-        android:layout_height="50dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
+        android:layout_width="150dp"
+        android:layout_height="30dp"
+        android:layout_marginTop="12dp"
         android:background="@drawable/custom_button"
         android:text="Return"
         app:layout_constraintBottom_toTopOf="@+id/button_finish"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.938"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.875" />
+        app:layout_constraintVertical_bias="0.936" />
 
     <TextView
         android:id="@+id/text_performance"

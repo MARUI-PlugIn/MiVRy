@@ -1,130 +1,126 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_continuous"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/layout_continuous"
     tools:context=".ContinuousGestures">
 
 
     <Button
         android:id="@+id/button_record"
         android:layout_width="260dp"
-        android:layout_height="175dp"
-        android:layout_marginBottom="200dp"
+        android:layout_height="150dp"
         android:background="@drawable/custom_button"
         android:text="Press and Hold\nand move phone\nto perform gesture"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintVertical_bias="0.571" />
 
     <Button
         android:id="@+id/button_create"
-        android:layout_width="320dp"
-        android:layout_height="60dp"
-        android:layout_marginBottom="96dp"
+        android:layout_width="300dp"
+        android:layout_height="45dp"
         android:background="@drawable/custom_button"
         android:text="Touch to create a new Gesture\nand start recording samples"
-        app:layout_constraintBottom_toTopOf="@+id/button_record"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintHorizontal_bias="0.55"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.235" />
 
     <TextView
         android:id="@+id/text_message"
-        android:layout_width="350dp"
+        android:layout_width="300dp"
         android:layout_height="40dp"
-        android:layout_marginTop="20dp"
         android:text="Welcome to MiVRY!\nYour gesture keyword is:"
         android:textAlignment="center"
+        app:layout_constraintBottom_toTopOf="@+id/button_record"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.459"
+        app:layout_constraintHorizontal_bias="0.55"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button_create" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.893" />
 
     <Button
         android:id="@+id/button_reset"
-        android:layout_width="170dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginLeft="16dp"
+        android:layout_width="140dp"
+        android:layout_height="30dp"
         android:background="@drawable/custom_button"
         android:text="Reset &amp; restart"
         app:layout_constraintBottom_toTopOf="@+id/button_finish"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.059"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.807" />
+        app:layout_constraintVertical_bias="0.936" />
 
     <Button
         android:id="@+id/button_finish"
-        android:layout_width="320dp"
-        android:layout_height="55dp"
+        android:layout_width="300dp"
+        android:layout_height="45dp"
         android:background="@drawable/custom_button"
         android:text="Touch to finish recording\nAnd start training"
         app:layout_constraintBottom_toTopOf="@+id/button_create"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.494"
+        app:layout_constraintHorizontal_bias="0.549"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.917" />
+        app:layout_constraintVertical_bias="0.956" />
 
     <TextView
         android:id="@+id/text_keyword"
-        android:layout_width="351dp"
+        android:layout_width="300dp"
         android:layout_height="19dp"
         android:text="KEYWORD"
         android:textAlignment="center"
         app:layout_constraintBottom_toTopOf="@+id/button_record"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.466"
+        app:layout_constraintHorizontal_bias="0.555"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_message"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.529" />
 
     <TextView
         android:id="@+id/text_gesturelist"
-        android:layout_width="400dp"
-        android:layout_height="120dp"
+        android:layout_width="300dp"
+        android:layout_height="100dp"
         android:text="GESTURE LIST"
         android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.545"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_record"
-        app:layout_constraintVertical_bias="0.07" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <Button
         android:id="@+id/button_quit"
-        android:layout_width="170dp"
-        android:layout_height="50dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginRight="16dp"
+        android:layout_width="140dp"
+        android:layout_height="30dp"
         android:background="@drawable/custom_button"
         android:text="Return"
         app:layout_constraintBottom_toTopOf="@+id/button_finish"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@+id/button_reset"
+        app:layout_constraintHorizontal_bias="0.94"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.796" />
+        app:layout_constraintVertical_bias="0.936" />
 
     <Button
         android:id="@+id/button_settings"
         android:layout_width="100dp"
-        android:layout_height="50dp"
+        android:layout_height="30dp"
         android:background="@drawable/custom_button"
         android:text="Settings"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_gesturelist"
-        app:layout_constraintVertical_bias="0.333" />
+        app:layout_constraintVertical_bias="0.0" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
