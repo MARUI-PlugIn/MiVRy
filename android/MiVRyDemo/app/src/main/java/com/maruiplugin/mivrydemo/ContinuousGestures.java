@@ -1,5 +1,6 @@
 package com.maruiplugin.mivrydemo;
 
+import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -7,7 +8,6 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,8 +28,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
     private ButtonListenerFinish button_listener_finish;
     private ButtonListenerReset  button_listener_reset;
     private ButtonListenerQuit   button_listener_quit;
-    private SeekbarListenerSmoothingPositional seekbar_listener_smoothing_positional;
-    private SeekbarListenerSmoothingContinuous seekbar_listener_smoothing_continuous;
+    private ButtonListenerSettings button_listener_settings;
     private TrainingListener     training_listener;
 
     private static ConstraintLayout layout_continuous;
@@ -38,14 +37,13 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
     private static Button button_finish;
     private static Button button_reset;
     private static Button button_quit;
+    private static Button button_settings;
     private static TextView textview_message;
     private static TextView textview_keyword;
     private static TextView textview_gesturelist;
-    private static TextView textview_sensorinfo;
-    private static SeekBar seekbar_smoothing_positional;
-    private static SeekBar  seekbar_smoothing_continuous;
 
-    private static MiVRy mivry;
+    public  static MiVRy mivry;
+    public  static long recognition_interval = 250;
     private static int recording_gesture_id;
     private static double recognition_preformance;
     private static String save_gesture_database_path;
@@ -76,9 +74,11 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         save_gesture_database_path = getExternalFilesDir(null).getAbsolutePath();
         prng = new Random();
         mivry = new MiVRy(this);
-        mivry.SetContinuousIdentificationPeriod(1000);
-        mivry.SetContinuousIdentificationSmoothing(3);
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
         this.init();
     }
 
@@ -97,8 +97,6 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         textview_keyword.setText("Your keyword is: "+c);
         this.textview_gesturelist = findViewById(R.id.text_gesturelist);
         textview_gesturelist.setVisibility(View.INVISIBLE);
-        this.textview_sensorinfo = findViewById(R.id.text_sensorinfo);
-        textview_sensorinfo.setText(mivry.GetActiveSensorTypes());
 
         layout_continuous = findViewById(R.id.layout_continuous);
         Resources resources = getResources();
@@ -133,19 +131,11 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         button_quit.setVisibility(View.VISIBLE);
         button_quit.setEnabled(true);
 
-        seekbar_smoothing_positional = findViewById(R.id.seekbar_smoothing_positional);
-        this.seekbar_listener_smoothing_positional = new SeekbarListenerSmoothingPositional();
-        seekbar_smoothing_positional.setOnSeekBarChangeListener(this.seekbar_listener_smoothing_positional);
-        seekbar_smoothing_positional.setVisibility(View.VISIBLE);
-        seekbar_smoothing_positional.setEnabled(true);
-        seekbar_smoothing_positional.setProgress((int)(mivry.GetPositionalSmoothingFactor() * 100.0f));
-
-        seekbar_smoothing_continuous = findViewById(R.id.seekbar_smoothing_continuous);
-        this.seekbar_listener_smoothing_continuous = new SeekbarListenerSmoothingContinuous();
-        seekbar_smoothing_continuous.setOnSeekBarChangeListener(this.seekbar_listener_smoothing_continuous);
-        seekbar_smoothing_continuous.setVisibility(View.VISIBLE);
-        seekbar_smoothing_continuous.setEnabled(true);
-        seekbar_smoothing_continuous.setProgress((int)mivry.GetContinuousIdentificationSmoothing());
+        button_settings = findViewById(R.id.button_settings);
+        this.button_listener_settings = new ButtonListenerSettings();
+        button_settings.setOnTouchListener(this.button_listener_settings);
+        button_settings.setVisibility(View.VISIBLE);
+        button_settings.setEnabled(true);
 
         this.training_listener = new TrainingListener();
         mivry.SetTrainingListener(this.training_listener);
@@ -158,7 +148,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
             switch (action) {
                 case MotionEvent.ACTION_DOWN:
                     mivry.StartGesture(recording_gesture_id);
-                    mivry.SetContinuousIdentificationListener(ContinuousGestures.this);
+                    mivry.SetContinuousIdentificationListener(ContinuousGestures.this, recognition_interval);
                     button_record.setBackgroundResource(R.drawable.custom_button_active);
                     button_finish.setEnabled(false);
                     button_finish.setVisibility(View.INVISIBLE);
@@ -310,30 +300,17 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         }
     }
 
-    public class SeekbarListenerSmoothingPositional implements SeekBar.OnSeekBarChangeListener {
-        @Override
-        public void onStartTrackingTouch(SeekBar seekBar) {}
 
+    public class ButtonListenerSettings implements View.OnTouchListener {
         @Override
-        public void onStopTrackingTouch(SeekBar seekBar) {}
-
-        @Override
-        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            mivry.SetPositionalSmoothingFactor(((float)progress) / 100.0f);
-        }
-    }
-
-    public class SeekbarListenerSmoothingContinuous implements SeekBar.OnSeekBarChangeListener {
-        @Override
-        public void onStartTrackingTouch(SeekBar seekBar) {}
-
-        @Override
-        public void onStopTrackingTouch(SeekBar seekBar) {}
-
-        @Override
-        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            Log.d("MiVRy", "smoothing=" + progress);
-            mivry.SetContinuousIdentificationSmoothing(progress);
+        public boolean onTouch(View v, MotionEvent event) {
+            int action = event.getActionMasked();
+            if (action != MotionEvent.ACTION_UP) {
+                return true;
+            }
+            Intent i = new Intent(ContinuousGestures.this, ContinuousGesturesSettings.class);
+            ContinuousGestures.this.startActivity(i);
+            return true;
         }
     }
 

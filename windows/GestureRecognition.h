@@ -109,18 +109,20 @@
 
 #include <iostream>
 
-#define GERSTURERECOGNITION_RESULT_SUCCESS                  0   //!< Return code for: function executed successfully.
-#define GERSTURERECOGNITION_RESULT_ERROR_INVALIDPARAM       -1  //!< Return code for: invalid parameter(s) provided to function.
-#define GERSTURERECOGNITION_RESULT_ERROR_INVALIDINDEX       -2  //!< Return code for: invalid index provided to function.
-#define GERSTURERECOGNITION_RESULT_ERROR_INVALIDPATH        -3  //!< Return code for: invalid file path provided to function.
-#define GERSTURERECOGNITION_RESULT_ERROR_INVALIDFILE        -4  //!< Return code for: path to an invalid file provided to function.
-#define GERSTURERECOGNITION_RESULT_ERROR_NUMERICINSTABILITY -5  //!< Return code for: calculations failed due to numeric instability (too small or too large numbers).
-#define GERSTURERECOGNITION_RESULT_ERROR_DATACORRUPTION     -6  //!< Return code for: the internal state of the AI was corrupted.
-#define GERSTURERECOGNITION_RESULT_ERROR_INSUFFICIENTDATA   -7  //!< Return code for: available data (number of samples etc) is insufficient for this operation.
-#define GERSTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING  -8  //!< Return code for: the operation could not be performed because the AI is currently training.
+#define GESTURERECOGNITION_DEBUGOUTPUT                     0 //!< Whether to output debugging data
 
-#define GERSTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
-#define GERSTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
+#define GESTURERECOGNITION_RESULT_SUCCESS                  0   //!< Return code for: function executed successfully.
+#define GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM       -1  //!< Return code for: invalid parameter(s) provided to function.
+#define GESTURERECOGNITION_RESULT_ERROR_INVALIDINDEX       -2  //!< Return code for: invalid index provided to function.
+#define GESTURERECOGNITION_RESULT_ERROR_INVALIDPATH        -3  //!< Return code for: invalid file path provided to function.
+#define GESTURERECOGNITION_RESULT_ERROR_INVALIDFILE        -4  //!< Return code for: path to an invalid file provided to function.
+#define GESTURERECOGNITION_RESULT_ERROR_NUMERICINSTABILITY -5  //!< Return code for: calculations failed due to numeric instability (too small or too large numbers).
+#define GESTURERECOGNITION_RESULT_ERROR_DATACORRUPTION     -6  //!< Return code for: the internal state of the AI was corrupted.
+#define GESTURERECOGNITION_RESULT_ERROR_INSUFFICIENTDATA   -7  //!< Return code for: available data (number of samples etc) is insufficient for this operation.
+#define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING  -8  //!< Return code for: the operation could not be performed because the AI is currently training.
+
+#define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
+#define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
 
 
 #if _WIN32
@@ -203,6 +205,9 @@ extern "C" {
     LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationZ(void* gro); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
     LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationZ(void* gro, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
 
+#if GESTURERECOGNITION_DEBUGOUTPUT
+    LIBEXPORT void  GestureRecognition_setDebugOutputFile(void* gro, const char* path); //!< Set where to write debug information.
+#endif
 #ifdef __cplusplus
 }
 
@@ -210,23 +215,23 @@ class _GestureRecognition
 {
 public:
     enum Result {
-        Success = GERSTURERECOGNITION_RESULT_SUCCESS //!< Return code for: function executed successfully.
+        Success = GESTURERECOGNITION_RESULT_SUCCESS //!< Return code for: function executed successfully.
         ,
-        Error_InvalidParameter = GERSTURERECOGNITION_RESULT_ERROR_INVALIDPARAM //!< Return code for: invalid parameter(s) provided to function.
+        Error_InvalidParameter = GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM //!< Return code for: invalid parameter(s) provided to function.
         ,
-        Error_InvalidIndex = GERSTURERECOGNITION_RESULT_ERROR_INVALIDINDEX //!< Return code for: invalid index provided to function.
+        Error_InvalidIndex = GESTURERECOGNITION_RESULT_ERROR_INVALIDINDEX //!< Return code for: invalid index provided to function.
         ,
-        Error_InvalidPath = GERSTURERECOGNITION_RESULT_ERROR_INVALIDPATH //!< Return code for: invalid file path provided to function.
+        Error_InvalidPath = GESTURERECOGNITION_RESULT_ERROR_INVALIDPATH //!< Return code for: invalid file path provided to function.
         ,
-        Error_InvalidFile = GERSTURERECOGNITION_RESULT_ERROR_INVALIDFILE //!< Return code for: path to an invalid file provided to function.
+        Error_InvalidFile = GESTURERECOGNITION_RESULT_ERROR_INVALIDFILE //!< Return code for: path to an invalid file provided to function.
         ,
-        Error_NumericInstability = GERSTURERECOGNITION_RESULT_ERROR_NUMERICINSTABILITY //!< Return code for: calculations failed due to numeric instability (too small or too large numbers).
+        Error_NumericInstability = GESTURERECOGNITION_RESULT_ERROR_NUMERICINSTABILITY //!< Return code for: calculations failed due to numeric instability (too small or too large numbers).
         ,
-        Error_DataCorruption = GERSTURERECOGNITION_RESULT_ERROR_DATACORRUPTION //!< Return code for: the internal state of the AI was corrupted.
+        Error_DataCorruption = GESTURERECOGNITION_RESULT_ERROR_DATACORRUPTION //!< Return code for: the internal state of the AI was corrupted.
         ,
-        Error_InsufficientData = GERSTURERECOGNITION_RESULT_ERROR_INSUFFICIENTDATA //!< Return code for: available data (number of samples etc) is insufficient for this operation.
+        Error_InsufficientData = GESTURERECOGNITION_RESULT_ERROR_INSUFFICIENTDATA //!< Return code for: available data (number of samples etc) is insufficient for this operation.
         ,
-        Error_CurrentlyTraining = GERSTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING //!< Return code for: the operation could not be performed because the AI is currently training.
+        Error_CurrentlyTraining = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING //!< Return code for: the operation could not be performed because the AI is currently training.
     };
 
     typedef double DoubleVector3[3];        //!< Shorthand for a double[3] vector / array.
@@ -308,6 +313,10 @@ public:
     } ignoreHeadRotation; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
 
     virtual int runTests()=0; //!< Run internal tests to check for code correctness and data consistency.
+    
+#if GESTURERECOGNITION_DEBUGOUTPUT
+    virtual void setDebugOutputFile(const char* path)=0; //!< Set where to write debug information.
+#endif
 };
 
 typedef _GestureRecognition IGestureRecognition;

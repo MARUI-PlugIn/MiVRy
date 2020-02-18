@@ -88,7 +88,7 @@
     <TextView
         android:id="@+id/text_gesturelist"
         android:layout_width="400dp"
-        android:layout_height="100dp"
+        android:layout_height="120dp"
         android:text="GESTURE LIST"
         android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -113,73 +113,18 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.796" />
 
-    <SeekBar
-        android:id="@+id/seekbar_smoothing_positional"
-        android:layout_width="300dp"
-        android:layout_height="20dp"
+    <Button
+        android:id="@+id/button_settings"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
         android:background="@drawable/custom_button"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/text_smoothing_positional"
-        app:layout_constraintTop_toBottomOf="@+id/text_smoothing" />
-
-    <TextView
-        android:id="@+id/text_sensorinfo"
-        android:layout_width="200dp"
-        android:layout_height="25dp"
-        android:gravity="right"
-        android:text="SENSORINFO"
+        android:text="Settings"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_gesturelist"
-        app:layout_constraintVertical_bias="0.98" />
+        app:layout_constraintVertical_bias="0.333" />
 
-    <TextView
-        android:id="@+id/text_smoothing"
-        android:layout_width="100dp"
-        android:layout_height="20dp"
-        android:text="Smoothing:"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.017"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_gesturelist" />
-
-    <TextView
-        android:id="@+id/text_smoothing_positional"
-        android:layout_width="100dp"
-        android:layout_height="20dp"
-        android:text="Accelerometer"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.018"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_smoothing" />
-
-    <TextView
-        android:id="@+id/text_smoothing_continuous"
-        android:layout_width="100dp"
-        android:layout_height="20dp"
-        android:text="Continuous"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.017"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_smoothing_positional"
-        app:layout_constraintVertical_bias="0.028" />
-
-    <SeekBar
-        android:id="@+id/seekbar_smoothing_continuous"
-        style="@style/Widget.AppCompat.SeekBar.Discrete"
-        android:layout_width="300dp"
-        android:layout_height="20dp"
-        android:background="@drawable/custom_button"
-        android:max="6"
-        android:progress="3"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.502"
-        app:layout_constraintStart_toEndOf="@+id/text_smoothing_continuous"
-        app:layout_constraintTop_toBottomOf="@+id/seekbar_smoothing_positional"
-        app:layout_constraintVertical_bias="0.0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
