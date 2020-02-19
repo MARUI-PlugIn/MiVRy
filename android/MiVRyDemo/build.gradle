@@ -25,3 +25,15 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+
+gradle.buildFinished { buildResult ->
+    println "COPYING OUTPUT APK"
+    // println "build failure - " + buildResult.failure
+    copy {
+        from "${projectDir}/app/release"
+        include '*.apk'
+        into "${projectDir}/.."
+        rename(/.*\.apk/, 'MiVRyDemo.apk')
+    }
+}

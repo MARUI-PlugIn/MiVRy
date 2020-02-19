@@ -83,6 +83,8 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
     }
 
     private void init() {
+        mivry.DeleteAllGestures();
+
         this.codewords = new ArrayList<String>();
         for (int i=0; i<codewords_sourcelist.length; i++) {
             codewords.add(codewords_sourcelist[i]);

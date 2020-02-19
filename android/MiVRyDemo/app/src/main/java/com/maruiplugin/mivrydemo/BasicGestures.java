@@ -90,6 +90,8 @@ public class BasicGestures extends AppCompatActivity
     }
 
     private void init() {
+        mivry.DeleteAllGestures();
+
         this.codewords = new ArrayList<String>();
         String[] codewords_sourcelist = null;
         switch (which_codewords_sourcelist) {
