@@ -355,8 +355,12 @@ public class BasicGestures extends AppCompatActivity
                 button_record.setEnabled(true);
                 button_record.setText("Touch and hold\nand move phone\nto perform gesture");
                 String gesture_list = "Recorded gestures:\n";
-                for (int i = mivry.NumberOfGestures()-1; i>=0; i--) {
-                    gesture_list = gesture_list + mivry.GetGestureName(i) + "\n";
+                int n = mivry.NumberOfGestures();
+                if (n > 0) {
+                    gesture_list = gesture_list + mivry.GetGestureName(n-1);
+                    for (int i=n-2; i>=0; i--) {
+                        gesture_list = gesture_list + ", " + mivry.GetGestureName(i);
+                    }
                 }
                 textview_gesturelist.setText(gesture_list);
                 textview_gesturelist.setVisibility(View.VISIBLE);
