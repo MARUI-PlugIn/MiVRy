@@ -1,6 +1,8 @@
 package com.maruiplugin.mivrydemo;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -12,6 +14,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.maruiplugin.mivry.MiVRy;
 import com.maruiplugin.mivry.MiVRyContinuousIdentificationListener;
@@ -328,6 +332,10 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         @Override
         public void trainingFinishCallback(double performance)
         {
+            int permissionCheck = ContextCompat.checkSelfPermission(ContinuousGestures.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(ContinuousGestures.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+            }
             android.text.format.DateFormat df = new android.text.format.DateFormat();
             CharSequence date = df.format("yyyy-MM-dd_HHmmss", new java.util.Date());
             boolean success = mivry.SaveToFile(save_gesture_database_path + "/MiVRy" + date + ".dat");
@@ -361,6 +369,19 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
                 Resources resources = getResources();
                 layout_continuous.setBackgroundColor(resources.getColor(resources.getIdentifier("white", "color", getPackageName())));
             }});
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult (int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode != 0) {
+            Log.d("MiVRy", "Unknown permission request code: " + requestCode);
+        }
+        for (int i=0; i<grantResults.length; i++) {
+            if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                Log.d("MiVRy", "Permission denied");
+            }
         }
     }
 
