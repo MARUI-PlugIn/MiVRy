@@ -11,14 +11,14 @@
     <Button
         android:id="@+id/button_record"
         android:layout_width="260dp"
-        android:layout_height="170dp"
+        android:layout_height="140dp"
         android:background="@drawable/custom_button"
         android:text="Press and Hold\nand move phone\nto perform gesture"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.658" />
+        app:layout_constraintVertical_bias="0.637" />
 
     <Button
         android:id="@+id/button_finish"
@@ -74,15 +74,15 @@
     <TextView
         android:id="@+id/text_gesturelist"
         android:layout_width="300dp"
-        android:layout_height="120dp"
+        android:layout_height="70dp"
         android:text="GESTURE LIST"
         android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_bias="0.45"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_record"
-        app:layout_constraintVertical_bias="0.142" />
+        app:layout_constraintVertical_bias="0.0" />
 
     <Button
         android:id="@+id/button_reset"
@@ -121,5 +121,42 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/text_keyword" />
+
+    <Button
+        android:id="@+id/button_load"
+        android:layout_width="70dp"
+        android:layout_height="30dp"
+        android:text="Load"
+        android:background="@drawable/custom_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.292"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_gesturelist"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <Button
+        android:id="@+id/button_save"
+        android:layout_width="70dp"
+        android:layout_height="30dp"
+        android:text="Save"
+        android:background="@drawable/custom_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.271"
+        app:layout_constraintStart_toEndOf="@+id/button_load"
+        app:layout_constraintTop_toBottomOf="@+id/text_gesturelist"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <Button
+        android:id="@+id/button_settings"
+        android:layout_width="100dp"
+        android:layout_height="30dp"
+        android:text="Settings"
+        android:background="@drawable/custom_button"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button_load" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

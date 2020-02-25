@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
@@ -21,6 +22,8 @@ import com.maruiplugin.mivry.MiVRy;
 import com.maruiplugin.mivry.MiVRyContinuousIdentificationListener;
 import com.maruiplugin.mivry.MiVRyTrainingListener;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -33,6 +36,8 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
     private ButtonListenerReset  button_listener_reset;
     private ButtonListenerQuit   button_listener_quit;
     private ButtonListenerSettings button_listener_settings;
+    private ButtonListenerLoad   button_listener_load;
+    private ButtonListenerSave   button_listener_save;
     private TrainingListener     training_listener;
 
     private static ConstraintLayout layout_continuous;
@@ -42,6 +47,8 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
     private static Button button_reset;
     private static Button button_quit;
     private static Button button_settings;
+    private static Button button_load;
+    private static Button button_save;
     private static TextView textview_message;
     private static TextView textview_keyword;
     private static TextView textview_gesturelist;
@@ -49,6 +56,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
     public  static MiVRy mivry;
     public  static long recognition_interval = 250;
     private static int recording_gesture_id;
+    private static int load_gesture_database_index = 0;
     private static double recognition_preformance;
     private static String save_gesture_database_path;
     private static final String[] codewords_sourcelist = {
@@ -96,6 +104,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
 
         String c = this.getRandomCodeword();
         this.recording_gesture_id = mivry.CreateGesture(c);
+        load_gesture_database_index = 0;
 
         this.textview_message = findViewById(R.id.text_message);
         textview_message.setText("Use the button below\nto record gestures.");
@@ -142,6 +151,23 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         button_settings.setOnTouchListener(this.button_listener_settings);
         button_settings.setVisibility(View.VISIBLE);
         button_settings.setEnabled(true);
+
+        button_load = findViewById(R.id.button_load);
+        this.button_listener_load = new ButtonListenerLoad();
+        button_load.setOnTouchListener(this.button_listener_load);
+        if (getGestureDatabaseFile(0) == null) {
+            button_load.setVisibility(View.INVISIBLE);
+            button_load.setEnabled(false);
+        } else {
+            button_load.setVisibility(View.VISIBLE);
+            button_load.setEnabled(true);
+        }
+
+        button_save = findViewById(R.id.button_save);
+        this.button_listener_save = new ButtonListenerSave();
+        button_save.setOnTouchListener(this.button_listener_save);
+        button_save.setVisibility(View.INVISIBLE);
+        button_save.setEnabled(false);
 
         this.training_listener = new TrainingListener();
         mivry.SetTrainingListener(this.training_listener);
@@ -320,6 +346,101 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         }
     }
 
+
+    public String getGestureDatabaseFile(int index) {
+        File dir = new File(save_gesture_database_path);
+        if (!dir.exists() || !dir.isDirectory()) {
+            return null;
+        }
+        FilenameFilter filter = new FilenameFilter() {
+            @Override
+            public boolean accept(File file, String s) {
+                return s.contains("Continuous") && s.contains(".dat");
+            }
+        };
+        File[] files = dir.listFiles(filter);
+        if (files.length == 0) {
+            return null;
+        }
+        return files[files.length-1-(index % files.length)].getAbsolutePath();
+    }
+
+
+    public class ButtonListenerLoad implements View.OnTouchListener {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            int action = event.getActionMasked();
+            if (action != MotionEvent.ACTION_UP) {
+                return true;
+            }
+            String path = getGestureDatabaseFile(load_gesture_database_index);
+            if (path == null) {
+                Toast.makeText(getApplicationContext(), "No gesture database file found", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            load_gesture_database_index++;
+            boolean success = mivry.LoadFromFile(path);
+            if (!success) {
+                Toast.makeText(getApplicationContext(), "Failed to load gesture database", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            Toast.makeText(getApplicationContext(), "Loaded: " + path, Toast.LENGTH_LONG).show();
+            textview_message.setText("Gestures loaded!\nRecorded performance:");
+            textview_keyword.setText(String.format("%.1f%%",mivry.RecognitionScore() * 100.0));
+            button_finish.setVisibility(View.VISIBLE);
+            button_finish.setEnabled(true);
+            button_finish.setText("Restart training");
+            button_create.setVisibility(View.VISIBLE);
+            button_create.setEnabled(true);
+            button_create.setText("Tap to add\na new gesture");
+            button_record.setVisibility(View.VISIBLE);
+            button_record.setEnabled(true);
+            button_record.setText("Touch and hold\nand move phone\nto perform gesture");
+            String gesture_list = "Recorded gestures:\n";
+            int n = mivry.NumberOfGestures();
+            if (n > 0) {
+                gesture_list = gesture_list + mivry.GetGestureName(n-1);
+                for (int i=n-2; i>=0; i--) {
+                    gesture_list = gesture_list + ", " + mivry.GetGestureName(i);
+                }
+            }
+            textview_gesturelist.setText(gesture_list);
+            textview_gesturelist.setVisibility(View.VISIBLE);
+            button_load.setVisibility(View.VISIBLE);
+            button_load.setEnabled(true);
+            button_save.setVisibility(View.VISIBLE);
+            button_save.setEnabled(true);
+            Resources resources = getResources();
+            layout_continuous.setBackgroundColor(resources.getColor(resources.getIdentifier("white", "color", getPackageName())));
+            recording_gesture_id = -1;
+            return true;
+        }
+    }
+
+    public class ButtonListenerSave implements View.OnTouchListener {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            int action = event.getActionMasked();
+            if (action != MotionEvent.ACTION_UP) {
+                return true;
+            }
+            int permissionCheck = ContextCompat.checkSelfPermission(ContinuousGestures.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(ContinuousGestures.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+            }
+            android.text.format.DateFormat df = new android.text.format.DateFormat();
+            CharSequence date = df.format("yyyy-MM-dd_HHmmss", new java.util.Date());
+            String path = save_gesture_database_path + "/GesturesContinuous" + date + ".dat";
+            boolean success = mivry.SaveToFile(path);
+            if (success) {
+                Toast.makeText(getApplicationContext(), "Saved to: " + path, Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(getApplicationContext(), "Failed to save gesture database", Toast.LENGTH_LONG).show();
+            }
+            return true;
+        }
+    }
+
     public class TrainingListener implements MiVRyTrainingListener {
         @Override
         public void trainingUpdateCallback(double performance)
@@ -332,16 +453,6 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         @Override
         public void trainingFinishCallback(double performance)
         {
-            int permissionCheck = ContextCompat.checkSelfPermission(ContinuousGestures.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(ContinuousGestures.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
-            }
-            android.text.format.DateFormat df = new android.text.format.DateFormat();
-            CharSequence date = df.format("yyyy-MM-dd_HHmmss", new java.util.Date());
-            boolean success = mivry.SaveToFile(save_gesture_database_path + "/MiVRy" + date + ".dat");
-            if (!success) {
-                Log.d("MiVRyDemo", "Failed to save gesture database to "+ save_gesture_database_path);
-            }
             recognition_preformance = performance;
             recording_gesture_id = -1;
             runOnUiThread(new Runnable() { public void run() {
@@ -366,6 +477,15 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
                 }
                 textview_gesturelist.setText(gesture_list);
                 textview_gesturelist.setVisibility(View.VISIBLE);
+                if (getGestureDatabaseFile(0) == null) {
+                    button_load.setVisibility(View.INVISIBLE);
+                    button_load.setEnabled(false);
+                } else {
+                    button_load.setVisibility(View.VISIBLE);
+                    button_load.setEnabled(true);
+                }
+                button_save.setVisibility(View.VISIBLE);
+                button_save.setEnabled(true);
                 Resources resources = getResources();
                 layout_continuous.setBackgroundColor(resources.getColor(resources.getIdentifier("white", "color", getPackageName())));
             }});

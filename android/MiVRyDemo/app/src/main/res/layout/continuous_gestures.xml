@@ -88,7 +88,7 @@
     <TextView
         android:id="@+id/text_gesturelist"
         android:layout_width="300dp"
-        android:layout_height="100dp"
+        android:layout_height="80dp"
         android:text="GESTURE LIST"
         android:textAlignment="center"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -119,6 +119,32 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button_load"
+        app:layout_constraintVertical_bias="0.333" />
+
+    <Button
+        android:id="@+id/button_load"
+        android:layout_width="70dp"
+        android:layout_height="30dp"
+        android:background="@drawable/custom_button"
+        android:text="Load"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.324"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/text_gesturelist"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <Button
+        android:id="@+id/button_save"
+        android:layout_width="70dp"
+        android:layout_height="30dp"
+        android:background="@drawable/custom_button"
+        android:text="Save"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.181"
+        app:layout_constraintStart_toEndOf="@+id/button_load"
         app:layout_constraintTop_toBottomOf="@+id/text_gesturelist"
         app:layout_constraintVertical_bias="0.0" />
 

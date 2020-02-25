@@ -16,8 +16,9 @@ public class ContinuousGesturesSettings extends AppCompatActivity {
     private ButtonListenerReturn button_listener_return;
     private SeekbarListenerSmoothingPositional seekbar_listener_smoothing_positional;
     private SeekbarListenerSmoothingContinuous seekbar_listener_smoothing_continuous;
-    private TextviewListenerGesturePeriod textview_listener_gesture_period;
+    private TextviewListenerGesturePeriod       textview_listener_gesture_period;
     private TextviewListenerRecognitionInterval textview_listener_recognition_interval;
+    private TextviewListenerTrainingTime        textview_listener_training_time;
 
     private static Button   button_return;
     private static TextView textview_sensorinfo;
@@ -25,12 +26,17 @@ public class ContinuousGesturesSettings extends AppCompatActivity {
     private static SeekBar  seekbar_smoothing_continuous;
     private static TextView number_gestureperiod;
     private static TextView number_recognitioninterval;
+    private static TextView number_trainingtime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.continuous_gestures_settings);
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
         this.textview_sensorinfo = findViewById(R.id.text_sensorinfo);
         textview_sensorinfo.setText(ContinuousGestures.mivry.GetActiveSensorTypes());
 
@@ -57,6 +63,11 @@ public class ContinuousGesturesSettings extends AppCompatActivity {
         textview_listener_recognition_interval = new TextviewListenerRecognitionInterval();
         number_recognitioninterval.setOnEditorActionListener(textview_listener_recognition_interval);
         number_recognitioninterval.setText("" + (ContinuousGestures.recognition_interval * 0.001));
+
+        number_trainingtime = findViewById(R.id.number_trainingtime);
+        textview_listener_training_time = new TextviewListenerTrainingTime();
+        number_trainingtime.setOnEditorActionListener(textview_listener_training_time);
+        number_trainingtime.setText("" + ContinuousGestures.mivry.GetMaxTrainingTime());
     }
 
 
@@ -98,6 +109,14 @@ public class ContinuousGesturesSettings extends AppCompatActivity {
         @Override
         public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
             ContinuousGestures.recognition_interval = (long)(Double.parseDouble(v.getText().toString()) * 1000.0);
+            return false;
+        }
+    }
+
+    public class TextviewListenerTrainingTime implements TextView.OnEditorActionListener {
+        @Override
+        public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+            ContinuousGestures.mivry.SetMaxTrainingTime((int)(Double.parseDouble(v.getText().toString())));
             return false;
         }
     }
