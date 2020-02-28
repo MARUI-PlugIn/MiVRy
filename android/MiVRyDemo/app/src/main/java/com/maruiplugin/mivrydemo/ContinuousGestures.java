@@ -54,8 +54,9 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
     private static TextView textview_gesturelist;
 
     public  static MiVRy mivry;
+    private static boolean recording = false;
     public  static long recognition_interval = 250;
-    private static int recording_gesture_id;
+    private static int recording_gesture_id = -1;
     private static int load_gesture_database_index = 0;
     private static double recognition_preformance;
     private static String save_gesture_database_path;
@@ -120,7 +121,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         button_record = findViewById(R.id.button_record);
         this.button_listener_record = new ButtonListenerRecord();
         button_record.setOnTouchListener(this.button_listener_record);
-        button_record.setText("Touch and hold\nand move phone\nto record gesture sample");
+        button_record.setText("Tap here\nand move phone\nto record gesture samples");
 
         button_create = findViewById(R.id.button_create);
         this.button_listener_create = new ButtonListenerCreate();
@@ -177,41 +178,42 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             int action = event.getActionMasked();
-            switch (action) {
-                case MotionEvent.ACTION_DOWN:
-                    mivry.StartGesture(recording_gesture_id);
-                    mivry.SetContinuousIdentificationListener(ContinuousGestures.this, recognition_interval);
-                    button_record.setBackgroundResource(R.drawable.custom_button_active);
-                    button_finish.setEnabled(false);
-                    button_finish.setVisibility(View.INVISIBLE);
-                    button_create.setEnabled(false);
-                    button_create.setVisibility(View.INVISIBLE);
-                    button_reset.setEnabled(false);
-                    button_reset.setVisibility(View.INVISIBLE);
-                    button_quit.setEnabled(false);
-                    button_quit.setVisibility(View.INVISIBLE);
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-                    final Rect r = new Rect();
-                    v.getHitRect(r);
-                    final float x = event.getX() + r.left;
-                    final float y = event.getY() + r.top;
-                    if (!r.contains((int) x, (int) y)) {
-                        mivry.CancelGesture();
-                        mivry.SetContinuousIdentificationListener(null);
-                        button_record.setBackgroundResource(R.drawable.custom_button);
-                    }
-                    return true;
-                case MotionEvent.ACTION_UP:
-                    break; // additional action required - will be performed below
-                default:
-                    return true; // ignore other events
+            if (action != MotionEvent.ACTION_DOWN) {
+                return true;
             }
-            // if we arrive here, then a gesture was finished
+            if (!recording) {
+                mivry.StartGesture(recording_gesture_id);
+                mivry.SetContinuousIdentificationListener(ContinuousGestures.this, recognition_interval);
+                recording = true;
+                button_record.setBackgroundResource(R.drawable.custom_button_active);
+                if (recording_gesture_id >= 0) {
+                    button_record.setText("Recording...\n(Move your phone)\nTap again to stop");
+                } else {
+                    button_record.setText("Identifying...\n(Move your phone)\nTap again to stop");
+                }
+                button_finish.setEnabled(false);
+                button_finish.setVisibility(View.INVISIBLE);
+                button_create.setEnabled(false);
+                button_create.setVisibility(View.INVISIBLE);
+                button_reset.setEnabled(false);
+                button_reset.setVisibility(View.INVISIBLE);
+                button_quit.setEnabled(false);
+                button_quit.setVisibility(View.INVISIBLE);
+                button_load.setEnabled(false);
+                button_load.setVisibility(View.INVISIBLE);
+                button_save.setEnabled(false);
+                button_save.setVisibility(View.INVISIBLE);
+                button_settings.setEnabled(false);
+                button_settings.setVisibility(View.INVISIBLE);
+                return true;
+            }
+            // if we arrive here, then a second tap ended the gesture recording process
+            recording = false;
             button_record.setBackgroundResource(R.drawable.custom_button);
             mivry.SetContinuousIdentificationListener(null);
             mivry.CancelGesture();
             if (recording_gesture_id >= 0) {
+                button_record.setText("Tap here\nand move phone\nto record gesture samples");
                 int n = mivry.GetGestureNumberOfSamples(recording_gesture_id);
                 String c = mivry.GetGestureName(recording_gesture_id);
                 textview_message.setText("Recording gestures for keyword:\n" + c);
@@ -225,6 +227,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
                     button_create.setText("Tap to record\nanother gesture");
                 }
             } else {
+                button_record.setText("Tap here\nand move phone\nto identify gestures");
                 button_finish.setEnabled(true);
                 button_finish.setVisibility(View.VISIBLE);
                 button_create.setEnabled(true);
@@ -234,6 +237,17 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
             button_reset.setVisibility(View.VISIBLE);
             button_quit.setEnabled(true);
             button_quit.setVisibility(View.VISIBLE);
+            if (getGestureDatabaseFile(0) == null) {
+                button_load.setVisibility(View.INVISIBLE);
+                button_load.setEnabled(false);
+            } else {
+                button_load.setVisibility(View.VISIBLE);
+                button_load.setEnabled(true);
+            }
+            button_save.setVisibility(View.VISIBLE);
+            button_save.setEnabled(true);
+            button_settings.setVisibility(View.VISIBLE);
+            button_settings.setEnabled(true);
             return true;
         }
     }
@@ -252,7 +266,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
                 textview_keyword.setText(String.format("(%.1f%%)", mivry.RecognitionScore()*100.0));
                 button_record.setEnabled(true);
                 button_record.setVisibility(View.VISIBLE);
-                button_record.setText("Touch and hold\nand move phone\nto perform gesture");
+                button_record.setText("Tap here\nand move phone\nto identify gestures");
                 button_create.setEnabled(true);
                 button_create.setVisibility(View.VISIBLE);
                 button_create.setText("Tap to create\nnew gesture");
@@ -293,7 +307,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
             textview_keyword.setText("\"Number of recorded samples: 0");
             button_record.setEnabled(true);
             button_record.setVisibility(View.VISIBLE);
-            button_record.setText("Touch and hold\nand move phone\nto record gesture sample");
+            button_record.setText("Tap here\nand move phone\nto record gesture samples");
             Resources resources = getResources();
             layout_continuous.setBackgroundColor(resources.getColor(resources.getIdentifier(c, "color", getPackageName())));
 
@@ -395,7 +409,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
             button_create.setText("Tap to add\na new gesture");
             button_record.setVisibility(View.VISIBLE);
             button_record.setEnabled(true);
-            button_record.setText("Touch and hold\nand move phone\nto perform gesture");
+            button_record.setText("Tap here\nand move phone\nto identify gestures");
             String gesture_list = "Recorded gestures:\n";
             int n = mivry.NumberOfGestures();
             if (n > 0) {
@@ -466,7 +480,7 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
                 button_create.setText("Tap to create\nanother gesture");
                 button_record.setVisibility(View.VISIBLE);
                 button_record.setEnabled(true);
-                button_record.setText("Touch and hold\nand move phone\nto perform gesture");
+                button_record.setText("Tap here\nand move phone\nto identify gestures");
                 String gesture_list = "Recorded gestures:\n";
                 int n = mivry.NumberOfGestures();
                 if (n > 0) {

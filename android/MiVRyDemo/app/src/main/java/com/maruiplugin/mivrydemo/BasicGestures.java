@@ -36,6 +36,7 @@ public class BasicGestures extends AppCompatActivity
     private ButtonListenerSettings button_listener_settings;
     private ButtonListenerLoad button_listener_load;
     private ButtonListenerSave button_listener_save;
+    private ButtonListenerUndo button_listener_undo;
     private TrainingListener training_listener;
 
     private static ConstraintLayout layout_basic;
@@ -47,6 +48,7 @@ public class BasicGestures extends AppCompatActivity
     private static Button button_settings;
     private static Button button_load;
     private static Button button_save;
+    private static Button button_undo;
     private static TextView textview_message;
     private static TextView textview_keyword;
     private static TextView textview_performance;
@@ -192,6 +194,12 @@ public class BasicGestures extends AppCompatActivity
         button_save.setVisibility(View.INVISIBLE);
         button_save.setEnabled(false);
 
+        button_undo = findViewById(R.id.button_undo);
+        this.button_listener_undo = new ButtonListenerUndo();
+        button_undo.setOnTouchListener(this.button_listener_undo);
+        button_undo.setVisibility(View.INVISIBLE);
+        button_undo.setEnabled(false);
+
         this.training_listener = new TrainingListener();
         mivry.SetTrainingListener(this.training_listener);
     }
@@ -245,6 +253,9 @@ public class BasicGestures extends AppCompatActivity
                     button_create.setVisibility(View.VISIBLE);
                     button_create.setText("Tap to record\nanother gesture");
                 }
+                textview_gesturelist.setVisibility(View.INVISIBLE);
+                button_undo.setVisibility(View.VISIBLE);
+                button_undo.setEnabled(true);
             } else {
                 if (ret.gesture_id >=0 ) {
                     textview_message.setText("Identified gesture:");
@@ -259,6 +270,8 @@ public class BasicGestures extends AppCompatActivity
                 button_finish.setVisibility(View.VISIBLE);
                 button_create.setEnabled(true);
                 button_create.setVisibility(View.VISIBLE);
+                button_undo.setEnabled(false);
+                button_undo.setVisibility(View.INVISIBLE);
             }
             button_reset.setEnabled(true);
             button_reset.setVisibility(View.VISIBLE);
@@ -305,6 +318,8 @@ public class BasicGestures extends AppCompatActivity
                 button_finish.setVisibility(View.VISIBLE);
                 button_finish.setText("Stop training");
             }
+            button_undo.setVisibility(View.INVISIBLE);
+            button_undo.setEnabled(false);
             return true;
         }
     }
@@ -327,12 +342,12 @@ public class BasicGestures extends AppCompatActivity
             button_record.setEnabled(true);
             button_record.setVisibility(View.VISIBLE);
             button_record.setText("Touch and hold\nand move phone\nto record gesture sample");
-
             button_create.setEnabled(false);
             button_create.setVisibility(View.INVISIBLE);
-
             button_finish.setEnabled(false);
             button_finish.setVisibility(View.INVISIBLE);
+            button_undo.setEnabled(false);
+            button_undo.setVisibility(View.INVISIBLE);
             return true;
         }
     }
@@ -434,6 +449,8 @@ public class BasicGestures extends AppCompatActivity
             }
             textview_gesturelist.setText(gesture_list);
             textview_gesturelist.setVisibility(View.VISIBLE);
+            button_undo.setVisibility(View.INVISIBLE);
+            button_undo.setEnabled(false);
             button_load.setVisibility(View.VISIBLE);
             button_load.setEnabled(true);
             button_save.setVisibility(View.VISIBLE);
@@ -464,6 +481,26 @@ public class BasicGestures extends AppCompatActivity
             } else {
                 Toast.makeText(getApplicationContext(), "Failed to save gesture database", Toast.LENGTH_LONG).show();
             }
+            return true;
+        }
+    }
+
+    public class ButtonListenerUndo implements View.OnTouchListener {
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            int action = event.getActionMasked();
+            if (action != MotionEvent.ACTION_UP) {
+                return true;
+            }
+            if (recording_gesture_id < 0) {
+                return true;
+            }
+            int num_samples = mivry.GetGestureNumberOfSamples(recording_gesture_id);
+            if (num_samples > 0) {
+                mivry.DeleteGestureSample(recording_gesture_id, num_samples-1);
+            }
+            num_samples = mivry.GetGestureNumberOfSamples(recording_gesture_id);
+            textview_performance.setText(String.format("Number of recorded samples: %d", num_samples));
             return true;
         }
     }
@@ -504,6 +541,8 @@ public class BasicGestures extends AppCompatActivity
                 }
                 textview_gesturelist.setText(gesture_list);
                 textview_gesturelist.setVisibility(View.VISIBLE);
+                button_undo.setVisibility(View.INVISIBLE);
+                button_undo.setEnabled(false);
                 if (getGestureDatabaseFile(0) == null) {
                     button_load.setVisibility(View.INVISIBLE);
                     button_load.setEnabled(false);

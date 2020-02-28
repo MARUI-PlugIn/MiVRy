@@ -47,7 +47,7 @@
 
     <TextView
         android:id="@+id/text_message"
-        android:layout_width="350dp"
+        android:layout_width="300dp"
         android:layout_height="40dp"
         android:gravity="end|center"
         android:text="Welcome to MiVRY!\nYour gesture keyword is:"
@@ -59,7 +59,7 @@
 
     <TextView
         android:id="@+id/text_keyword"
-        android:layout_width="350dp"
+        android:layout_width="300dp"
         android:layout_height="40dp"
         android:text="KEYWORD"
         android:textAlignment="center"
@@ -113,7 +113,7 @@
 
     <TextView
         android:id="@+id/text_performance"
-        android:layout_width="350dp"
+        android:layout_width="300dp"
         android:layout_height="25dp"
         android:text="PERFORMANCE"
         android:textAlignment="center"
@@ -158,5 +158,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_load" />
+
+    <Button
+        android:id="@+id/button_undo"
+        android:layout_width="200dp"
+        android:layout_height="40dp"
+        android:background="@drawable/custom_button"
+        android:text="Undo / Delete Last"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button_record"
+        app:layout_constraintVertical_bias="0.051" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
