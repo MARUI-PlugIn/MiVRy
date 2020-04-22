@@ -1332,7 +1332,7 @@ public class GestureCombinations {
     public static extern int GestureCombinations_contdStrokeM(IntPtr gco, int part, double[,] m); //!< Continue stroke data input.
     [DllImport(libfile, EntryPoint = "GestureCombinations_endStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_endStroke(IntPtr gco, int part, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2); //!< End the stroke and identify the gesture.
-    [DllImport(libfile, EntryPoint = "GestureCombinations_identifyGestureCombination", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(libfile, EntryPoint = "GestureCombinations_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_cancelStroke(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_identifyGestureCombination", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_identifyGestureCombination(IntPtr gco, double[] similarity); //!< Return the most likely gesture candidate for the previous gesture combination.
