@@ -109,8 +109,6 @@
 
 #include <iostream>
 
-#define GESTURERECOGNITION_DEBUGOUTPUT                     0 //!< Whether to output debugging data
-
 #define GESTURERECOGNITION_RESULT_SUCCESS                  0   //!< Return code for: function executed successfully.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM       -1  //!< Return code for: invalid parameter(s) provided to function.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDINDEX       -2  //!< Return code for: invalid index provided to function.
@@ -126,88 +124,88 @@
 
 
 #if _WIN32
-#define LIBEXPORT __declspec(dllexport)
+#define GESTURERECOGNITION_LIBEXPORT __declspec(dllexport)
+#define GESTURERECOGNITION_CALLCONV __cdecl
 #else
-#define LIBEXPORT 
+#define GESTURERECOGNITION_LIBEXPORT
+#define GESTURERECOGNITION_CALLCONV
 #endif
 #ifdef __cplusplus
 extern "C" {
 #endif
-    typedef void* MetadataCreatorFunction(); //!< Function pointer type to a function that creates Metadata objects.
-    typedef void TrainingCallbackFunction(double performance, void* metadata); //!< Function pointer to an optional callback function to e called during training.
-    LIBEXPORT void* GestureRecognition_create(); //!< Create new instance.
-    LIBEXPORT void  GestureRecognition_delete(void* gro); //!< Delete instance.
-    LIBEXPORT int   GestureRecognition_startStroke(void* gro, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
-    LIBEXPORT int   GestureRecognition_startStrokeM(void* gro, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
-    LIBEXPORT int   GestureRecognition_contdStroke(void* gro, const double p[3]); //!< Continue stroke data input (translational data only).
-    LIBEXPORT int   GestureRecognition_contdStrokeQ(void* gro, const double p[3], const double q[4]); //!< Continue stroke data input with rotational data in the form of a quaternion.
-    LIBEXPORT int   GestureRecognition_contdStrokeE(void* gro, const double p[3], const double r[3]); //!< Continue stroke data input with rotational data in the form of a Euler rotation.
-    LIBEXPORT int   GestureRecognition_contdStrokeM(void* gro, const double m[4][4]); //!< Continue stroke data input with a transformation matrix (translation and rotation).
-    LIBEXPORT int   GestureRecognition_endStroke(void* gro, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and identify the gesture.
-    LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilities(void* gro, double p[], int n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities.
-    LIBEXPORT int   GestureRecognition_endStrokeAndGetSimilarity(void* gro, double* similarity, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get similarity value.
-    LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(void* gro, double p[], double s[], int n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities and similarity values.
-    LIBEXPORT int   GestureRecognition_cancelStroke(void* gro); //!< Cancel a started stroke.
+    typedef void* GESTURERECOGNITION_CALLCONV MetadataCreatorFunction(); //!< Function pointer type to a function that creates Metadata objects.
+    typedef void GESTURERECOGNITION_CALLCONV TrainingCallbackFunction(double performance, void* metadata); //!< Function pointer to an optional callback function to e called during training.
+    GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_create(); //!< Create new instance.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_delete(void* gro); //!< Delete instance.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStroke(void* gro, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStrokeM(void* gro, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStroke(void* gro, const double p[3]); //!< Continue stroke data input (translational data only).
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStrokeQ(void* gro, const double p[3], const double q[4]); //!< Continue stroke data input with rotational data in the form of a quaternion.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStrokeE(void* gro, const double p[3], const double r[3]); //!< Continue stroke data input with rotational data in the form of a Euler rotation.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStrokeM(void* gro, const double m[4][4]); //!< Continue stroke data input with a transformation matrix (translation and rotation).
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStroke(void* gro, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and identify the gesture.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilities(void* gro, double p[], int n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetSimilarity(void* gro, double* similarity, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get similarity value.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(void* gro, double p[], double s[], int n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities and similarity values.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_cancelStroke(void* gro); //!< Cancel a started stroke.
 
-    LIBEXPORT int   GestureRecognition_contdIdentify(void* gro, const double hmd_p[3], const double hmd_q[4], double* similarity); //!< Continuous gesture identification.
-    LIBEXPORT int   GestureRecognition_contdRecord(void* gro, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
-    LIBEXPORT int   GestureRecognition_getContdIdentificationPeriod(void* gro); //!< Get time frame for continuous gesture identification in milliseconds.
-    LIBEXPORT int   GestureRecognition_setContdIdentificationPeriod(void* gro, int ms); //!< Set time frame for continuous gesture identification in milliseconds.
-    LIBEXPORT int   GestureRecognition_getContdIdentificationSmoothing(void* gro); //!< Get smoothing for continuous gesture identification in number of samples.
-    LIBEXPORT int   GestureRecognition_setContdIdentificationSmoothing(void* gro, int samples); //!< Set smoothing for continuous gesture identification in number of samples.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentify(void* gro, const double hmd_p[3], const double hmd_q[4], double* similarity); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdRecord(void* gro, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getContdIdentificationPeriod(void* gro); //!< Get time frame for continuous gesture identification in milliseconds.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_setContdIdentificationPeriod(void* gro, int ms); //!< Set time frame for continuous gesture identification in milliseconds.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getContdIdentificationSmoothing(void* gro); //!< Get smoothing for continuous gesture identification in number of samples.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_setContdIdentificationSmoothing(void* gro, int samples); //!< Set smoothing for continuous gesture identification in number of samples.
 
-    LIBEXPORT int  GestureRecognition_numberOfGestures(void* gro); //!< Get the number of gestures currently recorded in the system.
-    LIBEXPORT int  GestureRecognition_deleteGesture(void* gro, int index); //!< Delete the recorded gesture with the specified index.
-    LIBEXPORT int  GestureRecognition_deleteAllGestures(void* gro); //!< Delete recorded gestures.
-    LIBEXPORT int  GestureRecognition_createGesture(void* gro, const char* name, void* metadata); //!< Create new gesture.
-    LIBEXPORT double GestureRecognition_recognitionScore(void* gro); //!< Get the gesture recognition score of the current neural network (0~1).
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_numberOfGestures(void* gro); //!< Get the number of gestures currently recorded in the system.
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_deleteGesture(void* gro, int index); //!< Delete the recorded gesture with the specified index.
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_deleteAllGestures(void* gro); //!< Delete recorded gestures.
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_createGesture(void* gro, const char* name, void* metadata); //!< Create new gesture.
+    GESTURERECOGNITION_LIBEXPORT double GestureRecognition_recognitionScore(void* gro); //!< Get the gesture recognition score of the current neural network (0~1).
         
-    LIBEXPORT const char* GestureRecognition_getGestureName(void* gro, int index); //!< Get the name of a registered gesture.
-    LIBEXPORT int         GestureRecognition_getGestureNameLength(void* gro, int index); //!< Get the length of the name of a registered gesture.
-    LIBEXPORT int         GestureRecognition_copyGestureName(void* gro, int index, char* buf, int buflen); //!< Copy the name of a registered gesture to a buffer.
+    GESTURERECOGNITION_LIBEXPORT const char* GestureRecognition_getGestureName(void* gro, int index); //!< Get the name of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureNameLength(void* gro, int index); //!< Get the length of the name of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_copyGestureName(void* gro, int index, char* buf, int buflen); //!< Copy the name of a registered gesture to a buffer.
 
-    LIBEXPORT void*       GestureRecognition_getGestureMetadata(void* gro, int index); //!< Get the command of a registered gesture.
-    LIBEXPORT int         GestureRecognition_getGestureNumberOfSamples(void* gro, int index); //!< Get the number of recorded samples of a registered gesture.
-    LIBEXPORT int         GestureRecognition_getGestureSampleLength(void* gro, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
-    LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a sample stroke.
-    LIBEXPORT int         GestureRecognition_deleteGestureSample(void* gro, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
-    LIBEXPORT int         GestureRecognition_deleteAllGestureSamples(void* gro, int gesture_index); //!< Delete all gesture sample recordings from the set.
+    GESTURERECOGNITION_LIBEXPORT void*       GestureRecognition_getGestureMetadata(void* gro, int index); //!< Get the command of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureNumberOfSamples(void* gro, int index); //!< Get the number of recorded samples of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleLength(void* gro, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a sample stroke.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteGestureSample(void* gro, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteAllGestureSamples(void* gro, int gesture_index); //!< Delete all gesture sample recordings from the set.
 
-    LIBEXPORT int GestureRecognition_setGestureName(void* gro, int index, const char* name); //!< Set the name of a registered gesture.
-    LIBEXPORT int GestureRecognition_setGestureMetadata(void* gro, int index, void* metadata); //!< Set the command of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setGestureName(void* gro, int index, const char* name); //!< Set the name of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setGestureMetadata(void* gro, int index, void* metadata); //!< Set the command of a registered gesture.
 
-    LIBEXPORT int GestureRecognition_saveToFile(void* gro, const char* path); //!< Save the neural network and recorded training data to file.
-    LIBEXPORT int GestureRecognition_saveToStream(void* gro, void* stream); //!< Save the neural network and recorded training data to std::ofstream.
-    LIBEXPORT int GestureRecognition_loadFromFile(void* gro, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
-    LIBEXPORT int GestureRecognition_loadFromBuffer(void* gro, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from buffer.
-    LIBEXPORT int GestureRecognition_loadFromStream(void* gro, void* stream, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from std::istream.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_saveToFile(void* gro, const char* path); //!< Save the neural network and recorded training data to file.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_saveToStream(void* gro, void* stream); //!< Save the neural network and recorded training data to std::ofstream.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromFile(void* gro, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromBuffer(void* gro, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromStream(void* gro, void* stream, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from std::istream.
 
-    LIBEXPORT int  GestureRecognition_startTraining(void* gro); //!< Start train the Neural Network based on the the currently collected data.
-    LIBEXPORT int  GestureRecognition_isTraining(void* gro); //!< Whether the Neural Network is currently training.
-    LIBEXPORT void GestureRecognition_stopTraining(void* gro); //!< Stop the training process (last best result will be used).
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_startTraining(void* gro); //!< Start train the Neural Network based on the the currently collected data.
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_isTraining(void* gro); //!< Whether the Neural Network is currently training.
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_stopTraining(void* gro); //!< Stop the training process (last best result will be used).
 
-    LIBEXPORT int   GestureRecognition_getMaxTrainingTime(void* gro); //!< Get maximum training time in seconds.
-    LIBEXPORT void  GestureRecognition_setMaxTrainingTime(void* gro, int t); //!< Set maximum training time in seconds.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getMaxTrainingTime(void* gro); //!< Get maximum training time in seconds.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setMaxTrainingTime(void* gro, int t); //!< Set maximum training time in seconds.
 
-    LIBEXPORT void GestureRecognition_setTrainingUpdateCallback(void* gro, TrainingCallbackFunction* cbf); //!< Set callback function to be called during training.
-    LIBEXPORT void GestureRecognition_setTrainingFinishCallback(void* gro, TrainingCallbackFunction* cbf); //!< Set callback function to be called when training is finished.
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setTrainingUpdateCallback(void* gro, TrainingCallbackFunction* cbf); //!< Set callback function to be called during training.
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setTrainingFinishCallback(void* gro, TrainingCallbackFunction* cbf); //!< Set callback function to be called when training is finished.
     
-    LIBEXPORT void GestureRecognition_setTrainingUpdateCallbackMetadata(void* gro, void* metadata); //!< Set metadata for callback function to be called during training.
-    LIBEXPORT void GestureRecognition_setTrainingFinishCallbackMetadata(void* gro, void* metadata); //!< Set metadata for callback function to be called when training is finished.
-    LIBEXPORT void* GestureRecognition_getTrainingUpdateCallbackMetadata(void* gro); //!< Get callback data for function to be called during training.
-    LIBEXPORT void* GestureRecognition_getTrainingFinishCallbackMetadata(void* gro); //!< Get callback data for function to be called when training is finished.
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setTrainingUpdateCallbackMetadata(void* gro, void* metadata); //!< Set metadata for callback function to be called during training.
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setTrainingFinishCallbackMetadata(void* gro, void* metadata); //!< Set metadata for callback function to be called when training is finished.
+    GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_getTrainingUpdateCallbackMetadata(void* gro); //!< Get callback data for function to be called during training.
+    GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_getTrainingFinishCallbackMetadata(void* gro); //!< Get callback data for function to be called when training is finished.
 
 
-    LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationX(void* gro); //!< Get whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
-    LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationX(void* gro, int on_off); //!< Set whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
-    LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationY(void* gro); //!< Get whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
-    LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationY(void* gro, int on_off); //!< Set whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
-    LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationZ(void* gro); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
-    LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationZ(void* gro, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationX(void* gro); //!< Get whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationX(void* gro, int on_off); //!< Set whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationY(void* gro); //!< Get whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationY(void* gro, int on_off); //!< Set whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationZ(void* gro); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationZ(void* gro, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
 
-#if GESTURERECOGNITION_DEBUGOUTPUT
-    LIBEXPORT void  GestureRecognition_setDebugOutputFile(void* gro, const char* path); //!< Set where to write debug information.
-#endif
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugOutputFile(void* gro, const char* path); //!< Set where to write debug information.
 #ifdef __cplusplus
 }
 
@@ -250,7 +248,7 @@ public:
     };
     typedef Metadata* MetadataCreatorFunction(); //!< Function pointer type to a function that creates Metadata objects.
 
-    typedef void TrainingCallbackFunction(double performance, void* metadata); //!< Function pointer to an optional callback function to e called during training.
+    typedef void GESTURERECOGNITION_CALLCONV TrainingCallbackFunction(double performance, void* metadata); //!< Function pointer to an optional callback function to e called during training.
 
     virtual int startStroke(const double hmd[4][4], int record_as_sample=-1)=0; //!< Start new stroke.
     virtual int startStroke(const double hmd_p[3], const double hmd_q[4], int record_as_sample=-1)=0; //!< Start new stroke.
@@ -314,9 +312,7 @@ public:
 
     virtual int runTests()=0; //!< Run internal tests to check for code correctness and data consistency.
     
-#if GESTURERECOGNITION_DEBUGOUTPUT
     virtual void setDebugOutputFile(const char* path)=0; //!< Set where to write debug information.
-#endif
 };
 
 typedef _GestureRecognition IGestureRecognition;
