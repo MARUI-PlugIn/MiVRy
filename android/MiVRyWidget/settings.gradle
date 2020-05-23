@@ -1,0 +1,2 @@
+include ':app', ':mivry'
+rootProject.name='MiVRyWidget'

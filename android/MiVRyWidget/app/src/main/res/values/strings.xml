@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">MiVRyWidget</string>
+    <string name="main_button_add">Add new</string>
+    <string name="main_button_settings">Settings</string>
+    <string name="main_button_retrain">Re-Train</string>
+    <string name="main_imageview_logo_desc">MiVRy Logo</string>
+</resources>

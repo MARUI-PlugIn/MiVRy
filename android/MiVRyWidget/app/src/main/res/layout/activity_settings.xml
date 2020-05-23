@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SettingsActivity">
+
+    <TextView
+        android:id="@+id/settings_text_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginTop="25dp"
+        android:text="Settings"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/settings_text_gesturelen"
+        android:layout_width="165dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/settings_text_title"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginTop="25dp"
+        android:text="Gesture length (sec)" />
+
+    <TextView
+        android:id="@+id/settings_text_manualend"
+        android:layout_width="165dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/settings_text_gesturelen"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginTop="35dp"
+        android:text="Manual gesture end" />
+
+    <EditText
+        android:id="@+id/settings_number_gesturelen"
+        android:layout_width="120dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/settings_text_title"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="25dp"
+        android:layout_toEndOf="@+id/settings_text_gesturelen"
+        android:layout_toRightOf="@+id/settings_text_gesturelen"
+        android:ems="10"
+        android:inputType="number" />
+
+    <Switch
+        android:id="@+id/settings_switch_manualend"
+        android:layout_width="65dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/settings_text_gesturelen"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="35dp"
+        android:layout_marginEnd="25dp"
+        android:layout_marginRight="25dp" />
+
+    <Button
+        android:id="@+id/settings_button_back"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginBottom="25dp"
+        android:background="@drawable/custom_button"
+        android:text="Back" />
+
+    <TextView
+        android:id="@+id/settings_text_trainingtime"
+        android:layout_width="168dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/settings_text_manualend"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginTop="35dp"
+        android:text="Training time (sec)" />
+
+    <EditText
+        android:id="@+id/settings_number_trainingtime"
+        android:layout_width="168dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/settings_text_manualend"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginStart="25dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginTop="25dp"
+        android:layout_marginEnd="25dp"
+        android:layout_marginRight="25dp"
+        android:layout_toEndOf="@+id/settings_text_trainingtime"
+        android:layout_toRightOf="@+id/settings_text_trainingtime"
+        android:ems="10"
+        android:inputType="numberDecimal" />
+</RelativeLayout>
