@@ -50,16 +50,20 @@ public class Settings {
             return;
         }
         String path = settingsFilePath(context);
-        final File file = new File(path);
-        if (!file.exists()) {
-            return;
-        }
+        File file = new File(path);
         try {
-            FileOutputStream stream = context.openFileOutput(path, Context.MODE_PRIVATE);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileOutputStream stream = new FileOutputStream(file, false);
             OutputStreamWriter writer = new OutputStreamWriter(stream);
             for (TreeMap.Entry<String, String> entry : settings.entrySet()) {
                 writer.write(entry.getKey() + "=" + entry.getValue() + "\n");
             }
+            writer.flush();
+            writer.close();
+            stream.flush();
+            stream.close();
         } catch (FileNotFoundException e) {
             //
         } catch (IOException e) {

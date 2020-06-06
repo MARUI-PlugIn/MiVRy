@@ -1,5 +1,6 @@
 package com.maruiplugin.mivrywidget;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
@@ -29,8 +30,8 @@ public class Item {
         this.uri = uri;
     }
 
-    public boolean execute() {
-        if (MainActivity.me == null) {
+    public boolean execute(Context context) {
+        if (context == null) {
             return false;
         }
         if (this.uri == null) {
@@ -40,22 +41,22 @@ public class Item {
             case WebLink:
                 Uri webpage = Uri.parse(this.uri); // "http://www.android.com"
                 Intent web_intent = new Intent(Intent.ACTION_VIEW, webpage);
-                MainActivity.me.startActivity(web_intent);
+                context.startActivity(web_intent);
                 return true;
             case CallContact:
                 Uri number = Uri.parse(this.uri); // "tel:5551234"
                 Intent call_intent = new Intent(Intent.ACTION_DIAL, number);
-                MainActivity.me.startActivity(call_intent);
+                context.startActivity(call_intent);
                 return true;
             case MapLocation:
                 Uri location = Uri.parse(this.uri); // "geo:0,0?q=1600+Amphitheatre+Parkway,+Mountain+View,+California"
                 // Or map point based on latitude/longitude: "geo:37.422219,-122.08364?z=14" where z param is zoom level
                 Intent map_intent = new Intent(Intent.ACTION_VIEW, location);
-                MainActivity.me.startActivity(map_intent);
+                context.startActivity(map_intent);
                 return true;
             case AppLaunch:
-                Intent app_intent = MainActivity.me.getPackageManager().getLaunchIntentForPackage(this.uri); // "com.linkedin.android"
-                MainActivity.me.startActivity(app_intent);
+                Intent app_intent = context.getPackageManager().getLaunchIntentForPackage(this.uri); // "com.linkedin.android"
+                context.startActivity(app_intent);
                 return true;
         }
         return false; // no valid type
