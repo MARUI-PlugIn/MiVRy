@@ -65,7 +65,10 @@ public class MiVRyAppWidgetProvider extends AppWidgetProvider {
         if (!ItemManager.isInitialized()) {
             debugLog("initializing ItemManager");
             ItemManager.init(context);
-            ItemManager.load();
+            if(!ItemManager.load()) {
+                debugLog("failed to load gestures");
+                return;
+            }
         }
         // RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
         AppWidgetManager manager = AppWidgetManager.getInstance(context);

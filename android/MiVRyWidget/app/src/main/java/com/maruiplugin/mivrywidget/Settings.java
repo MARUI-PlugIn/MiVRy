@@ -15,6 +15,7 @@ import java.util.TreeMap;
 public class Settings {
 
     private static TreeMap<String, String> settings = null;
+    private static String settings_file_path = null;
 
     private static String settingsFilePath(Context context) {
         return context.getExternalFilesDir(null).getAbsolutePath() + "/settings.dat";
@@ -22,13 +23,18 @@ public class Settings {
 
     private static void load(Context context) {
         settings = new TreeMap<String, String>();
-        String path = settingsFilePath(context);
-        final File file = new File(path);
+        if (settings_file_path == null) {
+            if (context == null) {
+                return;
+            }
+            settings_file_path = settingsFilePath(context);
+        }
+        final File file = new File(settings_file_path);
         if (!file.exists()) {
             return;
         }
         try {
-            FileInputStream stream = context.openFileInput(path);
+            FileInputStream stream = new FileInputStream(file);
             BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
             String line = reader.readLine();
             while(line != null){
@@ -49,8 +55,13 @@ public class Settings {
         if (settings == null) {
             return;
         }
-        String path = settingsFilePath(context);
-        File file = new File(path);
+        if (settings_file_path == null) {
+            if (context == null) {
+                return;
+            }
+            settings_file_path = settingsFilePath(context);
+        }
+        File file = new File(settings_file_path);
         try {
             if (!file.exists()) {
                 file.createNewFile();
