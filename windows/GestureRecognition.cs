@@ -1083,6 +1083,36 @@ public class GestureRecognition {
     {
         return GestureRecognition_loadFromBuffer(m_gro, buffer, null) != 0;
     }
+
+    //                                                          ________________________________
+    //_________________________________________________________/     importGestureSamples()
+    /// <summary>
+    /// Import recorded gesture samples from another gesture recognition object.
+    /// </summary>
+    /// <param name="from_gro">The GestureRecognitionObject from where to import recorded gesture samples.</param>
+    /// <param name="from_gesture_index">The index(ID) of the gesture(on the other GRO) to import.</param>
+    /// <param name="into_gesture_index">The index (ID) of the gesture (on this object) to which the samples should be added.</param>
+    /// <returns>
+    /// True on success, false on failure.
+    /// </returns>
+    public bool importGestureSamples(GestureRecognition from_gro, int from_gesture_index, int into_gesture_index)
+    {
+        return GestureRecognition_importGestureSamples(m_gro, from_gro.m_gro, from_gesture_index, into_gesture_index) != 0;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     importGestures()
+    /// <summary>
+    /// Import recorded gesture samples from another gesture recognition object, merging gestures by name.
+    /// Gestures with names which are not in the list of gestures yet will be appended.
+    /// </summary>
+    /// <param name="from_gro">The GestureRecognitionObject from where to import gestures.</param>
+    /// <returns>
+    /// True on success, false on failure.
+    /// </returns>
+    public bool importGestures(GestureRecognition from_gro)
+    {
+        return GestureRecognition_importGestures(m_gro, from_gro.m_gro) != 0;
+    }
     //                                                          ________________________________
     //_________________________________________________________/      startTraining()
     /// <summary>
@@ -1284,6 +1314,10 @@ public class GestureRecognition {
     public static extern int GestureRecognition_loadFromFile(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromBuffer", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_loadFromBuffer(IntPtr gro, string buffer, MetadataCreatorFunction createMetadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_importGestureSamples", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_importGestureSamples(IntPtr gro, IntPtr from_gro, int from_gesture_index, int into_gesture_index);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_importGestures", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_importGestures(IntPtr gro, IntPtr from_gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startTraining", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_startTraining(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_isTraining", CallingConvention = CallingConvention.Cdecl)]

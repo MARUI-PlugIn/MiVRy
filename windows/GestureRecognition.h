@@ -118,6 +118,8 @@
 #define GESTURERECOGNITION_RESULT_ERROR_DATACORRUPTION     -6  //!< Return code for: the internal state of the AI was corrupted.
 #define GESTURERECOGNITION_RESULT_ERROR_INSUFFICIENTDATA   -7  //!< Return code for: available data (number of samples etc) is insufficient for this operation.
 #define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING  -8  //!< Return code for: the operation could not be performed because the AI is currently training.
+#define GESTURERECOGNITION_RESULT_ERROR_NOGESTURES         -9  //!< Return code for: no gestures registered.
+#define GESTURERECOGNITION_RESULT_ERROR_NNINCONSISTENT    -10  //!< Return code for: the neural network is inconsistent - re-training might solve the issue.
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -181,6 +183,9 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromFile(void* gro, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromBuffer(void* gro, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from buffer.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromStream(void* gro, void* stream, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from std::istream.
+
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importGestureSamples(void* gro, const void* from_gro, int from_gesture_index, int into_gesture_index); //!< Import recorded gesture samples from another gesture recognition object.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importGestures(void* gro, const void* from_gro); //!< Import recorded gesture samples from another gesture recognition object, merging gestures by name.
 
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_startTraining(void* gro); //!< Start train the Neural Network based on the the currently collected data.
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_isTraining(void* gro); //!< Whether the Neural Network is currently training.
@@ -292,6 +297,9 @@ public:
     virtual bool loadFromFile(const char* path, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
     virtual bool loadFromBuffer(const char* buffer, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
     virtual bool loadFromStream(void* stream, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from std::istream.
+
+    virtual bool importGestureSamples(const _GestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0; //!< Import recorded gesture samples from another gesture recognition object.
+    virtual bool importGestures(const _GestureRecognition* from_gro)=0; //!< Import recorded gesture samples from another gesture recognition object, merging gestures by name.
 
     virtual bool startTraining()=0; //!< Start train the Neural Network based on the the currently collected data.
     virtual bool isTraining()=0; //!< Whether the Neural Network is currently training.
