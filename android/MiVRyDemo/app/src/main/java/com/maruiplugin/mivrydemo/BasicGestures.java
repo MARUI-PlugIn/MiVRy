@@ -237,6 +237,7 @@ public class BasicGestures extends AppCompatActivity
                     return true; // ignore other events
             }
             // if we arrive here, then a gesture was finished
+
             button_record.setBackgroundResource(R.drawable.custom_button);
             MiVRy.GestureRecognitionResult ret = mivry.EndGesture();
             if (recording_gesture_id >= 0) {
@@ -261,6 +262,9 @@ public class BasicGestures extends AppCompatActivity
                     textview_message.setText("Identified gesture:");
                     textview_keyword.setText(mivry.GetGestureName(ret.gesture_id));
                     textview_performance.setText(String.format("(Confidence: %.1f%%)", ret.similarity * 100.0));
+                } else if (ret.gesture_id == MiVRy.ERROR_NOTGESTURING) {
+                    // Sometimes we get a second "ACTION_UP" event.
+                    // -> Don't overwrite the result of the previous call.
                 } else {
                     textview_message.setText("Failed to identify gesture.");
                     textview_keyword.setText("Error " + (-ret.gesture_id));
