@@ -31,8 +31,8 @@ public class ItemManager {
         }
         mivry.DeleteAllGestures();
         items.clear();
-        boolean success = mivry.LoadFromFile(gesture_database_file_path);
-        if (!success) {
+        boolean success = mivry.LoadFromFile(gesture_database_file_path) == 0;
+        if (success) {
             mivry.DeleteAllGestures();
             items.clear();
             return false;
@@ -83,7 +83,7 @@ public class ItemManager {
         if (mivry == null) {
             return false;
         }
-        boolean s = mivry.SaveToFile(gesture_database_file_path);
+        boolean s = mivry.SaveToFile(gesture_database_file_path) == 0;
         if (MainActivity.me != null) {
             Toast.makeText(MainActivity.me, (s) ? "Gestures saved" : "ERROR! Failed to save gestures", Toast.LENGTH_LONG).show();
         }

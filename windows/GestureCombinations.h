@@ -275,12 +275,12 @@ public:
     virtual bool setGestureName(int part, int index, const char* name)=0; //!< Set the name of a registered gesture.
     virtual bool setGestureMetadata(int part, int index, _GestureRecognition::Metadata* metadata)=0; //!< Set the command of a registered gesture.
 
-    virtual bool saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
-    virtual bool loadFromFile(const char* path, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
-    virtual bool loadFromBuffer(const char* buffer, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
-    virtual bool saveGestureToFile(int part, const char* path)=0; //!< Save the neural network and recorded training data to file.
-    virtual bool loadGestureFromFile(int part, const char* path, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
-    virtual bool loadGestureFromBuffer(int part, const char* buffer, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
+    virtual int saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
+    virtual int loadFromFile(const char* path, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
+    virtual int loadFromBuffer(const char* buffer, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
+    virtual int saveGestureToFile(int part, const char* path)=0; //!< Save the neural network and recorded training data to file.
+    virtual int loadGestureFromFile(int part, const char* path, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
+    virtual int loadGestureFromBuffer(int part, const char* buffer, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
 
     // Functions for handling gesture combinations
     virtual int  numberOfGestureCombinations()=0; //!< Get the number of gestures currently recorded in the i's system.

@@ -1051,11 +1051,11 @@ public class GestureRecognition {
     /// </summary>
     /// <param name="path">File system path and filename where to save the file.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool saveToFile(string path)
+    public int saveToFile(string path)
     {
-        return GestureRecognition_saveToFile(m_gro, path) != 0;
+        return GestureRecognition_saveToFile(m_gro, path);
     }
     //                                                          ________________________________
     //_________________________________________________________/    loadFromFile()
@@ -1064,11 +1064,11 @@ public class GestureRecognition {
     /// </summary>
     /// <param name="path">File system path and filename from where to load.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool loadFromFile(string path)
+    public int loadFromFile(string path)
     {
-        return GestureRecognition_loadFromFile(m_gro, path, null) != 0;
+        return GestureRecognition_loadFromFile(m_gro, path, null);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadFromBuffer()
@@ -1077,11 +1077,11 @@ public class GestureRecognition {
     /// </summary>
     /// <param name="buffer">The string buffer containing the artificial intelligence.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool loadFromBuffer(string buffer)
+    public int loadFromBuffer(string buffer)
     {
-        return GestureRecognition_loadFromBuffer(m_gro, buffer, null) != 0;
+        return GestureRecognition_loadFromBuffer(m_gro, buffer, null);
     }
 
     //                                                          ________________________________

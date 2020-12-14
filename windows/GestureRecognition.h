@@ -120,6 +120,7 @@
 #define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING  -8  //!< Return code for: the operation could not be performed because the AI is currently training.
 #define GESTURERECOGNITION_RESULT_ERROR_NOGESTURES         -9  //!< Return code for: no gestures registered.
 #define GESTURERECOGNITION_RESULT_ERROR_NNINCONSISTENT    -10  //!< Return code for: the neural network is inconsistent - re-training might solve the issue.
+#define GESTURERECOGNITION_RESULT_ERROR_CANNOTOVERWRITE   -11  //!< Return code for: file or object exists and can't be overwritten.
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -235,6 +236,10 @@ public:
         Error_InsufficientData = GESTURERECOGNITION_RESULT_ERROR_INSUFFICIENTDATA //!< Return code for: available data (number of samples etc) is insufficient for this operation.
         ,
         Error_CurrentlyTraining = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING //!< Return code for: the operation could not be performed because the AI is currently training.
+        ,
+        Error_NNInconsistent = GESTURERECOGNITION_RESULT_ERROR_NNINCONSISTENT //!< Return code for: the neural network is inconsistent - re-training might solve the issue.
+        ,
+        Error_CannotOverwrite = GESTURERECOGNITION_RESULT_ERROR_CANNOTOVERWRITE //!< Return code for: file or object exists and can't be overwritten.
     };
 
     typedef double DoubleVector3[3];        //!< Shorthand for a double[3] vector / array.
@@ -292,11 +297,11 @@ public:
     virtual bool setGestureName(int index, const char* name)=0; //!< Set the name of a registered gesture.
     virtual bool setGestureMetadata(int index, Metadata* metadata)=0; //!< Set the command of a registered gesture.
 
-    virtual bool saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
-    virtual bool saveToStream(void* stream)=0; //!< Save the neural network and recorded training data to std::ofstream.
-    virtual bool loadFromFile(const char* path, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
-    virtual bool loadFromBuffer(const char* buffer, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
-    virtual bool loadFromStream(void* stream, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from std::istream.
+    virtual int  saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
+    virtual int  saveToStream(void* stream)=0; //!< Save the neural network and recorded training data to std::ofstream.
+    virtual int  loadFromFile(const char* path, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
+    virtual int  loadFromBuffer(const char* buffer, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
+    virtual int  loadFromStream(void* stream, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from std::istream.
 
     virtual bool importGestureSamples(const _GestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0; //!< Import recorded gesture samples from another gesture recognition object.
     virtual bool importGestures(const _GestureRecognition* from_gro)=0; //!< Import recorded gesture samples from another gesture recognition object, merging gestures by name.

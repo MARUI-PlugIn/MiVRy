@@ -1102,11 +1102,11 @@ public class GestureCombinations {
     /// </summary>
     /// <param name="path">File system path and filename where to save the file.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool saveToFile(string path)
+    public int saveToFile(string path)
     {
-        return GestureCombinations_saveToFile(m_gc, path) != 0;
+        return GestureCombinations_saveToFile(m_gc, path);
     }
     //                                                          ________________________________
     //_________________________________________________________/    loadFromFile()
@@ -1115,11 +1115,11 @@ public class GestureCombinations {
     /// </summary>
     /// <param name="path">File system path and filename from where to load.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool loadFromFile(string path)
+    public int loadFromFile(string path)
     {
-        return GestureCombinations_loadFromFile(m_gc, path, null) != 0;
+        return GestureCombinations_loadFromFile(m_gc, path, null);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadFromBuffer()
@@ -1128,11 +1128,11 @@ public class GestureCombinations {
     /// </summary>
     /// <param name="buffer">The string buffer containing the artificial intelligence.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool loadFromBuffer(string buffer)
+    public int loadFromBuffer(string buffer)
     {
-        return GestureCombinations_loadFromBuffer(m_gc, buffer, null) != 0;
+        return GestureCombinations_loadFromBuffer(m_gc, buffer, null);
     }
     //                                                          ________________________________
     //_________________________________________________________/      saveGestureToFile()
@@ -1142,11 +1142,11 @@ public class GestureCombinations {
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="path">File system path and filename where to save the file.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool saveGestureToFile(int part, string path)
+    public int saveGestureToFile(int part, string path)
     {
-        return GestureCombinations_saveGestureToFile(m_gc, part, path) != 0;
+        return GestureCombinations_saveGestureToFile(m_gc, part, path);
     }
     //                                                          ________________________________
     //_________________________________________________________/    loadGestureFromFile()
@@ -1156,11 +1156,11 @@ public class GestureCombinations {
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="path">File system path and filename from where to load.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool loadGestureFromFile(int part, string path)
+    public int loadGestureFromFile(int part, string path)
     {
-        return GestureCombinations_loadGestureFromFile(m_gc, part, path, null) != 0;
+        return GestureCombinations_loadGestureFromFile(m_gc, part, path, null);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadGestureFromBuffer()
@@ -1170,11 +1170,11 @@ public class GestureCombinations {
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="buffer">The string buffer containing the artificial intelligence.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool loadGestureFromBuffer(int part, string buffer)
+    public int loadGestureFromBuffer(int part, string buffer)
     {
-        return GestureCombinations_loadGestureFromBuffer(m_gc, part, buffer, null) != 0;
+        return GestureCombinations_loadGestureFromBuffer(m_gc, part, buffer, null);
     }
     //                                                          ________________________________
     //_________________________________________________________/      startTraining()

@@ -393,9 +393,9 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
                 return true;
             }
             load_gesture_database_index++;
-            boolean success = mivry.LoadFromFile(path);
-            if (!success) {
-                Toast.makeText(getApplicationContext(), "Failed to load gesture database", Toast.LENGTH_LONG).show();
+            int ret = mivry.LoadFromFile(path);
+            if (ret != 0) {
+                Toast.makeText(getApplicationContext(), "Failed to load gesture database ("+ret+")", Toast.LENGTH_LONG).show();
                 return true;
             }
             Toast.makeText(getApplicationContext(), "Loaded: " + path, Toast.LENGTH_LONG).show();
@@ -445,11 +445,11 @@ public class ContinuousGestures extends AppCompatActivity implements MiVRyContin
             android.text.format.DateFormat df = new android.text.format.DateFormat();
             CharSequence date = df.format("yyyy-MM-dd_HHmmss", new java.util.Date());
             String path = save_gesture_database_path + "/GesturesContinuous" + date + ".dat";
-            boolean success = mivry.SaveToFile(path);
-            if (success) {
+            int ret = mivry.SaveToFile(path);
+            if (ret == 0) {
                 Toast.makeText(getApplicationContext(), "Saved to: " + path, Toast.LENGTH_LONG).show();
             } else {
-                Toast.makeText(getApplicationContext(), "Failed to save gesture database", Toast.LENGTH_LONG).show();
+                Toast.makeText(getApplicationContext(), "Failed to save gesture database ("+ret+")", Toast.LENGTH_LONG).show();
             }
             return true;
         }
