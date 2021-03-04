@@ -167,7 +167,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_deleteGesture(void* gco, int part, int index); //!< Delete the recorded gesture with the specified index.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_deleteAllGestures(void* gco, int part); //!< Delete recorded gestures.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_createGesture(void* gco, int part, const char* name, void* metadata); //!< Create new gesture.
-    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_copyGesture(void* gco, int from_part, int gesture_index, int to_part, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_copyGesture(void* gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
     GESTURERECOGNITION_LIBEXPORT double GestureCombinations_gestureRecognitionScore(void* gco, int part); //!< Get the gesture recognition score of the current neural network (0~1).
         
     GESTURERECOGNITION_LIBEXPORT const char* GestureCombinations_getGestureName(void* gco, int part, int index); //!< Get the name of a registered gesture.
@@ -259,7 +259,7 @@ public:
     virtual bool deleteGesture(int part, int index)=0; //!< Delete the recorded gesture with the specified index.
     virtual bool deleteAllGestures(int part)=0; //!< Delete recorded gestures.
     virtual int  createGesture(int part, const char*  name, _GestureRecognition::Metadata* metadata=0)=0; //!< Create new gesture.
-    virtual int  copyGesture(int from_part, int gesture_index, int to_part, bool mirror_x=false, bool mirror_y=false, bool mirror_z=false)=0; //!< Copy gesture from one part/side to another.
+    virtual int  copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x=false, bool mirror_y=false, bool mirror_z=false)=0; //!< Copy gesture from one part/side to another.
     virtual double gestureRecognitionScore(int part)=0; //!< Get the gesture recognition score of the current neural network (0~1).
         
     virtual const char* getGestureName(int part, int index)=0; //!< Get the name of a registered gesture.
@@ -312,6 +312,8 @@ public:
 
     /// Whether the rotation of the users head should be considered when recording and performing gestures.
     _GestureRecognition::IgnoreHeadRotation ignoreHeadRotation; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
+
+    virtual int runTests() = 0; //!< Run internal tests to check for code correctness and data consistency.
 };
 
 typedef _GestureCombinations IGestureCombinations;

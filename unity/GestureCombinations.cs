@@ -1,6 +1,7 @@
 ﻿/*
- * GestureCombinations - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
- * Copyright (c) 2019 MARUI-PlugIn (inc.)
+ * MiVRy - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
+ * Version 1.14
+ * Copyright (c) 2020 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )
@@ -134,6 +135,22 @@
  * gc.loadFromFile("C:/myGestureCombos.dat");
  * </code>
  * 
+ * (TroubleShooting)
+ * Most of the functions return an integer code on whether they succeeded
+ * or if there was any error, which is helpful to find the root cause of possible issues.
+ * Here is a list of the possible error codes that functions may return:
+ * (0) : Return code for: function executed successfully.
+ * (-1) : Return code for: invalid parameter(s) provided to function.
+ * (-2) : Return code for: invalid index provided to function.
+ * (-3) : Return code for: invalid file path provided to function.
+ * (-4) : Return code for: path to an invalid file provided to function.
+ * (-5) : Return code for: calculations failed due to numeric instability (too small or too large numbers).
+ * (-6) : Return code for: the internal state of the AI was corrupted.
+ * (-7) : Return code for: available data (number of samples etc) is insufficient for this operation.
+ * (-8) : Return code for: the operation could not be performed because the AI is currently training.
+ * (-9) : Return code for: no gestures registered.
+ * (-10) : Return code for: the neural network is inconsistent - re-training might solve the issue.
+ * (-11) : Return code for: file or object exists and can't be overwritten.
  */
 
 using System.Collections;
@@ -144,8 +161,8 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-public class GestureCombinations {
-
+public class GestureCombinations
+{
     //                                                          ________________________________
     //_________________________________________________________/  ignoreHeadRotationLeftRight
     /// <summary>
@@ -926,9 +943,9 @@ public class GestureCombinations {
     /// <returns>
     /// ID of the new gesture, -1 on failure.
     /// </returns>
-    public int copyGesture(int from_part, int gesture_index, int to_part, bool mirror_x, bool mirror_y, bool mirror_z)
+    public int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x, bool mirror_y, bool mirror_z)
     {
-        return GestureCombinations_copyGesture(m_gc, from_part, gesture_index, to_part, mirror_x ? 1 : 0, mirror_y ? 1 : 0, mirror_z ? 1 : 0);
+        return GestureCombinations_copyGesture(m_gc, from_part, from_gesture_index, to_part, to_gesture_index, mirror_x ? 1 : 0, mirror_y ? 1 : 0, mirror_z ? 1 : 0);
     }
     //                                                          ________________________________
     //_________________________________________________________/ subGestureRecognitionScore()
@@ -1357,7 +1374,7 @@ public class GestureCombinations {
     [DllImport(libfile, EntryPoint = "GestureCombinations_createGesture", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_createGesture(IntPtr gco, int part, string name, IntPtr metadata); //!< Create new gesture.
     [DllImport(libfile, EntryPoint = "GestureCombinations_copyGesture", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_copyGesture(IntPtr gco, int from_part, int gesture_index, int to_part, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
+    public static extern int GestureCombinations_copyGesture(IntPtr gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
     [DllImport(libfile, EntryPoint = "GestureCombinations_gestureRecognitionScore", CallingConvention = CallingConvention.Cdecl)]
     public static extern double GestureCombinations_gestureRecognitionScore(IntPtr gco, int part); //!< Get the gesture recognition score of the current artificial intelligence (0~1).
     // [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureName", CallingConvention = CallingConvention.Cdecl)]

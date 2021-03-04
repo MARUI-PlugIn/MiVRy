@@ -1,6 +1,7 @@
 ﻿/*
- * GestureRecognition - VR gesture recognition library plug-in for Unity.
- * Copyright (c) 2019 MARUI-PlugIn (inc.)
+ * MiVRy - VR gesture recognition library plug-in for Unity.
+ * Version 1.14
+ * Copyright (c) 2020 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )
@@ -103,6 +104,22 @@
  * gr.loadFromFile("C:/myGestures.dat");
  * </code>
  * 
+ * (TroubleShooting)
+ * Most of the functions return an integer code on whether they succeeded
+ * or if there was any error, which is helpful to find the root cause of possible issues.
+ * Here is a list of the possible error codes that functions may return:
+ * (0) : Return code for: function executed successfully.
+ * (-1) : Return code for: invalid parameter(s) provided to function.
+ * (-2) : Return code for: invalid index provided to function.
+ * (-3) : Return code for: invalid file path provided to function.
+ * (-4) : Return code for: path to an invalid file provided to function.
+ * (-5) : Return code for: calculations failed due to numeric instability (too small or too large numbers).
+ * (-6) : Return code for: the internal state of the AI was corrupted.
+ * (-7) : Return code for: available data (number of samples etc) is insufficient for this operation.
+ * (-8) : Return code for: the operation could not be performed because the AI is currently training.
+ * (-9) : Return code for: no gestures registered.
+ * (-10) : Return code for: the neural network is inconsistent - re-training might solve the issue.
+ * (-11) : Return code for: file or object exists and can't be overwritten.
  */
 
 using System.Collections;
@@ -113,8 +130,8 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-public class GestureRecognition {
-
+public class GestureRecognition
+{
     //                                                          ________________________________
     //_________________________________________________________/  ignoreHeadRotationLeftRight
     /// <summary>

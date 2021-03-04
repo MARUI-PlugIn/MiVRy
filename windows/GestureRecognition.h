@@ -237,6 +237,8 @@ public:
         ,
         Error_CurrentlyTraining = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING //!< Return code for: the operation could not be performed because the AI is currently training.
         ,
+        Error_NoGestures = GESTURERECOGNITION_RESULT_ERROR_NOGESTURES //!< Return code for: no gestures registered.
+        ,
         Error_NNInconsistent = GESTURERECOGNITION_RESULT_ERROR_NNINCONSISTENT //!< Return code for: the neural network is inconsistent - re-training might solve the issue.
         ,
         Error_CannotOverwrite = GESTURERECOGNITION_RESULT_ERROR_CANNOTOVERWRITE //!< Return code for: file or object exists and can't be overwritten.
