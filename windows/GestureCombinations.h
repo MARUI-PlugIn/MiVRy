@@ -224,6 +224,13 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_setIgnoreHeadRotationY(void* gco, int on_off); //!< Set whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getIgnoreHeadRotationZ(void* gco); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_setIgnoreHeadRotationZ(void* gco, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceX(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their x-axis rotation (commonly: pitch, looking up or down).
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceX(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their x-axis rotation (commonly: pitch, looking up or down).
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceY(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceY(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceZ(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceZ(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
 
 #ifdef __cplusplus
 }
@@ -311,7 +318,7 @@ public:
     virtual void setMaxTrainingTime(unsigned long t)=0; //!< Get the current maximum training time in seconds
 
     /// Whether the rotation of the users head should be considered when recording and performing gestures.
-    _GestureRecognition::IgnoreHeadRotation ignoreHeadRotation; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
+    IGestureRecognition::RotationalFrameOfReference rotationalFrameOfReference; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
 
     virtual int runTests() = 0; //!< Run internal tests to check for code correctness and data consistency.
 };

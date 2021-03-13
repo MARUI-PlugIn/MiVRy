@@ -163,9 +163,83 @@ using System.Text;
 
 public class GestureCombinations
 {
+    //                                                                       ___________________
+    //______________________________________________________________________/ FrameOfReference
+    /// <summary>
+    /// What frame of reference (point of view) is used to interpret data.
+    /// </summary>
+    public enum FrameOfReference
+    {
+        Head = 0
+        ,
+        World = 1
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    frameOfReferenceYaw
+    /// <summary>
+    /// Which frame of reference is used to interpret where "front" and "back" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "front" will be the
+    /// direction in which you look, no matter which direction you look.
+    /// If the frame of reference is "World", then "front" will be towards your PC
+    /// (or another room-fixed direction, based on your tracking system).
+    /// Switch this setting to "World" if your gestures are specific to north/south/east/west
+    /// of your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceYaw
+    {
+        get
+        {
+            return (FrameOfReference)GestureCombinations_getRotationalFrameOfReferenceY(m_gc);
+        }
+        set
+        {
+            GestureCombinations_setRotationalFrameOfReferenceY(m_gc, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  frameOfReferenceUpDownPitch
+    /// <summary>
+    /// Which frame of reference is used to interpret where "up" and "down" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "up" will be the
+    /// the visual "up" no matter if you look up or down. If the frame of reference is "World",
+    /// then "up" will be towards the sky in the world (direction of the y-axis).
+    /// Switch this setting to "World" if your gestures are specific to up/down
+    /// in your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceUpDownPitch
+    {
+        get
+        {
+            return (FrameOfReference)GestureCombinations_getRotationalFrameOfReferenceX(m_gc);
+        }
+        set
+        {
+            GestureCombinations_setRotationalFrameOfReferenceX(m_gc, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/   frameOfReferenceRollTilt
+    /// <summary>
+    /// Which frame of reference is used to interpret head tilting when performing a
+    /// gesture. If the frame of reference is "Head" (default), then "right" will be the
+    /// the visual "right", even if you tilt your head. If the frame of reference is "World",
+    /// then the horizon (world) will be used to determine left/right/up/down.
+    /// </summary>
+    public FrameOfReference frameOfReferenceRollTilt
+    {
+        get
+        {
+            return (FrameOfReference)GestureCombinations_getRotationalFrameOfReferenceZ(m_gc);
+        }
+        set
+        {
+            GestureCombinations_setRotationalFrameOfReferenceZ(m_gc, (int)value);
+        }
+    }
     //                                                          ________________________________
     //_________________________________________________________/  ignoreHeadRotationLeftRight
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceYaw instead.
     /// Setting whether the horizontal rotation of the users head
     /// (commonly called "pan" or "yaw", looking left or right) should be considered when 
     /// recording and performing gestures.
@@ -185,11 +259,10 @@ public class GestureCombinations
             GestureCombinations_setIgnoreHeadRotationY(m_gc, value ? 1 : 0);
         }
     }
-
-
     //                                                          ________________________________
     //_________________________________________________________/   ignoreHeadRotationUpDown
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceUpDownPitch instead.
     /// Setting whether the vertical rotation of the users head
     /// (commonly called "pitch", looking up or down) should be considered when 
     /// recording and performing gestures.
@@ -209,11 +282,10 @@ public class GestureCombinations
             GestureCombinations_setIgnoreHeadRotationX(m_gc, value ? 1 : 0);
         }
     }
-
-
     //                                                          ________________________________
     //_________________________________________________________/   ignoreHeadRotationTilt
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceRollTilt instead.
     /// Setting whether the tilting rotation of the users head
     /// (also called "roll" or "bank", tilting the head to the site without changing the
     /// view direction) should be considered when recording and performing gestures.
@@ -233,7 +305,6 @@ public class GestureCombinations
             GestureCombinations_setIgnoreHeadRotationZ(m_gc, value ? 1 : 0);
         }
     }
-
     //                                                          ________________________________
     //_________________________________________________________/   GestureCombinations()
     /// <summary>
@@ -310,23 +381,6 @@ public class GestureCombinations
     /// </returns>
     public int startStroke(int part, Vector3 hmd_p, Quaternion hmd_q, int record_as_sample = -1)
     {
-        if (ignoreHeadRotationLeftRight || ignoreHeadRotationUpDown || ignoreHeadRotationTilt)
-        {
-            Vector3 r = hmd_q.eulerAngles;
-            if (ignoreHeadRotationUpDown)
-            {
-                r.x = 0;
-            }
-            if (ignoreHeadRotationLeftRight)
-            {
-                r.y = 0;
-            }
-            if (ignoreHeadRotationTilt)
-            {
-                r.z = 0;
-            }
-            hmd_q.eulerAngles = r;
-        }
         double[] p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
         return GestureCombinations_startStroke(m_gc, part, p, q, record_as_sample);
@@ -1463,6 +1517,18 @@ public class GestureCombinations
     public static extern int GestureCombinations_getIgnoreHeadRotationZ(IntPtr gco); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
     [DllImport(libfile, EntryPoint = "GestureCombinations_setIgnoreHeadRotationZ", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureCombinations_setIgnoreHeadRotationZ(IntPtr gco, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getRotationalFrameOfReferenceX", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getRotationalFrameOfReferenceX(IntPtr gco); //!< Get whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setRotationalFrameOfReferenceX", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureCombinations_setRotationalFrameOfReferenceX(IntPtr gco, int i); //!< Set whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getRotationalFrameOfReferenceY", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getRotationalFrameOfReferenceY(IntPtr gco); //!< Get whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setRotationalFrameOfReferenceY", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureCombinations_setRotationalFrameOfReferenceY(IntPtr gco, int i); //!< Set whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getRotationalFrameOfReferenceZ(IntPtr gco); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureCombinations_setRotationalFrameOfReferenceZ(IntPtr gco, int i); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
 
     private IntPtr m_gc;
 }
