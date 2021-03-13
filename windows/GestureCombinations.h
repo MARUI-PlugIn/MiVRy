@@ -178,6 +178,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureNumberOfSamples(void* gco, int part, int index); //!< Get the number of recorded samples of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleLength(void* gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleStroke(void* gco, int part, int gesture_index, int sample_index, int processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a sample stroke.
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureMeanLength(void* gco, int part, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureMeanStroke(void* gco, int part, int gesture_index, double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_deleteGestureSample(void* gco, int part, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_deleteAllGestureSamples(void* gco, int part, int gesture_index); //!< Delete all gesture sample recordings from the set.
 
@@ -276,6 +278,8 @@ public:
     virtual int         getGestureNumberOfSamples(int part, int index)=0; //!< Get the number of recorded samples of a registered gesture.
     virtual int         getGestureSampleLength(int part, int gesture_index, int sample_index, bool processed)=0; //!< Get the number of data points a sample has.
     virtual int         getGestureSampleStroke(int part, int gesture_index, int sample_index, bool processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size)=0; //!< Retrieve a sample stroke.
+    virtual int         getGestureMeanLength(int part, int gesture_index) = 0; //!< Get the number of samples of the gesture mean (average over samples).
+    virtual int         getGestureMeanStroke(int part, int gesture_index, double p[][3], double q[][4], int stroke_buf_size) = 0; //!< Retrieve a gesture mean (average over samples).
     virtual bool        deleteGestureSample(int part, int gesture_index, int sample_index)=0; //!< Delete a gesture sample recording from the set.
     virtual bool        deleteAllGestureSamples(int part, int gesture_index)=0; //!< Delete all gesture sample recordings from the set.
 

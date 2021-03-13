@@ -1075,6 +1075,45 @@ public class GestureRecognition
         return samples_written;
     }
     //                                                          ________________________________
+    //_________________________________________________________/    getGestureMeanStroke()
+    /// <summary>
+    /// Retrieve a gesture mean (average over samples).
+    /// </summary>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
+    /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
+    /// <returns>
+    /// The number of data points on that sample (ie. resulting length of p and q).
+    /// </returns>
+    public int getGestureMeanStroke(int gesture_index, ref Vector3[] p, ref Quaternion[] q)
+    {
+        int sample_length = this.getGestureMeanLength(gesture_index, true);
+        if (sample_length == 0)
+        {
+            return 0;
+        }
+        double[] _p = new double[3 * sample_length];
+        double[] _q = new double[4 * sample_length];
+        int samples_written = GestureRecognition_getGestureMeanStroke(m_gro, gesture_index, _p, _q, sample_length);
+        if (samples_written == 0)
+        {
+            return 0;
+        }
+        p = new Vector3[samples_written];
+        q = new Quaternion[samples_written];
+        for (int i = 0; i < samples_written; i++)
+        {
+            p[i].x = (float)_p[i * 3 + 0];
+            p[i].y = (float)_p[i * 3 + 1];
+            p[i].z = (float)_p[i * 3 + 2];
+            q[i].x = (float)_q[i * 4 + 0];
+            q[i].y = (float)_q[i * 4 + 1];
+            q[i].z = (float)_q[i * 4 + 2];
+            q[i].w = (float)_q[i * 4 + 3];
+        }
+        return samples_written;
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      deleteGestureSample()
     /// <summary>
     /// Delete a gesture sample recording from the set.
@@ -1371,6 +1410,10 @@ public class GestureRecognition
     public static extern int GestureRecognition_getGestureSampleLength(IntPtr gro, int gesture_index, int sample_index, int processed);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureSampleStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getGestureSampleStroke(IntPtr gro, int gesture_index, int sample_index, int processed, double[] hmd_p, double[] hmd_q, double[] p, double[] q, int stroke_buf_size);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureMeanLength", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getGestureMeanLength(IntPtr gro, int gesture_index);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureMeanStroke", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getGestureMeanStroke(IntPtr gro, int gesture_index, double[] p, double[] q, int stroke_buf_size);
     [DllImport(libfile, EntryPoint = "GestureRecognition_deleteGestureSample", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_deleteGestureSample(IntPtr gro, int gesture_index, int sample_index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_deleteAllGestureSamples", CallingConvention = CallingConvention.Cdecl)]
