@@ -128,17 +128,18 @@ public class GestureManagerEditor : UnityEditor.Editor
 
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical(GUI.skin.box);
-        EditorGUILayout.LabelField("IGNORE HEAD ROTATION:");
+        EditorGUILayout.LabelField("ROTATIONAL FRAME OF REFERENCE:");
+        string[] framesOfReference = {"Head", "World"};
         if (gm.gr != null)
         {
-            gm.gr.ignoreHeadRotationLeftRight = EditorGUILayout.Toggle("Ignore left/right", gm.gr.ignoreHeadRotationLeftRight);
-            gm.gr.ignoreHeadRotationUpDown = EditorGUILayout.Toggle("Ignore up/down", gm.gr.ignoreHeadRotationUpDown);
-            gm.gr.ignoreHeadRotationTilt = EditorGUILayout.Toggle("Ignore tilting", gm.gr.ignoreHeadRotationTilt);
+            gm.gr.frameOfReferenceYaw = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Yaw (left/right)", (int)gm.gr.frameOfReferenceYaw, framesOfReference);
+            gm.gr.frameOfReferenceUpDownPitch = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Pitch (up/down)", (int)gm.gr.frameOfReferenceUpDownPitch, framesOfReference);
+            gm.gr.frameOfReferenceRollTilt = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Tilt (roll)", (int)gm.gr.frameOfReferenceRollTilt, framesOfReference);
         } else if (gm.gc != null)
         {
-            gm.gc.ignoreHeadRotationLeftRight = EditorGUILayout.Toggle("Ignore left/right", gm.gc.ignoreHeadRotationLeftRight);
-            gm.gc.ignoreHeadRotationUpDown = EditorGUILayout.Toggle("Ignore up/down", gm.gc.ignoreHeadRotationUpDown);
-            gm.gc.ignoreHeadRotationTilt = EditorGUILayout.Toggle("Ignore tilting", gm.gc.ignoreHeadRotationTilt);
+            gm.gc.frameOfReferenceYaw = (GestureCombinations.FrameOfReference)EditorGUILayout.Popup("Yaw (left/right)", (int)gm.gc.frameOfReferenceYaw, framesOfReference);
+            gm.gc.frameOfReferenceUpDownPitch = (GestureCombinations.FrameOfReference)EditorGUILayout.Popup("Pitch (up/down)", (int)gm.gc.frameOfReferenceUpDownPitch, framesOfReference);
+            gm.gc.frameOfReferenceRollTilt = (GestureCombinations.FrameOfReference)EditorGUILayout.Popup("Tilt (roll)", (int)gm.gc.frameOfReferenceRollTilt, framesOfReference);
         }
         EditorGUILayout.EndVertical();
 
@@ -449,9 +450,8 @@ public class GestureManagerEditor : UnityEditor.Editor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
             {
-                bool success = gm.gr.startTraining();
-                Debug.Log((success ? "Training successfully started" : "[ERROR] Failed to start training."));
-
+                gm.training_started = gm.gr.startTraining();
+                Debug.Log((gm.training_started ? "Training successfully started" : "[ERROR] Failed to start training."));
             }
             if (GUILayout.Button("Stop training"))
             {
@@ -465,9 +465,8 @@ public class GestureManagerEditor : UnityEditor.Editor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
             {
-                bool success = gm.gc.startTraining();
-                Debug.Log((success ? "Training successfully started" : "[ERROR] Failed to start training."));
-
+                gm.training_started = gm.gc.startTraining();
+                Debug.Log((gm.training_started ? "Training successfully started" : "[ERROR] Failed to start training."));
             }
             if (GUILayout.Button("Stop training"))
             {

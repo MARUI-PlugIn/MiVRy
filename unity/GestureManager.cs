@@ -75,7 +75,10 @@ public class GestureManager : MonoBehaviour
     private Text HUDText;
 
     // The game object associated with the currently active controller (if any):
-    private GameObject           active_controller = null; 
+    private GameObject active_controller = null;
+
+    // Whether the training process is was recently started.
+    public bool training_started = false;
 
     // Last reported recognition performance (during training).
     // 0 = 0% correctly recognized, 1 = 100% correctly recognized.
@@ -178,12 +181,20 @@ public class GestureManager : MonoBehaviour
                       + "[Currently, no gesture recognition object is created].";
             return;
         }
-        if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
+        if (training_started)
         {
-            HUDText.text = "Currently training...\n"
-                      + "Current recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n"
-                      + "You can stop training in the Inspector for the XR rig.\n";
-            return;
+            if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
+            {
+                HUDText.text = "Currently training...\n"
+                          + "Current recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n"
+                          + "You can stop training in the Inspector for the XR rig.\n";
+                return;
+            } else
+            {
+                training_started = false;
+                HUDText.text = "Training finished!\n"
+                          + "Final recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+            }
         }
 
         float trigger_left = Input.GetAxis("LeftControllerTrigger");
