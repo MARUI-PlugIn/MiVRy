@@ -1,6 +1,7 @@
 ﻿/*
- * GestureCombinations - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
- * Copyright (c) 2019 MARUI-PlugIn (inc.)
+ * MiVRy - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
+ * Version 1.14
+ * Copyright (c) 2020 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )
@@ -134,6 +135,22 @@
  * gc.loadFromFile("C:/myGestureCombos.dat");
  * </code>
  * 
+ * (TroubleShooting)
+ * Most of the functions return an integer code on whether they succeeded
+ * or if there was any error, which is helpful to find the root cause of possible issues.
+ * Here is a list of the possible error codes that functions may return:
+ * (0) : Return code for: function executed successfully.
+ * (-1) : Return code for: invalid parameter(s) provided to function.
+ * (-2) : Return code for: invalid index provided to function.
+ * (-3) : Return code for: invalid file path provided to function.
+ * (-4) : Return code for: path to an invalid file provided to function.
+ * (-5) : Return code for: calculations failed due to numeric instability (too small or too large numbers).
+ * (-6) : Return code for: the internal state of the AI was corrupted.
+ * (-7) : Return code for: available data (number of samples etc) is insufficient for this operation.
+ * (-8) : Return code for: the operation could not be performed because the AI is currently training.
+ * (-9) : Return code for: no gestures registered.
+ * (-10) : Return code for: the neural network is inconsistent - re-training might solve the issue.
+ * (-11) : Return code for: file or object exists and can't be overwritten.
  */
 
 using System.Collections;
@@ -144,11 +161,85 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-public class GestureCombinations {
-
+public class GestureCombinations
+{
+    //                                                                       ___________________
+    //______________________________________________________________________/ FrameOfReference
+    /// <summary>
+    /// What frame of reference (point of view) is used to interpret data.
+    /// </summary>
+    public enum FrameOfReference
+    {
+        Head = 0
+        ,
+        World = 1
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    frameOfReferenceYaw
+    /// <summary>
+    /// Which frame of reference is used to interpret where "front" and "back" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "front" will be the
+    /// direction in which you look, no matter which direction you look.
+    /// If the frame of reference is "World", then "front" will be towards your PC
+    /// (or another room-fixed direction, based on your tracking system).
+    /// Switch this setting to "World" if your gestures are specific to north/south/east/west
+    /// of your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceYaw
+    {
+        get
+        {
+            return (FrameOfReference)GestureCombinations_getRotationalFrameOfReferenceY(m_gc);
+        }
+        set
+        {
+            GestureCombinations_setRotationalFrameOfReferenceY(m_gc, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  frameOfReferenceUpDownPitch
+    /// <summary>
+    /// Which frame of reference is used to interpret where "up" and "down" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "up" will be the
+    /// the visual "up" no matter if you look up or down. If the frame of reference is "World",
+    /// then "up" will be towards the sky in the world (direction of the y-axis).
+    /// Switch this setting to "World" if your gestures are specific to up/down
+    /// in your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceUpDownPitch
+    {
+        get
+        {
+            return (FrameOfReference)GestureCombinations_getRotationalFrameOfReferenceX(m_gc);
+        }
+        set
+        {
+            GestureCombinations_setRotationalFrameOfReferenceX(m_gc, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/   frameOfReferenceRollTilt
+    /// <summary>
+    /// Which frame of reference is used to interpret head tilting when performing a
+    /// gesture. If the frame of reference is "Head" (default), then "right" will be the
+    /// the visual "right", even if you tilt your head. If the frame of reference is "World",
+    /// then the horizon (world) will be used to determine left/right/up/down.
+    /// </summary>
+    public FrameOfReference frameOfReferenceRollTilt
+    {
+        get
+        {
+            return (FrameOfReference)GestureCombinations_getRotationalFrameOfReferenceZ(m_gc);
+        }
+        set
+        {
+            GestureCombinations_setRotationalFrameOfReferenceZ(m_gc, (int)value);
+        }
+    }
     //                                                          ________________________________
     //_________________________________________________________/  ignoreHeadRotationLeftRight
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceYaw instead.
     /// Setting whether the horizontal rotation of the users head
     /// (commonly called "pan" or "yaw", looking left or right) should be considered when 
     /// recording and performing gestures.
@@ -168,11 +259,10 @@ public class GestureCombinations {
             GestureCombinations_setIgnoreHeadRotationY(m_gc, value ? 1 : 0);
         }
     }
-
-
     //                                                          ________________________________
     //_________________________________________________________/   ignoreHeadRotationUpDown
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceUpDownPitch instead.
     /// Setting whether the vertical rotation of the users head
     /// (commonly called "pitch", looking up or down) should be considered when 
     /// recording and performing gestures.
@@ -192,11 +282,10 @@ public class GestureCombinations {
             GestureCombinations_setIgnoreHeadRotationX(m_gc, value ? 1 : 0);
         }
     }
-
-
     //                                                          ________________________________
     //_________________________________________________________/   ignoreHeadRotationTilt
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceRollTilt instead.
     /// Setting whether the tilting rotation of the users head
     /// (also called "roll" or "bank", tilting the head to the site without changing the
     /// view direction) should be considered when recording and performing gestures.
@@ -216,7 +305,6 @@ public class GestureCombinations {
             GestureCombinations_setIgnoreHeadRotationZ(m_gc, value ? 1 : 0);
         }
     }
-
     //                                                          ________________________________
     //_________________________________________________________/   GestureCombinations()
     /// <summary>
@@ -293,23 +381,6 @@ public class GestureCombinations {
     /// </returns>
     public int startStroke(int part, Vector3 hmd_p, Quaternion hmd_q, int record_as_sample = -1)
     {
-        if (ignoreHeadRotationLeftRight || ignoreHeadRotationUpDown || ignoreHeadRotationTilt)
-        {
-            Vector3 r = hmd_q.eulerAngles;
-            if (ignoreHeadRotationUpDown)
-            {
-                r.x = 0;
-            }
-            if (ignoreHeadRotationLeftRight)
-            {
-                r.y = 0;
-            }
-            if (ignoreHeadRotationTilt)
-            {
-                r.z = 0;
-            }
-            hmd_q.eulerAngles = r;
-        }
         double[] p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
         return GestureCombinations_startStroke(m_gc, part, p, q, record_as_sample);
@@ -926,9 +997,9 @@ public class GestureCombinations {
     /// <returns>
     /// ID of the new gesture, -1 on failure.
     /// </returns>
-    public int copyGesture(int from_part, int gesture_index, int to_part, bool mirror_x, bool mirror_y, bool mirror_z)
+    public int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x, bool mirror_y, bool mirror_z)
     {
-        return GestureCombinations_copyGesture(m_gc, from_part, gesture_index, to_part, mirror_x ? 1 : 0, mirror_y ? 1 : 0, mirror_z ? 1 : 0);
+        return GestureCombinations_copyGesture(m_gc, from_part, from_gesture_index, to_part, to_gesture_index, mirror_x ? 1 : 0, mirror_y ? 1 : 0, mirror_z ? 1 : 0);
     }
     //                                                          ________________________________
     //_________________________________________________________/ subGestureRecognitionScore()
@@ -1037,6 +1108,46 @@ public class GestureCombinations {
         hmd_q.y = (float)_hmd_q[1];
         hmd_q.z = (float)_hmd_q[2];
         hmd_q.w = (float)_hmd_q[3];
+        p = new Vector3[samples_written];
+        q = new Quaternion[samples_written];
+        for (int k = 0; k < samples_written; k++)
+        {
+            p[k].x = (float)_p[k * 3 + 0];
+            p[k].y = (float)_p[k * 3 + 1];
+            p[k].z = (float)_p[k * 3 + 2];
+            q[k].x = (float)_q[k * 4 + 0];
+            q[k].y = (float)_q[k * 4 + 1];
+            q[k].z = (float)_q[k * 4 + 2];
+            q[k].w = (float)_q[k * 4 + 3];
+        }
+        return samples_written;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    getGestureMeanStroke()
+    /// <summary>
+    /// Retrieve a gesture mean (average over samples).
+    /// </summary>
+    /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
+    /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
+    /// <returns>
+    /// The number of data points on that sample (ie. resulting length of p and q).
+    /// </returns>
+    public int getGestureMeanStroke(int part, int gesture_index, ref Vector3[] p, ref Quaternion[] q)
+    {
+        int sample_length = GestureCombinations_getGestureMeanLength(m_gc, part, gesture_index);
+        if (sample_length == 0)
+        {
+            return 0;
+        }
+        double[] _p = new double[3 * sample_length];
+        double[] _q = new double[4 * sample_length];
+        int samples_written = GestureCombinations_getGestureMeanStroke(m_gc, part, gesture_index, _p, _q, sample_length);
+        if (samples_written == 0)
+        {
+            return 0;
+        }
         p = new Vector3[samples_written];
         q = new Quaternion[samples_written];
         for (int k = 0; k < samples_written; k++)
@@ -1357,7 +1468,7 @@ public class GestureCombinations {
     [DllImport(libfile, EntryPoint = "GestureCombinations_createGesture", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_createGesture(IntPtr gco, int part, string name, IntPtr metadata); //!< Create new gesture.
     [DllImport(libfile, EntryPoint = "GestureCombinations_copyGesture", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_copyGesture(IntPtr gco, int from_part, int gesture_index, int to_part, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
+    public static extern int GestureCombinations_copyGesture(IntPtr gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
     [DllImport(libfile, EntryPoint = "GestureCombinations_gestureRecognitionScore", CallingConvention = CallingConvention.Cdecl)]
     public static extern double GestureCombinations_gestureRecognitionScore(IntPtr gco, int part); //!< Get the gesture recognition score of the current artificial intelligence (0~1).
     // [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureName", CallingConvention = CallingConvention.Cdecl)]
@@ -1374,6 +1485,10 @@ public class GestureCombinations {
     public static extern int GestureCombinations_getGestureSampleLength(IntPtr gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureSampleStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getGestureSampleStroke(IntPtr gco, int part, int gesture_index, int sample_index, int processed, double[] hmd_p, double[] hmd_q, double[] p, double[] q, int stroke_buf_size); //!< Retrieve a sample stroke.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureMeanLength", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getGestureMeanLength(IntPtr gco, int part, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureMeanStroke", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getGestureMeanStroke(IntPtr gco, int part, int gesture_index, double[] p, double[] q, int stroke_buf_size); //!< Retrieve a gesture mean (average over samples).
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteGestureSample", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_deleteGestureSample(IntPtr gco, int part, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteAllGestureSamples", CallingConvention = CallingConvention.Cdecl)]
@@ -1446,6 +1561,18 @@ public class GestureCombinations {
     public static extern int GestureCombinations_getIgnoreHeadRotationZ(IntPtr gco); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
     [DllImport(libfile, EntryPoint = "GestureCombinations_setIgnoreHeadRotationZ", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureCombinations_setIgnoreHeadRotationZ(IntPtr gco, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getRotationalFrameOfReferenceX", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getRotationalFrameOfReferenceX(IntPtr gco); //!< Get whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setRotationalFrameOfReferenceX", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureCombinations_setRotationalFrameOfReferenceX(IntPtr gco, int i); //!< Set whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getRotationalFrameOfReferenceY", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getRotationalFrameOfReferenceY(IntPtr gco); //!< Get whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setRotationalFrameOfReferenceY", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureCombinations_setRotationalFrameOfReferenceY(IntPtr gco, int i); //!< Set whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getRotationalFrameOfReferenceZ(IntPtr gco); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureCombinations_setRotationalFrameOfReferenceZ(IntPtr gco, int i); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
 
     private IntPtr m_gc;
 }

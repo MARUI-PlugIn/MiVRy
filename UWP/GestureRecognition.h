@@ -125,6 +125,8 @@
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
 
+#define GESTURERECOGNITION_FRAMEOFREFERENCE_HEAD    0   //!< Identifier for interpreting gestures as seen from the headset/HMD (user point of view). 
+#define GESTURERECOGNITION_FRAMEOFREFERENCE_WORLD   1   //!< Identifier for interpreting gestures as seen from world origin (global coordinates).
 
 #if _WIN32
 #define GESTURERECOGNITION_LIBEXPORT __declspec(dllexport)
@@ -173,6 +175,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureNumberOfSamples(void* gro, int index); //!< Get the number of recorded samples of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleLength(void* gro, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a sample stroke.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanLength(void* gro, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanStroke(void* gro, int gesture_index, double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteGestureSample(void* gro, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteAllGestureSamples(void* gro, int gesture_index); //!< Delete all gesture sample recordings from the set.
 
@@ -203,13 +207,19 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_getTrainingUpdateCallbackMetadata(void* gro); //!< Get callback data for function to be called during training.
     GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_getTrainingFinishCallbackMetadata(void* gro); //!< Get callback data for function to be called when training is finished.
 
-
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationX(void* gro); //!< Get whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationX(void* gro, int on_off); //!< Set whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationY(void* gro); //!< Get whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationY(void* gro, int on_off); //!< Set whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getIgnoreHeadRotationZ(void* gro); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setIgnoreHeadRotationZ(void* gro, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getRotationalFrameOfReferenceX(void* gro); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their x-axis rotation (commonly: pitch, looking up or down).
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceX(void* gro, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their x-axis rotation (commonly: pitch, looking up or down).
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getRotationalFrameOfReferenceY(void* gro); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceY(void* gro, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getRotationalFrameOfReferenceZ(void* gro); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceZ(void* gro, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
 
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugOutputFile(void* gro, const char* path); //!< Set where to write debug information.
 #ifdef __cplusplus
@@ -236,6 +246,8 @@ public:
         Error_InsufficientData = GESTURERECOGNITION_RESULT_ERROR_INSUFFICIENTDATA //!< Return code for: available data (number of samples etc) is insufficient for this operation.
         ,
         Error_CurrentlyTraining = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYTRAINING //!< Return code for: the operation could not be performed because the AI is currently training.
+        ,
+        Error_NoGestures = GESTURERECOGNITION_RESULT_ERROR_NOGESTURES //!< Return code for: no gestures registered.
         ,
         Error_NNInconsistent = GESTURERECOGNITION_RESULT_ERROR_NNINCONSISTENT //!< Return code for: the neural network is inconsistent - re-training might solve the issue.
         ,
@@ -291,6 +303,8 @@ public:
     virtual int         getGestureNumberOfSamples(int index)=0; //!< Get the number of recorded samples of a registered gesture.
     virtual int         getGestureSampleLength(int gesture_index, int sample_index, bool processed)=0; //!< Get the number of data points a sample has.
     virtual int         getGestureSampleStroke(int gesture_index, int sample_index, bool processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size)=0; //!< Retrieve a sample stroke.
+    virtual int         getGestureMeanLength(int gesture_index)=0; //!< Get the number of samples of the gesture mean (average over samples).
+    virtual int         getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size)=0; //!< Retrieve a gesture mean (average over samples).
     virtual bool        deleteGestureSample(int gesture_index, int sample_index)=0; //!< Delete a gesture sample recording from the set.
     virtual bool        deleteAllGestureSamples(int gesture_index)=0; //!< Delete all gesture sample recordings from the set.
 
@@ -315,13 +329,20 @@ public:
     void*                     trainingUpdateCallbackMetadata; //!< Optional metadata to be provided with the callback during training.
     TrainingCallbackFunction* trainingFinishCallback; //!< Optional callback function to be called when training is finished.
     void*                     trainingFinishCallbackMetadata; //!< Optional metadata to be provided with the callback when training is finished.
+
+    /// Different coordinate system origins from which to interpret gestures.
+    enum FrameOfReference {
+        Head  = GESTURERECOGNITION_FRAMEOFREFERENCE_HEAD  //!< Identifier for interpreting gestures as seen from the headset/HMD (user point of view). 
+        ,
+        World = GESTURERECOGNITION_FRAMEOFREFERENCE_WORLD //!< Identifier for interpreting gestures as seen from world origin (global coordinates).
+    };
     
     /// Whether the rotation of the users head should be considered when recording and performing gestures.
-    struct IgnoreHeadRotation {
-        bool x; //!< Whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
-        bool y; //!< Whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
-        bool z; //!< Whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
-    } ignoreHeadRotation; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
+    struct RotationalFrameOfReference {
+        FrameOfReference x = Head; //!< Whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
+        FrameOfReference y = Head; //!< Whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+        FrameOfReference z = Head; //!< Whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    } rotationalFrameOfReference; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
 
     virtual int runTests()=0; //!< Run internal tests to check for code correctness and data consistency.
     

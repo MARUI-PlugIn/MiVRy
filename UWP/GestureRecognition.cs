@@ -1,6 +1,7 @@
 ﻿/*
- * GestureRecognition - VR gesture recognition library plug-in for Unity.
- * Copyright (c) 2019 MARUI-PlugIn (inc.)
+ * MiVRy - VR gesture recognition library plug-in for Unity.
+ * Version 1.14
+ * Copyright (c) 2020 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )
@@ -103,6 +104,22 @@
  * gr.loadFromFile("C:/myGestures.dat");
  * </code>
  * 
+ * (TroubleShooting)
+ * Most of the functions return an integer code on whether they succeeded
+ * or if there was any error, which is helpful to find the root cause of possible issues.
+ * Here is a list of the possible error codes that functions may return:
+ * (0) : Return code for: function executed successfully.
+ * (-1) : Return code for: invalid parameter(s) provided to function.
+ * (-2) : Return code for: invalid index provided to function.
+ * (-3) : Return code for: invalid file path provided to function.
+ * (-4) : Return code for: path to an invalid file provided to function.
+ * (-5) : Return code for: calculations failed due to numeric instability (too small or too large numbers).
+ * (-6) : Return code for: the internal state of the AI was corrupted.
+ * (-7) : Return code for: available data (number of samples etc) is insufficient for this operation.
+ * (-8) : Return code for: the operation could not be performed because the AI is currently training.
+ * (-9) : Return code for: no gestures registered.
+ * (-10) : Return code for: the neural network is inconsistent - re-training might solve the issue.
+ * (-11) : Return code for: file or object exists and can't be overwritten.
  */
 
 using System.Collections;
@@ -113,11 +130,86 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-public class GestureRecognition {
-
+public class GestureRecognition
+{
+    //                                                                       ___________________
+    //______________________________________________________________________/ FrameOfReference
+    /// <summary>
+    /// What frame of reference (point of view) is used to interpret data.
+    /// </summary>
+    public enum FrameOfReference
+    {
+        Head = 0
+        ,
+        World = 1
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    frameOfReferenceYaw
+    /// <summary>
+    /// Which frame of reference is used to interpret where "front" and "back" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "front" will be the
+    /// direction in which you look, no matter which direction you look.
+    /// If the frame of reference is "World", then "front" will be towards your PC
+    /// (or another room-fixed direction, based on your tracking system).
+    /// Switch this setting to "World" if your gestures are specific to north/south/east/west
+    /// of your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceYaw
+    {
+        get
+        {
+            return (FrameOfReference)GestureRecognition_getRotationalFrameOfReferenceY(m_gro);
+        }
+        set
+        {
+            GestureRecognition_setRotationalFrameOfReferenceY(m_gro, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  frameOfReferenceUpDownPitch
+    /// <summary>
+    /// Which frame of reference is used to interpret where "up" and "down" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "up" will be the
+    /// the visual "up" no matter if you look up or down. If the frame of reference is "World",
+    /// then "up" will be towards the sky in the world (direction of the y-axis).
+    /// Switch this setting to "World" if your gestures are specific to up/down
+    /// in your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceUpDownPitch
+    {
+        get
+        {
+            return (FrameOfReference)GestureRecognition_getRotationalFrameOfReferenceX(m_gro);
+        }
+        set
+        {
+            GestureRecognition_setRotationalFrameOfReferenceX(m_gro, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/   frameOfReferenceRollTilt
+    /// <summary>
+    /// Which frame of reference is used to interpret head tilting when performing a
+    /// gesture. If the frame of reference is "Head" (default), then "right" will be the
+    /// the visual "right", even if you tilt your head. If the frame of reference is "World",
+    /// then the horizon (world) will be used to determine left/right/up/down.
+    /// in your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceRollTilt
+    {
+        get
+        {
+            return (FrameOfReference)GestureRecognition_getRotationalFrameOfReferenceZ(m_gro);
+        }
+        set
+        {
+            GestureRecognition_setRotationalFrameOfReferenceZ(m_gro, (int)value);
+        }
+    }
     //                                                          ________________________________
     //_________________________________________________________/  ignoreHeadRotationLeftRight
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceYaw instead.
     /// Setting whether the horizontal rotation of the users head
     /// (commonly called "pan" or "yaw", looking left or right) should be considered when 
     /// recording and performing gestures.
@@ -137,11 +229,10 @@ public class GestureRecognition {
             GestureRecognition_setIgnoreHeadRotationY(m_gro, value ? 1 : 0);
         }
     }
-
-
     //                                                          ________________________________
     //_________________________________________________________/   ignoreHeadRotationUpDown
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceUpDownPitch instead.
     /// Setting whether the vertical rotation of the users head
     /// (commonly called "pitch", looking up or down) should be considered when 
     /// recording and performing gestures.
@@ -161,11 +252,10 @@ public class GestureRecognition {
             GestureRecognition_setIgnoreHeadRotationX(m_gro, value ? 1 : 0);
         }
     }
-
-
     //                                                          ________________________________
     //_________________________________________________________/   ignoreHeadRotationTilt
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceRollTilt instead.
     /// Setting whether the tilting rotation of the users head
     /// (also called "roll" or "bank", tilting the head to the site without changing the
     /// view direction) should be considered when recording and performing gestures.
@@ -185,8 +275,6 @@ public class GestureRecognition {
             GestureRecognition_setIgnoreHeadRotationZ(m_gro, value ? 1 : 0);
         }
     }
-
-
     //                                                          ________________________________
     //_________________________________________________________/     GestureRecognition()
     /// <summary>
@@ -248,23 +336,6 @@ public class GestureRecognition {
     /// </returns>
     public int startStroke(Vector3 hmd_p, Quaternion hmd_q, int record_as_sample = -1)
     {
-        if (ignoreHeadRotationLeftRight || ignoreHeadRotationUpDown || ignoreHeadRotationTilt)
-        {
-            Vector3 r = hmd_q.eulerAngles;
-            if (ignoreHeadRotationUpDown)
-            {
-                r.x = 0;
-            }
-            if (ignoreHeadRotationLeftRight)
-            {
-                r.y = 0;
-            }
-            if (ignoreHeadRotationTilt)
-            {
-                r.z = 0;
-            }
-            hmd_q.eulerAngles = r;
-        }
         double[] p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
         return GestureRecognition_startStroke(m_gro, p, q, record_as_sample);
@@ -1004,6 +1075,45 @@ public class GestureRecognition {
         return samples_written;
     }
     //                                                          ________________________________
+    //_________________________________________________________/    getGestureMeanStroke()
+    /// <summary>
+    /// Retrieve a gesture mean (average over samples).
+    /// </summary>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
+    /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
+    /// <returns>
+    /// The number of data points on that sample (ie. resulting length of p and q).
+    /// </returns>
+    public int getGestureMeanStroke(int gesture_index, ref Vector3[] p, ref Quaternion[] q)
+    {
+        int sample_length = GestureRecognition_getGestureMeanLength(m_gro, gesture_index);
+        if (sample_length == 0)
+        {
+            return 0;
+        }
+        double[] _p = new double[3 * sample_length];
+        double[] _q = new double[4 * sample_length];
+        int samples_written = GestureRecognition_getGestureMeanStroke(m_gro, gesture_index, _p, _q, sample_length);
+        if (samples_written == 0)
+        {
+            return 0;
+        }
+        p = new Vector3[samples_written];
+        q = new Quaternion[samples_written];
+        for (int i = 0; i < samples_written; i++)
+        {
+            p[i].x = (float)_p[i * 3 + 0];
+            p[i].y = (float)_p[i * 3 + 1];
+            p[i].z = (float)_p[i * 3 + 2];
+            q[i].x = (float)_q[i * 4 + 0];
+            q[i].y = (float)_q[i * 4 + 1];
+            q[i].z = (float)_q[i * 4 + 2];
+            q[i].w = (float)_q[i * 4 + 3];
+        }
+        return samples_written;
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      deleteGestureSample()
     /// <summary>
     /// Delete a gesture sample recording from the set.
@@ -1300,6 +1410,10 @@ public class GestureRecognition {
     public static extern int GestureRecognition_getGestureSampleLength(IntPtr gro, int gesture_index, int sample_index, int processed);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureSampleStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getGestureSampleStroke(IntPtr gro, int gesture_index, int sample_index, int processed, double[] hmd_p, double[] hmd_q, double[] p, double[] q, int stroke_buf_size);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureMeanLength", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getGestureMeanLength(IntPtr gro, int gesture_index);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureMeanStroke", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getGestureMeanStroke(IntPtr gro, int gesture_index, double[] p, double[] q, int stroke_buf_size);
     [DllImport(libfile, EntryPoint = "GestureRecognition_deleteGestureSample", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_deleteGestureSample(IntPtr gro, int gesture_index, int sample_index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_deleteAllGestureSamples", CallingConvention = CallingConvention.Cdecl)]
@@ -1348,6 +1462,18 @@ public class GestureRecognition {
     public static extern int GestureRecognition_getIgnoreHeadRotationZ(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_setIgnoreHeadRotationZ", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureRecognition_setIgnoreHeadRotationZ(IntPtr gro, int on_off);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getRotationalFrameOfReferenceX", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getRotationalFrameOfReferenceX(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setRotationalFrameOfReferenceX", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureRecognition_setRotationalFrameOfReferenceX(IntPtr gro, int i);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getRotationalFrameOfReferenceY", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getRotationalFrameOfReferenceY(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setRotationalFrameOfReferenceY", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureRecognition_setRotationalFrameOfReferenceY(IntPtr gro, int i);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getRotationalFrameOfReferenceZ(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureRecognition_setRotationalFrameOfReferenceZ(IntPtr gro, int i);
 
     private IntPtr m_gro;
 }

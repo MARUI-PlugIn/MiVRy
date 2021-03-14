@@ -167,7 +167,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_deleteGesture(void* gco, int part, int index); //!< Delete the recorded gesture with the specified index.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_deleteAllGestures(void* gco, int part); //!< Delete recorded gestures.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_createGesture(void* gco, int part, const char* name, void* metadata); //!< Create new gesture.
-    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_copyGesture(void* gco, int from_part, int gesture_index, int to_part, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_copyGesture(void* gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
     GESTURERECOGNITION_LIBEXPORT double GestureCombinations_gestureRecognitionScore(void* gco, int part); //!< Get the gesture recognition score of the current neural network (0~1).
         
     GESTURERECOGNITION_LIBEXPORT const char* GestureCombinations_getGestureName(void* gco, int part, int index); //!< Get the name of a registered gesture.
@@ -178,6 +178,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureNumberOfSamples(void* gco, int part, int index); //!< Get the number of recorded samples of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleLength(void* gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleStroke(void* gco, int part, int gesture_index, int sample_index, int processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a sample stroke.
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureMeanLength(void* gco, int part, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureMeanStroke(void* gco, int part, int gesture_index, double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_deleteGestureSample(void* gco, int part, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_deleteAllGestureSamples(void* gco, int part, int gesture_index); //!< Delete all gesture sample recordings from the set.
 
@@ -224,6 +226,13 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_setIgnoreHeadRotationY(void* gco, int on_off); //!< Set whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getIgnoreHeadRotationZ(void* gco); //!< Get whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_setIgnoreHeadRotationZ(void* gco, int on_off); //!< Set whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+    
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceX(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their x-axis rotation (commonly: pitch, looking up or down).
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceX(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their x-axis rotation (commonly: pitch, looking up or down).
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceY(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceY(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceZ(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceZ(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
 
 #ifdef __cplusplus
 }
@@ -259,7 +268,7 @@ public:
     virtual bool deleteGesture(int part, int index)=0; //!< Delete the recorded gesture with the specified index.
     virtual bool deleteAllGestures(int part)=0; //!< Delete recorded gestures.
     virtual int  createGesture(int part, const char*  name, _GestureRecognition::Metadata* metadata=0)=0; //!< Create new gesture.
-    virtual int  copyGesture(int from_part, int gesture_index, int to_part, bool mirror_x=false, bool mirror_y=false, bool mirror_z=false)=0; //!< Copy gesture from one part/side to another.
+    virtual int  copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x=false, bool mirror_y=false, bool mirror_z=false)=0; //!< Copy gesture from one part/side to another.
     virtual double gestureRecognitionScore(int part)=0; //!< Get the gesture recognition score of the current neural network (0~1).
         
     virtual const char* getGestureName(int part, int index)=0; //!< Get the name of a registered gesture.
@@ -269,6 +278,8 @@ public:
     virtual int         getGestureNumberOfSamples(int part, int index)=0; //!< Get the number of recorded samples of a registered gesture.
     virtual int         getGestureSampleLength(int part, int gesture_index, int sample_index, bool processed)=0; //!< Get the number of data points a sample has.
     virtual int         getGestureSampleStroke(int part, int gesture_index, int sample_index, bool processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size)=0; //!< Retrieve a sample stroke.
+    virtual int         getGestureMeanLength(int part, int gesture_index) = 0; //!< Get the number of samples of the gesture mean (average over samples).
+    virtual int         getGestureMeanStroke(int part, int gesture_index, double p[][3], double q[][4], int stroke_buf_size) = 0; //!< Retrieve a gesture mean (average over samples).
     virtual bool        deleteGestureSample(int part, int gesture_index, int sample_index)=0; //!< Delete a gesture sample recording from the set.
     virtual bool        deleteAllGestureSamples(int part, int gesture_index)=0; //!< Delete all gesture sample recordings from the set.
 
@@ -311,7 +322,9 @@ public:
     virtual void setMaxTrainingTime(unsigned long t)=0; //!< Get the current maximum training time in seconds
 
     /// Whether the rotation of the users head should be considered when recording and performing gestures.
-    _GestureRecognition::IgnoreHeadRotation ignoreHeadRotation; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
+    IGestureRecognition::RotationalFrameOfReference rotationalFrameOfReference; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
+
+    virtual int runTests() = 0; //!< Run internal tests to check for code correctness and data consistency.
 };
 
 typedef _GestureCombinations IGestureCombinations;
