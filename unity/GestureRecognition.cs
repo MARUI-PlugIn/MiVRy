@@ -1087,7 +1087,7 @@ public class GestureRecognition
     /// </returns>
     public int getGestureMeanStroke(int gesture_index, ref Vector3[] p, ref Quaternion[] q)
     {
-        int sample_length = this.getGestureMeanLength(gesture_index, true);
+        int sample_length = GestureRecognition_getGestureMeanLength(m_gro, gesture_index);
         if (sample_length == 0)
         {
             return 0;

@@ -1136,7 +1136,7 @@ public class GestureCombinations
     /// </returns>
     public int getGestureMeanStroke(int part, int gesture_index, ref Vector3[] p, ref Quaternion[] q)
     {
-        int sample_length = this.getGestureMeanLength(part, gesture_index, true);
+        int sample_length = GestureCombinations_getGestureMeanLength(m_gc, part, gesture_index);
         if (sample_length == 0)
         {
             return 0;
