@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Runtime.InteropServices;
+using System.IO;
 using AOT;
 using UnityEngine.UI;
 using UnityEngine.XR;
@@ -38,17 +39,63 @@ using UnityEngine.XR;
 public class GestureManager : MonoBehaviour
 {
     // Fields to be controlled by the editor:
-    public int numberOfParts = 1;
-
-    public string file_load_combinations = "Assets/GestureRecognition/Sample_TwoHanded_Gestures.dat";
-    public string file_load_subgestures = "Assets/GestureRecognition/Sample_TwoHanded_GesturesLeft.dat";
+    public int numberOfParts {
+        get
+        {
+            if (gr != null)
+                return 1;
+            if (gc != null)
+                return gc.numberOfParts();
+            return 0;
+        }
+        set {
+            if (value <= 0)
+            {
+                gr = null;
+                gc = null;
+                if (ConsoleText != null)
+                    ConsoleText.text = "Deleted Gesture Recognition Object";
+            } else if (value == 1) {
+                gc = null;
+                if (gr == null)
+                {
+                    gr = new GestureRecognition();
+                    gr.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
+                    gr.setTrainingUpdateCallbackMetadata((IntPtr)me);
+                    gr.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
+                    gr.setTrainingFinishCallbackMetadata((IntPtr)me);
+                    if (ConsoleText != null)
+                        ConsoleText.text = "Created Gesture Recognition Object\n(for one-handed gestures)";
+                }
+            } else
+            {
+                gr = null;
+                if (gc == null || gc.numberOfParts() != value) {
+                    gc = new GestureCombinations(value);
+                    gc.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
+                    gc.setTrainingUpdateCallbackMetadata((IntPtr)me);
+                    gc.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
+                    gc.setTrainingFinishCallbackMetadata((IntPtr)me);
+                    if (ConsoleText != null)
+                        ConsoleText.text = $"Created Gesture Combination Object\n(for {value} parts)";
+                }
+            }
+            GestureManagerVR.refresh();
+        }
+    }
+#if UNITY_EDITOR
+    public static string file_default_path = "Assets/GestureRecognition";
+#else
+    public static string file_default_path = Application.streamingAssetsPath;
+#endif
+    public string file_load_combinations = "Sample_TwoHanded_Gestures.dat";
+    public string file_load_subgestures = "Sample_OneHanded_Gestures.dat";
     public int file_load_subgestures_i = 0;
-    public string file_load_gestures = "Assets/GestureRecognition/Sample_OneHanded_Gestures.dat";
-
-    public string file_save_combinations = "Assets/GestureRecognition/Sample_TwoHanded_MyGestures.dat";
-    // public string file_save_subgestures = "Assets/GestureRecognition/Sample_TwoHanded_MyGesturesLeft.dat";
+    public string file_load_gestures = "Sample_OneHanded_Gestures.dat";
+    public string file_save_combinations = "Sample_TwoHanded_MyGestures.dat";
+    // public string file_save_subgestures = "Sample_TwoHanded_MyGesturesLeft.dat";
     // public int file_save_subgestures_i = 0;
-    public string file_save_gestures = "Assets/GestureRecognition/Sample_OneHanded_MyGestures.dat";
+    public string file_save_gestures = "Sample_OneHanded_MyGestures.dat";
 
     public string create_combination_name = "(new gesture combination name)";
     public string create_gesture_name = "(new gesture name)";
@@ -72,7 +119,7 @@ public class GestureManager : MonoBehaviour
     public GestureCombinations gc = null;
 
     // The text field to display instructions.
-    private Text HUDText;
+    private Text ConsoleText;
 
     // The game object associated with the currently active controller (if any):
     private GameObject active_controller = null;
@@ -82,7 +129,7 @@ public class GestureManager : MonoBehaviour
 
     // Last reported recognition performance (during training).
     // 0 = 0% correctly recognized, 1 = 100% correctly recognized.
-    private double last_performance_report = 0; 
+    public double last_performance_report = 0; 
 
     // Temporary storage for objects to display the gesture stroke.
     List<string> stroke = new List<string>(); 
@@ -98,7 +145,7 @@ public class GestureManager : MonoBehaviour
     private bool trigger_pressed_right = false;
 
     // Wether a gesture was already started
-    private bool gesture_started = false;
+    public bool gesture_started = false;
 
     public GestureManager() : base()
     {
@@ -109,11 +156,10 @@ public class GestureManager : MonoBehaviour
     void Start ()
     {
         // Set the welcome message.
-        HUDText = GameObject.Find("HUDText").GetComponent<Text>();
-        HUDText.text = "Welcome to MARUI Gesture Plug-in!\n"
+        ConsoleText = GameObject.Find("ConsoleText").GetComponent<Text>();
+        ConsoleText.text = "Welcome to MiVRy Gesture Recognition!\n"
                       + "This manager allows you to create and record gestures,\n"
-                      + "and organize gesture files.\n"
-                      + "Please use the Inspector for the XR rig.";
+                      + "and organize gesture files.";
 
         me = GCHandle.Alloc(this);
         
@@ -172,29 +218,40 @@ public class GestureManager : MonoBehaviour
     // Update:
     void Update()
     {
+        float escape = Input.GetAxis("escape");
+        if (escape > 0.0f)
+        {
+            Application.Quit();
+        }
         if (this.gr == null && this.gc == null)
         {
-            HUDText.text = "Welcome to MARUI Gesture Plug-in!\n"
-                      + "This manager allows you to create and record gestures,\n"
-                      + "and organize gesture files.\n"
-                      + "Please use the Inspector for the XR rig.\n"
-                      + "[Currently, no gesture recognition object is created].";
+            ConsoleText.text = "Welcome to MiVRy Gesture Recognition!\n"
+                             + "This manager allows you to create and record gestures,\n"
+                             + "and organize gesture files.";
             return;
         }
         if (training_started)
         {
             if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
             {
-                HUDText.text = "Currently training...\n"
-                          + "Current recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n"
-                          + "You can stop training in the Inspector for the XR rig.\n";
+                ConsoleText.text = "Currently training...\n"
+                                 + "Current recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+                GestureManagerVR.refresh();
                 return;
             } else
             {
                 training_started = false;
-                HUDText.text = "Training finished!\n"
-                          + "Final recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+                ConsoleText.text = "Training finished!\n"
+                                 + "Final recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+                GestureManagerVR.refresh();
             }
+        } else if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
+        {
+            training_started = true;
+            ConsoleText.text = "Currently training...\n"
+                             + "Current recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+            GestureManagerVR.refresh();
+            return;
         }
 
         float trigger_left = Input.GetAxis("LeftControllerTrigger");
@@ -228,6 +285,7 @@ public class GestureManager : MonoBehaviour
                 Vector3 hmd_p = hmd.transform.position;
                 Quaternion hmd_q = hmd.transform.rotation;
                 gr.startStroke(hmd_p, hmd_q, record_gesture_id);
+                gesture_started = true;
                 return;
             }
 
@@ -259,14 +317,15 @@ public class GestureManager : MonoBehaviour
             Vector3 dir1 = Vector3.zero; // This will receive the secondary direction of the gesture.
             Vector3 dir2 = Vector3.zero; // This will receive the minor direction of the gesture (direction of smallest expansion).
             int gesture_id = gr.endStroke(ref similarity, ref pos, ref scale, ref dir0, ref dir1, ref dir2);
+            gesture_started = false;
+            GestureManagerVR.refresh();
 
             // If we are currently recording samples for a custom gesture, check if we have recorded enough samples yet.
             if (record_gesture_id >= 0)
             {
                 // Currently recording samples for a custom gesture - check how many we have recorded so far.
-                HUDText.text = "Recorded a gesture sample for " + gr.getGestureName(record_gesture_id) + ".\n"
-                      + "Total number of recorded samples for this gesture: " + gr.getGestureNumberOfSamples(record_gesture_id) + ".\n"
-                      + "You can stop recording samples in the Inspector for the XR rig.\n";
+                ConsoleText.text = "Recorded a gesture sample for " + gr.getGestureName(record_gesture_id) + ".\n"
+                                 + "Total number of recorded samples for this gesture: " + gr.getGestureNumberOfSamples(record_gesture_id) + ".\n";
                 return;
             }
             // else: if we arrive here, we're not recording new samples,
@@ -274,12 +333,12 @@ public class GestureManager : MonoBehaviour
             if (gesture_id < 0)
             {
                 // Error trying to identify any gesture
-                HUDText.text = "Failed to identify gesture.";
+                ConsoleText.text = "Failed to identify gesture.";
             }
             else
             {
                 string gesture_name = gr.getGestureName(gesture_id);
-                HUDText.text = "Identified gesture " + gesture_name + "(" + gesture_id + ")\n(Similarity: " + similarity + ")";
+                ConsoleText.text = "Identified gesture " + gesture_name + "(" + gesture_id + ")\n(Similarity: " + similarity + ")";
             }
             return;
         }
@@ -389,9 +448,9 @@ public class GestureManager : MonoBehaviour
                 int num_samples_left = gc.getGestureNumberOfSamples(lefthand_combination_part, connected_gesture_id_left);
                 int num_samples_right = gc.getGestureNumberOfSamples(righthand_combination_part, connected_gesture_id_right);
                 // Currently recording samples for a custom gesture - check how many we have recorded so far.
-                HUDText.text = "Recorded a gesture sample for " + gc.getGestureCombinationName(record_combination_id) + ".\n"
-                      + "Total number of recorded samples for this gesture: " + num_samples_left + " left / " + num_samples_right + " right.\n"
-                      + "You can stop recording samples in the Inspector for the XR rig.\n";
+                ConsoleText.text = "Recorded a gesture sample for " + gc.getGestureCombinationName(record_combination_id) + ".\n"
+                                 + "Total number of recorded samples for this gesture: " + num_samples_left + " left / " + num_samples_right + " right.\n";
+                GestureManagerVR.refresh();
                 return;
             }
             // else: if we arrive here, we're not recording new samples for custom gestures,
@@ -400,12 +459,12 @@ public class GestureManager : MonoBehaviour
             if (recognized_combination_id < 0)
             {
                 // Error trying to identify any gesture
-                HUDText.text = "Failed to identify gesture.";
+                ConsoleText.text = "Failed to identify gesture.";
             }
             else
             {
                 string combination_name = gc.getGestureCombinationName(recognized_combination_id);
-                HUDText.text = "Identified gesture combination '"+ combination_name+"' ("+ recognized_combination_id + ")\n(Similarity: " + similarity + ")";
+                ConsoleText.text = "Identified gesture combination '"+ combination_name+"' ("+ recognized_combination_id + ")\n(Similarity: " + similarity + ")";
             }
         }
     }
@@ -454,5 +513,86 @@ public class GestureManager : MonoBehaviour
         float star_scale = (float)random.NextDouble() + 0.3f;
         star.transform.localScale = new Vector3(star_scale, star_scale, star_scale);
         stroke.Add(star.name);
+    }
+
+    // Helper function to load from gestures file.
+    public bool loadFromFile()
+    {
+        if (this.gr != null)
+        {
+            string path = this.file_load_gestures;
+            if (!Path.IsPathRooted(path))
+                path = file_default_path + "/" + path;
+            int ret = this.gr.loadFromFile(path);
+            if (ret == 0)
+            {
+                this.ConsoleText.text = "Gesture file loaded successfully";
+                return true;
+            } else
+            {
+                this.ConsoleText.text = $"[ERROR] Failed to load gesture file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                return false;
+            }
+        }
+        else if (this.gc != null)
+        {
+            string path = this.file_load_combinations;
+            if (!Path.IsPathRooted(path))
+                path = file_default_path + "/" + path;
+            int ret = this.gc.loadFromFile(path);
+            if (ret == 0)
+            {
+                this.ConsoleText.text = "Gesture combinations file loaded successfully";
+                return true;
+            }
+            else
+            {
+                this.ConsoleText.text = $"[ERROR] Failed to load gesture combinations file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                return false;
+            }
+        }
+        this.ConsoleText.text = "[ERROR] No Gesture Recognition object\nto load gestures into.";
+        return false;
+    }
+
+    // Helper function to save gestures to file. 
+    public bool saveToFile()
+    {
+        if (this.gr != null)
+        {
+            string path = this.file_save_combinations;
+            if (!Path.IsPathRooted(path))
+                path = file_default_path + "/" + path;
+            int ret = this.gr.saveToFile(path);
+            if (ret == 0)
+            {
+                this.ConsoleText.text = "Gesture file saved successfully";
+                return true;
+            }
+            else
+            {
+                this.ConsoleText.text = $"[ERROR] Failed to saved gesture file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                return false;
+            }
+        }
+        else if (this.gc != null)
+        {
+            string path = this.file_save_combinations;
+            if (!Path.IsPathRooted(path))
+                path = file_default_path + "/" + path;
+            int ret = this.gc.saveToFile(path);
+            if (ret == 0)
+            {
+                this.ConsoleText.text = "Gesture combinations file saved successfully";
+                return true;
+            }
+            else
+            {
+                this.ConsoleText.text = $"[ERROR] Failed to save gesture combinations file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                return false;
+            }
+        }
+        this.ConsoleText.text = "[ERROR] No Gesture Recognition object\nto save to file.";
+        return false;
     }
 }

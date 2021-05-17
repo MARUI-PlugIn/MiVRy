@@ -1,6 +1,7 @@
 /*
  * MiVRy - 3D gesture recognition library.
- * Copyright (c) 2019 MARUI-PlugIn (inc.)
+ * Version 1.16
+ * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )
@@ -294,7 +295,7 @@ public:
     virtual bool deleteGesture(int index)=0; //!< Delete the recorded gesture with the specified index.
     virtual bool deleteAllGestures()=0; //!< Delete recorded gestures.
     virtual int  createGesture(const char*  name, Metadata* metadata=0)=0; //!< Create new gesture.
-    virtual double recognitionScore()=0; //!< Get the gesture recognition score of the current neural network (0~1).
+    virtual double recognitionScore(bool all_samples=false)=0; //!< Get the gesture recognition score of the current neural network (0~1).
         
     virtual const char* getGestureName(int index)=0; //!< Get the name of a registered gesture.
     virtual int         getGestureNameLength(int index)=0; //!< Get the length of the name of a registered gesture.

@@ -23,37 +23,6 @@ public class GestureManagerEditor : UnityEditor.Editor
         EditorGUILayout.LabelField(" ", "1 for one-handed,");
         EditorGUILayout.LabelField(" ", "2 for two-handed or two sequential gestures,");
         EditorGUILayout.LabelField(" ", "3 for three sequential gestures, ...");
-        if (GUILayout.Button("Update"))
-        {
-            if (gm.numberOfParts <= 0)
-            {
-                return;
-            }
-            if (gm.numberOfParts == 1)
-            {
-                gm.gc = null;
-                if (gm.gr == null)
-                {
-                    gm.gr = new GestureRecognition();
-                }
-                gm.gr.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
-                gm.gr.setTrainingUpdateCallbackMetadata((IntPtr)gm.me);
-                gm.gr.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
-                gm.gr.setTrainingFinishCallbackMetadata((IntPtr)gm.me);
-            }
-            else
-            {
-                gm.gr = null;
-                if (gm.gc == null || gm.gc.numberOfParts() != gm.numberOfParts)
-                {
-                    gm.gc = new GestureCombinations(gm.numberOfParts);
-                }
-                gm.gc.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
-                gm.gc.setTrainingUpdateCallbackMetadata((IntPtr)gm.me);
-                gm.gc.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
-                gm.gc.setTrainingFinishCallbackMetadata((IntPtr)gm.me);
-            }
-        }
         EditorGUILayout.EndVertical();
 
         if (gm.gc != null)
@@ -92,28 +61,24 @@ public class GestureManagerEditor : UnityEditor.Editor
             gm.file_load_gestures = EditorGUILayout.TextField("Load gestures file:", gm.file_load_gestures);
             if (GUILayout.Button("Load Gestures from File"))
             {
-                int ret = gm.gr.loadFromFile(gm.file_load_gestures);
-                Debug.Log((ret == 0 ? "Gesture file loaded successfully" : $"[ERROR] Failed to load gesture file ({ret})."));
+                gm.loadFromFile();
             }
             gm.file_save_gestures = EditorGUILayout.TextField("Save gestures file:", gm.file_save_gestures);
             if (GUILayout.Button("Save Gestures to File"))
             {
-                int ret = gm.gr.saveToFile(gm.file_save_gestures);
-                Debug.Log((ret == 0 ? "Gesture file saved successfully" : $"[ERROR] Failed to save gesture file ({ret})."));
+                gm.saveToFile();
             }
         } else if (gm.gc != null)
         {
             gm.file_load_combinations = EditorGUILayout.TextField("Load GestureCombinations File: ", gm.file_load_combinations);
             if (GUILayout.Button("Load GestureCombinations File"))
             {
-                int ret = gm.gc.loadFromFile(gm.file_load_combinations);
-                Debug.Log((ret == 0 ? "Gesture file loaded successfully" : $"[ERROR] Failed to load gesture file ({ret})."));
+                gm.loadFromFile();
             }
             gm.file_save_combinations = EditorGUILayout.TextField("Save GestureCombinations File: ", gm.file_save_combinations);
             if (GUILayout.Button("Save GestureCombinations File"))
             {
-                int ret = gm.gc.saveToFile(gm.file_save_combinations);
-                Debug.Log((ret == 0 ? "Gesture file saved successfully" : $"[ERROR] Failed to save gesture file ({ret})."));
+                gm.saveToFile();
             }
             EditorGUILayout.LabelField("(optional) Import single-handed gesture file:");
             gm.file_load_subgestures = EditorGUILayout.TextField("Import SubGestures File:", gm.file_load_subgestures);

@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - VR gesture recognition library plug-in for Unity.
- * Version 1.14
- * Copyright (c) 2020 MARUI-PlugIn (inc.)
+ * Version 1.16
+ * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )
@@ -132,6 +132,44 @@ using System.Text;
 
 public class GestureRecognition
 {
+    //                                                                       ___________________
+    //______________________________________________________________________/ getErrorMessage()
+    /// <summary>
+    /// Get a descriptive string of an error code returned by a function.
+    /// </summary>
+    /// <param name="errorCode">The error code retuned by a function.</param>
+    /// <returns>A descriptive string explaining the error code.</returns>
+    public static string getErrorMessage(int errorCode)
+    {
+        switch (errorCode)
+        {
+            case 0:
+                return "Function executed successfully.";
+            case -1:
+                return "Invalid parameter(s) provided to function.";
+            case -2:
+                return "Invalid index provided to function.";
+            case -3:
+                return "Invalid file path provided to function.";
+            case -4:
+                return "Path to an invalid file provided to function.";
+            case -5:
+                return "Calculations failed due to numeric instability(too small or too large numbers).";
+            case -6:
+                return "The internal state of the AI was corrupted.";
+            case -7:
+                return "Available data(number of samples etc) is insufficient for this operation.";
+            case -8:
+                return "The operation could not be performed because the AI is currently training.";
+            case -9:
+                return "No gestures registered.";
+            case -10:
+                return "The neural network is inconsistent - re-training might solve the issue.";
+            case -11:
+                return "File or object exists and can't be overwritten.";
+        }
+        return "Unknown error.";
+    }
     //                                                                       ___________________
     //______________________________________________________________________/ FrameOfReference
     /// <summary>

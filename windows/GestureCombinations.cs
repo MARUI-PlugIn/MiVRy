@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
- * Version 1.14
- * Copyright (c) 2020 MARUI-PlugIn (inc.)
+ * Version 1.16
+ * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )

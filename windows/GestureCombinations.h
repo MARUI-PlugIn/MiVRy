@@ -1,6 +1,7 @@
 /*
  * GestureCombinations - VR gesture recognition library for multi-part gesture combinations.
- * Copyright (c) 2019 MARUI-PlugIn (inc.)
+ * Version 1.16
+ * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
  * ( http://creativecommons.org/licenses/by-nc/4.0/ )
@@ -269,7 +270,7 @@ public:
     virtual bool deleteAllGestures(int part)=0; //!< Delete recorded gestures.
     virtual int  createGesture(int part, const char*  name, _GestureRecognition::Metadata* metadata=0)=0; //!< Create new gesture.
     virtual int  copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x=false, bool mirror_y=false, bool mirror_z=false)=0; //!< Copy gesture from one part/side to another.
-    virtual double gestureRecognitionScore(int part)=0; //!< Get the gesture recognition score of the current neural network (0~1).
+    virtual double gestureRecognitionScore(int part, bool all_samples=false)=0; //!< Get the gesture recognition score of the current neural network (0~1).
         
     virtual const char* getGestureName(int part, int index)=0; //!< Get the name of a registered gesture.
     virtual int         getGestureNameLength(int part, int index)=0; //!< Get the length of the name of a registered gesture.
