@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
- * Version 1.16
+ * Version 1.17
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -1246,6 +1246,32 @@ public class GestureCombinations
         return GestureCombinations_loadFromBuffer(m_gc, buffer, null);
     }
     //                                                          ________________________________
+    //_________________________________________________________/    importFromFile()
+    /// <summary>
+    /// Import gestures from a GestureCombinations file.
+    /// </summary>
+    /// <param name="path">File system path and filename from where to import.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int importFromFile(string path)
+    {
+        return GestureCombinations_importFromFile(m_gc, path, null);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    importFromBuffer()
+    /// <summary>
+    /// Import gestures from a GestureCombinations string buffer.
+    /// </summary>
+    /// <param name="buffer">The string buffer from which to import.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int importFromBuffer(string buffer)
+    {
+        return GestureCombinations_importFromBuffer(m_gc, buffer, null);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      saveGestureToFile()
     /// <summary>
     /// Save the current artificial intelligence to a file.
@@ -1503,6 +1529,10 @@ public class GestureCombinations
     public static extern int GestureCombinations_loadFromFile(IntPtr gco, string path, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromBuffer", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_loadFromBuffer(IntPtr gco, string buffer, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_importFromFile", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_importFromFile(IntPtr gco, string path, MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition file.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_importFromBuffer", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_importFromBuffer(IntPtr gco, string buffer, MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition data buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_saveGestureToFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_saveGestureToFile(IntPtr gco, int part, string path); //!< Save the artificial intelligence and recorded training data to file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadGestureFromFile", CallingConvention = CallingConvention.Cdecl)]

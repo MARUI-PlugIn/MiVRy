@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - VR gesture recognition library plug-in for Unity.
- * Version 1.16
+ * Version 1.17
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -1231,7 +1231,32 @@ public class GestureRecognition
     {
         return GestureRecognition_loadFromBuffer(m_gro, buffer, null);
     }
-
+    //                                                          ________________________________
+    //_________________________________________________________/    importFromFile()
+    /// <summary>
+    /// Import gestures from a previously saved gesture recognition AI from a file.
+    /// </summary>
+    /// <param name="path">File system path and filename from where to import.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int importFromFile(string path)
+    {
+        return GestureRecognition_importFromFile(m_gro, path, null);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     importFromBuffer()
+    /// <summary>
+    /// Import gestures from a previously saved gesture recognition AI from a string buffer.
+    /// </summary>
+    /// <param name="buffer">The string buffer from where to import.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int importFromBuffer(string buffer)
+    {
+        return GestureRecognition_importFromBuffer(m_gro, buffer, null);
+    }
     //                                                          ________________________________
     //_________________________________________________________/     importGestureSamples()
     /// <summary>
@@ -1466,6 +1491,10 @@ public class GestureRecognition
     public static extern int GestureRecognition_loadFromFile(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromBuffer", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_loadFromBuffer(IntPtr gro, string buffer, MetadataCreatorFunction createMetadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_importFromFile", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_importFromFile(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_importFromBuffer", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_importFromBuffer(IntPtr gro, string buffer, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importGestureSamples", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_importGestureSamples(IntPtr gro, IntPtr from_gro, int from_gesture_index, int into_gesture_index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importGestures", CallingConvention = CallingConvention.Cdecl)]
