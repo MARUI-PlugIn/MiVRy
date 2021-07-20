@@ -1,6 +1,6 @@
 /*
  * GestureCombinations - VR gesture recognition library for multi-part gesture combinations.
- * Version 1.16
+ * Version 1.17
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -190,6 +190,10 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveToFile(void* gco, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromFile(void* gco, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromBuffer(void* gco, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromStream(void* gco, void* stream, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from std::istream.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_importFromFile(void* gco, const char* path, MetadataCreatorFunction* createMetadata); //!< Import recorded training data from file.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_importFromBuffer(void* gco, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Import recorded training data from buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_importFromStream(void* gco, void* stream, MetadataCreatorFunction* createMetadata); //!< Import recorded training data from std::istream.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveGestureToFile(void* gco, int part, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromFile(void* gco, int part, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromBuffer(void* gco, int part, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
@@ -290,6 +294,10 @@ public:
     virtual int saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
     virtual int loadFromFile(const char* path, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
     virtual int loadFromBuffer(const char* buffer, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
+    virtual int loadFromStream(void* stream, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from stream.
+    virtual int importFromFile(const char* path, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Import recorded training data from file.
+    virtual int importFromBuffer(const char* buffer, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Import recorded training data buffer.
+    virtual int importFromStream(void* stream, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Import recorded training data from stream.
     virtual int saveGestureToFile(int part, const char* path)=0; //!< Save the neural network and recorded training data to file.
     virtual int loadGestureFromFile(int part, const char* path, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
     virtual int loadGestureFromBuffer(int part, const char* buffer, _GestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
