@@ -1,0 +1,28 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.17",
+	"FriendlyName": "MiVRy",
+	"Description": "MiVRy Gesture Recognition",
+	"Category": "Other",
+	"CreatedBy": "MARUI-PlugIn",
+	"CreatedByURL": "https://www.marui-plugin.com/mivry",
+	"DocsURL": "https://www.marui-plugin.com/documentation-mivry-unreal/",
+	"MarketplaceURL": "",
+	"SupportURL": "mailto:support@marui-plugin.com",
+	"EngineVersion": "4.26.0",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "MiVRy",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64", "Win32", "Android", "Linux", "Hololens"
+			]
+		}
+	]
+}
