@@ -1,6 +1,6 @@
 /*
  * MiVRy - 3D gesture recognition library.
- * Version 1.17
+ * Version 1.18
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -130,7 +130,7 @@
 #define GESTURERECOGNITION_FRAMEOFREFERENCE_HEAD    0   //!< Identifier for interpreting gestures as seen from the headset/HMD (user point of view). 
 #define GESTURERECOGNITION_FRAMEOFREFERENCE_WORLD   1   //!< Identifier for interpreting gestures as seen from world origin (global coordinates).
 
-#if _WIN32
+#ifdef _WIN32
 #define GESTURERECOGNITION_LIBEXPORT __declspec(dllexport)
 #define GESTURERECOGNITION_CALLCONV __cdecl
 #else
@@ -178,7 +178,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleLength(void* gro, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a sample stroke.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanLength(void* gro, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
-    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanStroke(void* gro, int gesture_index, double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a gesture mean (average over samples).
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanStroke(void* gro, int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double hmd_p[3], double hmd_q[4], double* scale); //!< Retrieve a gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteGestureSample(void* gro, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteAllGestureSamples(void* gro, int gesture_index); //!< Delete all gesture sample recordings from the set.
 
@@ -230,7 +230,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 
-class _GestureRecognition
+class IGestureRecognition
 {
 public:
     enum Result {
@@ -263,8 +263,8 @@ public:
     typedef double DoubleVector4[4];        //!< Shorthand for a double[4] vector / array.
     typedef double DoubleMatrix4x4[4][4];   //!< Shorthand for a double[4][4] matrix / 2d-array.
 
-    static _GestureRecognition* create(); //!< Create new GestureRecognition object.
-    virtual ~_GestureRecognition(); //!< Destructor.
+    static IGestureRecognition* create(); //!< Create new GestureRecognition object.
+    virtual ~IGestureRecognition(); //!< Destructor.
 
     // Interface for metadata objects to attach to a gesture.
     struct Metadata
@@ -309,7 +309,7 @@ public:
     virtual int         getGestureSampleLength(int gesture_index, int sample_index, bool processed)=0; //!< Get the number of data points a sample has.
     virtual int         getGestureSampleStroke(int gesture_index, int sample_index, bool processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size)=0; //!< Retrieve a sample stroke.
     virtual int         getGestureMeanLength(int gesture_index)=0; //!< Get the number of samples of the gesture mean (average over samples).
-    virtual int         getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size)=0; //!< Retrieve a gesture mean (average over samples).
+    virtual int         getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double hmd_p[3], double hmd_q[4], double* scale)=0; //!< Retrieve a gesture mean (average over samples).
     virtual bool        deleteGestureSample(int gesture_index, int sample_index)=0; //!< Delete a gesture sample recording from the set.
     virtual bool        deleteAllGestureSamples(int gesture_index)=0; //!< Delete all gesture sample recordings from the set.
 
@@ -325,8 +325,8 @@ public:
     virtual int  importFromBuffer(const char* buffer, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from buffer.
     virtual int  importFromStream(void* stream, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from std::istream.
 
-    virtual bool importGestureSamples(const _GestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0; //!< Import recorded gesture samples from another gesture recognition object.
-    virtual bool importGestures(const _GestureRecognition* from_gro)=0; //!< Import recorded gesture samples from another gesture recognition object, merging gestures by name.
+    virtual bool importGestureSamples(const IGestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0; //!< Import recorded gesture samples from another gesture recognition object.
+    virtual bool importGestures(const IGestureRecognition* from_gro)=0; //!< Import recorded gesture samples from another gesture recognition object, merging gestures by name.
 
     virtual bool startTraining()=0; //!< Start train the Neural Network based on the the currently collected data.
     virtual bool isTraining()=0; //!< Whether the Neural Network is currently training.
@@ -357,7 +357,6 @@ public:
     virtual void setDebugOutputFile(const char* path)=0; //!< Set where to write debug information.
 };
 
-typedef _GestureRecognition IGestureRecognition;
 #endif // #ifdef __cplusplus
 
 #endif //__GESTURE_RECOGNITION_H

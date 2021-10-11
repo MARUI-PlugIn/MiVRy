@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
- * Version 1.17
+ * Version 1.18
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -1131,10 +1131,13 @@ public class GestureCombinations
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
     /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
     /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
+    /// <param name="hmd_p">[OUT] A vector to receive the average gesture position relative to (ie. as seen by) the headset.</param>
+    /// <param name="hmd_q">[OUT] A quaternion to receive the average gesture position rotation to (ie. as seen by) the headset.</param>
+    /// <param name="scale">[OUT] The average scale of the gesture.</param>
     /// <returns>
     /// The number of data points on that sample (ie. resulting length of p and q).
     /// </returns>
-    public int getGestureMeanStroke(int part, int gesture_index, ref Vector3[] p, ref Quaternion[] q)
+    public int getGestureMeanStroke(int part, int gesture_index, ref Vector3[] p, ref Quaternion[] q, ref Vector3 hmd_p, ref Quaternion hmd_q, ref float scale)
     {
         int sample_length = GestureCombinations_getGestureMeanLength(m_gc, part, gesture_index);
         if (sample_length == 0)
@@ -1143,11 +1146,22 @@ public class GestureCombinations
         }
         double[] _p = new double[3 * sample_length];
         double[] _q = new double[4 * sample_length];
-        int samples_written = GestureCombinations_getGestureMeanStroke(m_gc, part, gesture_index, _p, _q, sample_length);
-        if (samples_written == 0)
+        double[] _hmd_p = new double[3];
+        double[] _hmd_q = new double[4];
+        double[] _scale = new double[1];
+        int samples_written = GestureCombinations_getGestureMeanStroke(m_gc, part, gesture_index, _p, _q, sample_length, _hmd_p, _hmd_q, _scale);
+        if (samples_written <= 0)
         {
             return 0;
         }
+        hmd_p.x = (float)_hmd_p[0];
+        hmd_p.y = (float)_hmd_p[1];
+        hmd_p.z = (float)_hmd_p[2];
+        hmd_q.x = (float)_hmd_q[0];
+        hmd_q.y = (float)_hmd_q[1];
+        hmd_q.z = (float)_hmd_q[2];
+        hmd_q.w = (float)_hmd_q[3];
+        scale = (float)_scale[0];
         p = new Vector3[samples_written];
         q = new Quaternion[samples_written];
         for (int k = 0; k < samples_written; k++)
@@ -1514,7 +1528,7 @@ public class GestureCombinations
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureMeanLength", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getGestureMeanLength(IntPtr gco, int part, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureMeanStroke", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_getGestureMeanStroke(IntPtr gco, int part, int gesture_index, double[] p, double[] q, int stroke_buf_size); //!< Retrieve a gesture mean (average over samples).
+    public static extern int GestureCombinations_getGestureMeanStroke(IntPtr gco, int part, int gesture_index, double[] p, double[] q, int stroke_buf_size, double[] hmd_p, double[] hmd_q, double[] scale); //!< Retrieve a gesture mean (average over samples).
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteGestureSample", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_deleteGestureSample(IntPtr gco, int part, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteAllGestureSamples", CallingConvention = CallingConvention.Cdecl)]
