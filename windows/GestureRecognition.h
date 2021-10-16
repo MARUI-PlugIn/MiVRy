@@ -188,10 +188,10 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_saveToFile(void* gro, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_saveToStream(void* gro, void* stream); //!< Save the neural network and recorded training data to std::ofstream.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromFile(void* gro, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
-    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromBuffer(void* gro, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromBuffer(void* gro, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from buffer.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromStream(void* gro, void* stream, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from std::istream.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importFromFile(void* gro, const char* path, MetadataCreatorFunction* createMetadata); //!< Import recorded gestures from file.
-    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importFromBuffer(void* gro, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Import recorded gestures from buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importFromBuffer(void* gro, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Import recorded gestures from buffer.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importFromStream(void* gro, void* stream, MetadataCreatorFunction* createMetadata); //!< Import recorded gestures std::istream.
 
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importGestureSamples(void* gro, const void* from_gro, int from_gesture_index, int into_gesture_index); //!< Import recorded gesture samples from another gesture recognition object.
@@ -319,10 +319,10 @@ public:
     virtual int  saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
     virtual int  saveToStream(void* stream)=0; //!< Save the neural network and recorded training data to std::ofstream.
     virtual int  loadFromFile(const char* path, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
-    virtual int  loadFromBuffer(const char* buffer, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
+    virtual int  loadFromBuffer(const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
     virtual int  loadFromStream(void* stream, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from std::istream.
     virtual int  importFromFile(const char* path, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from file.
-    virtual int  importFromBuffer(const char* buffer, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from buffer.
+    virtual int  importFromBuffer(const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from buffer.
     virtual int  importFromStream(void* stream, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from std::istream.
 
     virtual bool importGestureSamples(const IGestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0; //!< Import recorded gesture samples from another gesture recognition object.

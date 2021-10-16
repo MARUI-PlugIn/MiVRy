@@ -1243,7 +1243,7 @@ public class GestureRecognition
     /// </returns>
     public int loadFromBuffer(string buffer)
     {
-        return GestureRecognition_loadFromBuffer(m_gro, buffer, null);
+        return GestureRecognition_loadFromBuffer(m_gro, buffer, buffer.Length, null);
     }
     //                                                          ________________________________
     //_________________________________________________________/    importFromFile()
@@ -1269,7 +1269,7 @@ public class GestureRecognition
     /// </returns>
     public int importFromBuffer(string buffer)
     {
-        return GestureRecognition_importFromBuffer(m_gro, buffer, null);
+        return GestureRecognition_importFromBuffer(m_gro, buffer, buffer.Length, null);
     }
     //                                                          ________________________________
     //_________________________________________________________/     importGestureSamples()
@@ -1504,11 +1504,11 @@ public class GestureRecognition
     [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_loadFromFile(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_loadFromBuffer(IntPtr gro, string buffer, MetadataCreatorFunction createMetadata);
+    public static extern int GestureRecognition_loadFromBuffer(IntPtr gro, string buffer, int buffer_size, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importFromFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_importFromFile(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_importFromBuffer(IntPtr gro, string buffer, MetadataCreatorFunction createMetadata);
+    public static extern int GestureRecognition_importFromBuffer(IntPtr gro, string buffer, int buffer_size, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importGestureSamples", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_importGestureSamples(IntPtr gro, IntPtr from_gro, int from_gesture_index, int into_gesture_index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importGestures", CallingConvention = CallingConvention.Cdecl)]

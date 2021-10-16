@@ -189,14 +189,14 @@ extern "C" {
 
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveToFile(void* gco, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromFile(void* gco, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
-    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromBuffer(void* gco, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromBuffer(void* gco, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromStream(void* gco, void* stream, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from std::istream.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_importFromFile(void* gco, const char* path, MetadataCreatorFunction* createMetadata); //!< Import recorded training data from file.
-    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_importFromBuffer(void* gco, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Import recorded training data from buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_importFromBuffer(void* gco, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Import recorded training data from buffer.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_importFromStream(void* gco, void* stream, MetadataCreatorFunction* createMetadata); //!< Import recorded training data from std::istream.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveGestureToFile(void* gco, int part, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromFile(void* gco, int part, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
-    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromBuffer(void* gco, int part, const char* buffer, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromBuffer(void* gco, int part, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
 
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_numberOfGestureCombinations(void* gco); //!< Get the number of gestures currently recorded in the i's system.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_deleteGestureCombination(void* gco, int index); //!< Delete the recorded gesture with the specified index.
@@ -293,14 +293,14 @@ public:
 
     virtual int saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
     virtual int loadFromFile(const char* path, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
-    virtual int loadFromBuffer(const char* buffer, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
+    virtual int loadFromBuffer(const char* buffer, int buffer_size, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
     virtual int loadFromStream(void* stream, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from stream.
     virtual int importFromFile(const char* path, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Import recorded training data from file.
-    virtual int importFromBuffer(const char* buffer, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Import recorded training data buffer.
+    virtual int importFromBuffer(const char* buffer, int buffer_size, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Import recorded training data buffer.
     virtual int importFromStream(void* stream, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Import recorded training data from stream.
     virtual int saveGestureToFile(int part, const char* path)=0; //!< Save the neural network and recorded training data to file.
     virtual int loadGestureFromFile(int part, const char* path, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
-    virtual int loadGestureFromBuffer(int part, const char* buffer, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
+    virtual int loadGestureFromBuffer(int part, const char* buffer, int buffer_size, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
 
     // Functions for handling gesture combinations
     virtual int  numberOfGestureCombinations()=0; //!< Get the number of gestures currently recorded in the i's system.

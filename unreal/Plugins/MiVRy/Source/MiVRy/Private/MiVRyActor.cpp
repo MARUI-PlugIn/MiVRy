@@ -38,6 +38,7 @@
 #include "IXRTrackingSystem.h"
 #include "GestureRecognition.h"
 #include "GestureCombinations.h"
+#include "Misc/FileHelper.h"
 
 // Sets default values
 AMiVRyActor::AMiVRyActor()
@@ -103,18 +104,39 @@ void AMiVRyActor::BeginPlay()
 	}
 
 	FString path = this->GestureDatabaseFile.FilePath;
-	if (FPaths::IsRelative(path)) {
-		path = FPaths::Combine(FPaths::ProjectDir(), path);
-		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Relative path extended to %s"), *path);
+	TArray64<uint8> file_contents;
+	if (FFileHelper::LoadFileToArray(file_contents, *path)) {
+		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Found gesture database file at '%s'"), *path);
+	} else {
+		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Could not find gesture database file at '%s'"), *path);
+		if (FPaths::IsRelative(path)) {
+			FString relpath = FPaths::Combine(FPaths::ProjectDir(), path);
+			if (FFileHelper::LoadFileToArray(file_contents, *relpath)) {
+				UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Found gesture database file at '%s'"), *relpath);
+			} else {
+				UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Could not find gesture database file at '%s'"), *relpath);
+				FString abspath = FPaths::ConvertRelativePathToFull(relpath);
+				if (FFileHelper::LoadFileToArray(file_contents, *abspath)) {
+					UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Found gesture database file at '%s'"), *abspath);
+				} else {
+					UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Could not find gesture database file at '%s'"), *abspath);
+					UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Could not find gesture database file anywhere. Not packaged?"));
+					return;
+				}
+			}
+		} else {
+			UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Could not find gesture database file anywhere. Not packaged?"));
+			return;
+		}
 	}
-	const char* path_str = TCHAR_TO_ANSI(*path);
+
 	// Try one-part/one-hand gesture recognition object
 	this->gro = (IGestureRecognition*)GestureRecognition_create();
 	if (this->gro == nullptr) {
 		UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to create GestureRecognition object"));
 		return;
 	}
-	int ret = this->gro->loadFromFile(path_str, nullptr);
+	int ret = this->gro->loadFromBuffer((const char*)file_contents.GetData(), file_contents.Num(), nullptr);
 	if (ret == 0) {
 		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully loaded gesture database file."));
 		return; // successfully loaded
@@ -128,7 +150,7 @@ void AMiVRyActor::BeginPlay()
 		UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to create GestureCombinations object"));
 		return;
 	}
-	ret = this->gco->loadFromFile(path_str, nullptr);
+	ret = this->gco->loadFromBuffer((const char*)file_contents.GetData(), file_contents.Num(), nullptr);
 	if (ret == 0) {
 		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully loaded gesture database file."));
 		return; // successfully loaded
@@ -282,6 +304,7 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 		double dir2[3];
 		this->gesture_id = this->gro->endStrokeAndGetSimilarity(&this->similarity, position, &scale, dir0, dir1, dir2);
 		if (this->gesture_id < 0) {
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Identification failed with %i"), this->gesture_id);
 			Result = GestureRecognition_Identification::FailedToIdentify;
 			return;
 		}
