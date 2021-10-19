@@ -1249,13 +1249,13 @@ public class GestureCombinations
     //                                                          ________________________________
     //_________________________________________________________/     loadFromBuffer()
     /// <summary>
-    /// Load a previously saved gesture recognition artificial intelligence from a string buffer.
+    /// Load a previously saved gesture recognition artificial intelligence from a byte buffer.
     /// </summary>
-    /// <param name="buffer">The string buffer containing the artificial intelligence.</param>
+    /// <param name="buffer">The byte buffer containing the artificial intelligence.</param>
     /// <returns>
     /// Zero on success, a negative error code on failure.
     /// </returns>
-    public int loadFromBuffer(string buffer)
+    public int loadFromBuffer(byte[] buffer)
     {
         return GestureCombinations_loadFromBuffer(m_gc, buffer, buffer.Length, null);
     }
@@ -1275,13 +1275,13 @@ public class GestureCombinations
     //                                                          ________________________________
     //_________________________________________________________/    importFromBuffer()
     /// <summary>
-    /// Import gestures from a GestureCombinations string buffer.
+    /// Import gestures from a GestureCombinations byte buffer.
     /// </summary>
-    /// <param name="buffer">The string buffer from which to import.</param>
+    /// <param name="buffer">The byte buffer from which to import.</param>
     /// <returns>
     /// Zero on success, a negative error code on failure.
     /// </returns>
-    public int importFromBuffer(string buffer)
+    public int importFromBuffer(byte[] buffer)
     {
         return GestureCombinations_importFromBuffer(m_gc, buffer, buffer.Length, null);
     }
@@ -1316,14 +1316,14 @@ public class GestureCombinations
     //                                                          ________________________________
     //_________________________________________________________/     loadGestureFromBuffer()
     /// <summary>
-    /// Load a previously saved gesture recognition artificial intelligence from a string buffer.
+    /// Load a previously saved gesture recognition artificial intelligence from a byte buffer.
     /// </summary>
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
-    /// <param name="buffer">The string buffer containing the artificial intelligence.</param>
+    /// <param name="buffer">The byte buffer containing the artificial intelligence.</param>
     /// <returns>
     /// Zero on success, a negative error code on failure.
     /// </returns>
-    public int loadGestureFromBuffer(int part, string buffer)
+    public int loadGestureFromBuffer(int part, byte[] buffer)
     {
         return GestureCombinations_loadGestureFromBuffer(m_gc, part, buffer, buffer.Length, null);
     }
@@ -1542,17 +1542,17 @@ public class GestureCombinations
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_loadFromFile(IntPtr gco, string path, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadFromBuffer(IntPtr gco, string buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
+    public static extern int GestureCombinations_loadFromBuffer(IntPtr gco, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_importFromFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_importFromFile(IntPtr gco, string path, MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_importFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_importFromBuffer(IntPtr gco, string buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition data buffer.
+    public static extern int GestureCombinations_importFromBuffer(IntPtr gco, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition data buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_saveGestureToFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_saveGestureToFile(IntPtr gco, int part, string path); //!< Save the artificial intelligence and recorded training data to file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadGestureFromFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_loadGestureFromFile(IntPtr gco, int part, string path, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadGestureFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadGestureFromBuffer(IntPtr gco, int part, string buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
+    public static extern int GestureCombinations_loadGestureFromBuffer(IntPtr gco, int part, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_numberOfGestureCombinations", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_numberOfGestureCombinations(IntPtr gco); //!< Get the number of gestures currently recorded in the part's system.
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteGestureCombination", CallingConvention = CallingConvention.Cdecl)]

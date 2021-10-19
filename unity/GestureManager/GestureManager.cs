@@ -529,7 +529,7 @@ public class GestureManager : MonoBehaviour
         {
             // wait for file extraction to finish
         }
-        if (request.isNetworkError)
+        if (request.result == UnityWebRequest.Result.ConnectionError)
         {
             this.consoleText = "Failed to extract sample gesture database file from apk.";
             return file;
@@ -538,7 +538,7 @@ public class GestureManager : MonoBehaviour
         try {
             Directory.CreateDirectory(path);
             Directory.Delete(path);
-        } catch (Exception e) { }
+        } catch (Exception /* e */) { }
         try {
             File.WriteAllBytes(path, request.downloadHandler.data);
         } catch (Exception e) {
@@ -579,30 +579,45 @@ public class GestureManager : MonoBehaviour
         {
             string path = getLoadPath(this.file_load_gestures);
             int ret = this.gr.loadFromFile(path);
-            if (ret == 0)
+            if (ret != 0)
             {
-                this.consoleText = "Gesture file loaded successfully";
-                return true;
-            } else
-            {
-                this.consoleText = $"[ERROR] Failed to load gesture file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
-                return false;
+                byte[] file_contents = File.ReadAllBytes(path);
+                if (file_contents == null || file_contents.Length == 0)
+                {
+                    this.consoleText = $"Could not find gesture database file\n({path}).";
+                    return false;
+                }
+                ret = this.gr.loadFromBuffer(file_contents);
+                if (ret != 0)
+                {
+                    this.consoleText = $"[ERROR] Failed to load gesture file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                    return false;
+                }
             }
+            this.consoleText = "Gesture file loaded successfully";
+            return true;
         }
         else if (this.gc != null)
         {
             string path = getLoadPath(this.file_load_combinations);
             int ret = this.gc.loadFromFile(path);
-            if (ret == 0)
+            if (ret != 0)
             {
-                this.consoleText = "Gesture combinations file loaded successfully";
-                return true;
+                byte[] file_contents = File.ReadAllBytes(path);
+                if (file_contents == null || file_contents.Length == 0)
+                {
+                    this.consoleText = $"Could not find gesture database file\n({path}).";
+                    return false;
+                }
+                ret = this.gc.loadFromBuffer(file_contents);
+                if (ret != 0)
+                {
+                    this.consoleText = $"[ERROR] Failed to load gesture combinations file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                    return false;
+                }
             }
-            else
-            {
-                this.consoleText = $"[ERROR] Failed to load gesture combinations file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
-                return false;
-            }
+            this.consoleText = "Gesture combinations file loaded successfully";
+            return true;
         }
         this.consoleText = "[ERROR] No Gesture Recognition object\nto load gestures into.";
         return false;

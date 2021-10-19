@@ -260,7 +260,7 @@ public class Mivry : MonoBehaviour
         while (!request.isDone) {
             // wait for file extraction to finish
         }
-        if (request.isNetworkError)
+        if (request.result == UnityWebRequest.Result.ConnectionError)
         {
             Debug.LogError("Failed to extract sample gesture database file from apk.");
             return;
@@ -281,9 +281,21 @@ public class Mivry : MonoBehaviour
         // In this case, we can load the gesture database file from the streamingAssets folder.
         string GesturesFilePath = Application.streamingAssetsPath;
 #endif
+        GesturesFilePath = GesturesFilePath + "/" + GestureDatabaseFile;
         // try to figure out if this is a gesture recognition or gesture combinations file
         gr = new GestureRecognition();
-        int ret = gr.loadFromFile(GesturesFilePath + "/" + GestureDatabaseFile);
+        int ret = gr.loadFromFile(GesturesFilePath);
+        if (ret == 0) // file loaded successfully
+        {
+            return;
+        }
+        byte[] file_contents = File.ReadAllBytes(GesturesFilePath);
+        if (file_contents == null || file_contents.Length == 0)
+        {
+            Debug.LogError($"Could not find gesture database file ({GesturesFilePath}).");
+            return;
+        }
+        ret = gr.loadFromBuffer(file_contents);
         if (ret == 0) // file loaded successfully
         {
             return;
@@ -294,12 +306,18 @@ public class Mivry : MonoBehaviour
             Debug.LogError("[MiVRy] Failed to load gesture recognition database file: " + GestureRecognition.getErrorMessage(ret));
         }
         gc = new GestureCombinations(0);
-        ret = gc.loadFromFile(GesturesFilePath + "/" + GestureDatabaseFile);
-        if (ret != 0)
+        ret = gc.loadFromFile(GesturesFilePath);
+        if (ret == 0) // file loaded successfully
         {
-            gc = null;
-            Debug.LogError("[MiVRy] Failed to load gesture recognition database file: " + GestureRecognition.getErrorMessage(ret));
+            return;
         }
+        ret = gc.loadFromBuffer(file_contents);
+        if (ret == 0) // file loaded successfully
+        {
+            return;
+        }
+        gc = null;
+        Debug.LogError("[MiVRy] Failed to load gesture recognition database file: " + GestureRecognition.getErrorMessage(ret));
     }
 
     /// <summary>
