@@ -11,9 +11,11 @@ public class GestureManagerVR : MonoBehaviour
     public Material inputFocusOnMaterial;
     public Material inputFocusOffMaterial;
     public GameObject keyboard;
+    public GameObject splashscreen;
 
     private GameObject submenuNumberOfParts = null;
     private GameObject submenuFiles = null;
+    private GameObject submenuFileSuggestions = null;
     private GameObject submenuGesture = null;
     private GameObject submenuCombination = null;
     private GameObject submenuRecord = null;
@@ -36,6 +38,9 @@ public class GestureManagerVR : MonoBehaviour
                     break;
                 case "SubmenuFiles":
                     submenuFiles = child;
+                    break;
+                case "SubmenuFileSuggestions":
+                    submenuFileSuggestions = child;
                     break;
                 case "SubmenuGesture":
                     submenuGesture = child;
@@ -66,6 +71,10 @@ public class GestureManagerVR : MonoBehaviour
         if (me == null || me.inputFocus == null)
             return;
         me.inputFocus.keyboardInput(key);
+        if (me.inputFocus.target == EditableTextField.Target.LoadFile)
+        {
+            me.submenuFileSuggestions.GetComponent<SubmenuFileSuggestions>().refresh();
+        }
     }
 
     public static void setInputFocus(EditableTextField editableTextField)
@@ -127,6 +136,7 @@ public class GestureManagerVR : MonoBehaviour
         {
             me.submenuNumberOfParts.SetActive(true);
             me.submenuFiles.SetActive(false);
+            me.submenuFileSuggestions.SetActive(false);
             me.submenuGesture.SetActive(false);
             me.submenuCombination.SetActive(false);
             me.submenuRecord.SetActive(false);
@@ -136,6 +146,8 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuNumberOfParts.SetActive(true);
             me.submenuFiles.SetActive(true);
             me.submenuFiles.GetComponent<SubmenuFiles>().refresh();
+            me.submenuFileSuggestions.SetActive(true);
+            me.submenuFileSuggestions.GetComponent<SubmenuFileSuggestions>().refresh();
             me.submenuGesture.SetActive(true);
             me.submenuGesture.GetComponent<SubmenuGesture>().refesh();
             me.submenuCombination.SetActive(false);
@@ -150,6 +162,8 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuNumberOfParts.SetActive(true);
             me.submenuFiles.SetActive(true);
             me.submenuFiles.GetComponent<SubmenuFiles>().refresh();
+            me.submenuFileSuggestions.SetActive(true);
+            me.submenuFileSuggestions.GetComponent<SubmenuFileSuggestions>().refresh();
             me.submenuGesture.SetActive(true);
             me.submenuGesture.GetComponent<SubmenuGesture>().refesh();
             me.submenuCombination.SetActive(true);
@@ -176,8 +190,12 @@ public class GestureManagerVR : MonoBehaviour
 
     private void Update()
     {
-        if (Camera.main != null)
+        if (Camera.main == null || Camera.main.transform.position == Vector3.zero)
         {
+            splashscreen?.SetActive(true);
+        } else
+        {
+            if (splashscreen != null && splashscreen.activeSelf) splashscreen.SetActive(false);
             Vector3 v = Camera.main.transform.worldToLocalMatrix.MultiplyPoint3x4(this.transform.position);
             if (v.magnitude > 0.6f || v.z < 0)
             {

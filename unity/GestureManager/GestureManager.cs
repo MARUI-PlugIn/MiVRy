@@ -122,6 +122,9 @@ public class GestureManager : MonoBehaviour
     // The game object associated with the currently active controller (if any):
     private GameObject active_controller = null;
 
+    // The pointing tip of the active_controller (used for visualization).
+    private GameObject active_controller_pointer = null;
+
     // Whether the training process is was recently started.
     public bool training_started = false;
 
@@ -145,9 +148,64 @@ public class GestureManager : MonoBehaviour
     // Wether a gesture was already started
     public bool gesture_started = false;
 
+    // File/folder suggestions for the load files button
+    public int file_suggestion = 0;
+    public List<string> file_suggestions = new List<string>();
+
     public GestureManager() : base()
     {
         me = GCHandle.Alloc(this);
+    }
+
+    // Database of all controller models in the scene
+    private Dictionary<string, GameObject> controller_gameobjs = new Dictionary<string, GameObject>();
+
+    // Helper function to set the currently active controller model
+    void SetActiveControllerModel(string side, string type)
+    {
+        GameObject controller_oculus = controller_gameobjs["controller_oculus_" + side];
+        GameObject controller_vive = controller_gameobjs["controller_vive_" + side];
+        GameObject controller_microsoft = controller_gameobjs["controller_microsoft_" + side];
+        GameObject controller_index = controller_gameobjs["controller_index_" + side];
+        GameObject controller_dummy = controller_gameobjs["controller_dummy_" + side];
+        controller_oculus.SetActive(false);
+        controller_vive.SetActive(false);
+        controller_microsoft.SetActive(false);
+        controller_index.SetActive(false);
+        controller_dummy.SetActive(false);
+        if (type.Contains("Oculus")) // "Oculus Touch Controller OpenXR"
+        {
+            controller_oculus.SetActive(true);
+        }
+        else if (type.Contains("Windows MR")) // "Windows MR Controller OpenXR"
+        {
+            controller_microsoft.SetActive(true);
+        }
+        else if (type.Contains("Index")) // "Index Controller OpenXR"
+        {
+            controller_index.SetActive(true);
+        }
+        else if (type.Contains("Vive")) // "HTC Vive Controller OpenXR"
+        {
+            controller_vive.SetActive(true);
+        }
+        else
+        {
+            controller_dummy.SetActive(true);
+        }
+    }
+
+    // Helper function to handle new VR controllers being detected.
+    void DeviceConnected(InputDevice device)
+    {
+        if ((device.characteristics & InputDeviceCharacteristics.Left) != 0)
+        {
+            SetActiveControllerModel("left", device.name);
+        }
+        else if ((device.characteristics & InputDeviceCharacteristics.Right) != 0)
+        {
+            SetActiveControllerModel("right", device.name);
+        }
     }
 
     // Initialization:
@@ -160,56 +218,34 @@ public class GestureManager : MonoBehaviour
                       + "and organize gesture files.";
 
         me = GCHandle.Alloc(this);
-        
-        GameObject controller_oculus_left = GameObject.Find("controller_oculus_left");
-        GameObject controller_oculus_right = GameObject.Find("controller_oculus_right");
-        GameObject controller_vive_left = GameObject.Find("controller_vive_left");
-        GameObject controller_vive_right = GameObject.Find("controller_vive_right");
-        GameObject controller_microsoft_left = GameObject.Find("controller_microsoft_left");
-        GameObject controller_microsoft_right = GameObject.Find("controller_microsoft_right");
-        GameObject controller_dummy_left = GameObject.Find("controller_dummy_left");
-        GameObject controller_dummy_right = GameObject.Find("controller_dummy_right");
 
-        controller_oculus_left.SetActive(false);
-        controller_oculus_right.SetActive(false);
-        controller_vive_left.SetActive(false);
-        controller_vive_right.SetActive(false);
-        controller_microsoft_left.SetActive(false);
-        controller_microsoft_right.SetActive(false);
-        controller_dummy_left.SetActive(false);
-        controller_dummy_right.SetActive(false);
+        controller_gameobjs["controller_oculus_left"] = GameObject.Find("controller_oculus_left");
+        controller_gameobjs["controller_oculus_right"] = GameObject.Find("controller_oculus_right");
+        controller_gameobjs["controller_vive_left"] = GameObject.Find("controller_vive_left");
+        controller_gameobjs["controller_vive_right"] = GameObject.Find("controller_vive_right");
+        controller_gameobjs["controller_microsoft_left"] = GameObject.Find("controller_microsoft_left");
+        controller_gameobjs["controller_microsoft_right"] = GameObject.Find("controller_microsoft_right");
+        controller_gameobjs["controller_index_left"] = GameObject.Find("controller_index_left");
+        controller_gameobjs["controller_index_right"] = GameObject.Find("controller_index_right");
+        controller_gameobjs["controller_dummy_left"] = GameObject.Find("controller_dummy_left");
+        controller_gameobjs["controller_dummy_right"] = GameObject.Find("controller_dummy_right");
 
-        var input_devices = new List<UnityEngine.XR.InputDevice>();
-        UnityEngine.XR.InputDevices.GetDevices(input_devices);
-        String input_device = "";
-        foreach (var device in input_devices)
-        {
-            if (device.characteristics.HasFlag(InputDeviceCharacteristics.HeadMounted))
-            {
-                input_device = device.name;
-                break;
-            }
-        }
+        controller_gameobjs["controller_oculus_left"].SetActive(false);
+        controller_gameobjs["controller_oculus_right"].SetActive(false);
+        controller_gameobjs["controller_vive_left"].SetActive(false);
+        controller_gameobjs["controller_vive_right"].SetActive(false);
+        controller_gameobjs["controller_microsoft_left"].SetActive(false);
+        controller_gameobjs["controller_microsoft_right"].SetActive(false);
+        controller_gameobjs["controller_index_left"].SetActive(false);
+        controller_gameobjs["controller_index_right"].SetActive(false);
+        controller_gameobjs["controller_dummy_left"].SetActive(false);
+        controller_gameobjs["controller_dummy_right"].SetActive(false);
 
-        if (input_device.Length >= 6 && input_device.Substring(0, 6) == "Oculus")
-        {
-            controller_oculus_left.SetActive(true);
-            controller_oculus_right.SetActive(true);
-        } else if (input_device.Length >= 4 && input_device.Substring(0, 4) == "Vive")
-        {
-            controller_vive_left.SetActive(true);
-            controller_vive_right.SetActive(true);
-        }
-        else if (input_device.Length >= 4 && input_device.Substring(0, 4) == "DELL")
-        {
-            controller_microsoft_left.SetActive(true);
-            controller_microsoft_right.SetActive(true);
-        }
-        else // 
-        {
-            controller_dummy_left.SetActive(true);
-            controller_dummy_right.SetActive(true);
-        }
+        InputDevices.deviceConnected += DeviceConnected;
+        List<InputDevice> devices = new List<InputDevice>();
+        InputDevices.GetDevices(devices);
+        foreach (var device in devices)
+            DeviceConnected(device);
     }
 
 
@@ -266,11 +302,13 @@ public class GestureManager : MonoBehaviour
                 {
                     // Right controller trigger pressed.
                     active_controller = GameObject.Find("Right Hand");
+                    active_controller_pointer = GameObject.FindGameObjectWithTag("Right Pointer");
                 }
                 else if (trigger_left > 0.85)
                 {
                     // Left controller trigger pressed.
                     active_controller = GameObject.Find("Left Hand");
+                    active_controller_pointer = GameObject.FindGameObjectWithTag("Left Pointer");
                 }
                 else
                 {
@@ -295,7 +333,7 @@ public class GestureManager : MonoBehaviour
                 Vector3 p = active_controller.transform.position;
                 Quaternion q = active_controller.transform.rotation;
                 gr.contdStrokeQ(p, q);
-                addToStrokeTrail(p);
+                addToStrokeTrail(active_controller_pointer.transform.position);
                 return;
             }
             // else: if we arrive here, the user let go of the trigger, ending a gesture.
@@ -397,7 +435,8 @@ public class GestureManager : MonoBehaviour
                     GameObject left_hand = GameObject.Find("Left Hand");
                     gc.contdStrokeQ(lefthand_combination_part, left_hand.transform.position, left_hand.transform.rotation);
                     // Show the stroke by instatiating new objects
-                    addToStrokeTrail(left_hand.transform.position);
+                    GameObject left_hand_pointer = GameObject.FindGameObjectWithTag("Left Pointer");
+                    addToStrokeTrail(left_hand_pointer.transform.position);
                 }
             }
 
@@ -415,7 +454,8 @@ public class GestureManager : MonoBehaviour
                     GameObject right_hand = GameObject.Find("Right Hand");
                     gc.contdStrokeQ(righthand_combination_part, right_hand.transform.position, right_hand.transform.rotation);
                     // Show the stroke by instatiating new objects
-                    addToStrokeTrail(right_hand.transform.position);
+                    GameObject right_hand_pointer = GameObject.FindGameObjectWithTag("Right Pointer");
+                    addToStrokeTrail(right_hand_pointer.transform.position);
                 }
             }
 

@@ -1,6 +1,6 @@
 /*
  * MiVRy - 3D gesture recognition library.
- * Version 1.18
+ * Version 1.19
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -259,102 +259,489 @@ public:
         Error_CannotOverwrite = GESTURERECOGNITION_RESULT_ERROR_CANNOTOVERWRITE //!< Return code for: file or object exists and can't be overwritten.
     };
 
-    typedef double DoubleVector3[3];        //!< Shorthand for a double[3] vector / array.
-    typedef double DoubleVector4[4];        //!< Shorthand for a double[4] vector / array.
-    typedef double DoubleMatrix4x4[4][4];   //!< Shorthand for a double[4][4] matrix / 2d-array.
+    /**
+    * Create new GestureRecognition object.
+    */
+    static IGestureRecognition* create();
 
-    static IGestureRecognition* create(); //!< Create new GestureRecognition object.
-    virtual ~IGestureRecognition(); //!< Destructor.
+    /**
+    * Destructor.
+    */
+    virtual ~IGestureRecognition();
 
-    // Interface for metadata objects to attach to a gesture.
+    /**
+    * Interface for metadata objects to attach to a gesture.
+    */
     struct Metadata
     {
         virtual ~Metadata() {};
         virtual bool writeToStream(std::ostream* stream)=0;
         virtual bool readFromStream(std::istream* stream)=0;
     };
-    typedef Metadata* MetadataCreatorFunction(); //!< Function pointer type to a function that creates Metadata objects.
 
-    typedef void GESTURERECOGNITION_CALLCONV TrainingCallbackFunction(double performance, void* metadata); //!< Function pointer to an optional callback function to e called during training.
+    /**
+    * Function pointer type to a function that creates Metadata objects.
+    */
+    typedef Metadata* MetadataCreatorFunction(); 
 
-    virtual int startStroke(const double hmd[4][4], int record_as_sample=-1)=0; //!< Start new stroke.
-    virtual int startStroke(const double hmd_p[3], const double hmd_q[4], int record_as_sample=-1)=0; //!< Start new stroke.
-    virtual int contdStroke(const double p[3])=0; //!< Continue stroke data input  (translational data only).
-    virtual int contdStrokeQ(const double p[3], const double q[4])=0; //!< Continue stroke data input with rotational data in the form of a quaternion.
-    virtual int contdStrokeE(const double p[3], const double r[3])=0; //!< Continue stroke data input with rotational data in the form of a Euler rotation.
-    virtual int contdStrokeM(const double m[4][4])=0; //!< Continue stroke data input with a transformation matrix (translation and rotation).
-    virtual int endStroke(double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0; //!< End the stroke and identify the gesture.
-    virtual int endStrokeAndGetAllProbabilities(double p[], int n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0; //!< End the stroke and get gesture probabilities.
-    virtual int endStrokeAndGetSimilarity(double* similarity, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0; //!< End the stroke and get similarity value.
-    virtual int endStrokeAndGetAllProbabilitiesAndSimilarities(double p[], double s[], int n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0; //!< End the stroke and get gesture probabilities and similarity values.
-    virtual int cancelStroke()=0; //!< Cancel a started stroke.
+    /**
+    * Function pointer to an optional callback function to e called during training.
+    * \param performance        The current percentage of correctly recognized gestures (0~1).
+    * \param metadata           The meta data pointer set on trainingUpdateCallbackMetadata or trainingFinishCallbackMetadata.
+    */
+    typedef void GESTURERECOGNITION_CALLCONV TrainingCallbackFunction(double performance, void* metadata); 
 
-    virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0)=0; //!< Continuous gesture identification.
-    virtual int contdIdentifyAllProbabilitiesAndSimilarities(const double hmd_p[3], const double hmd_q[4], double p[], double s[], int n)=0; //!< Continuous gesture identification.
-    virtual int contdRecord(const double hmd_p[3], const double hmd_q[4])=0; //!< Continuous gesture recording.
-    unsigned int contdIdentificationPeriod; //!< Time frame in milliseconds for continuous gesture identification.
-    unsigned int contdIdentificationSmoothing; //!< The number of samples to use for smoothing continuous gesture identification results.
+    /**
+    * Start new stroke (gesture motion).
+    * \param  hmd               Transformation matrix (4x4) of the current headset position and rotation.
+    * \param  record_as_sample  Which gesture this stroke will be a sample for, or -1 to identify the gesture.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int startStroke(const double hmd[4][4], int record_as_sample=-1)=0; 
 
-    virtual int  numberOfGestures()=0; //!< Get the number of gestures currently recorded in the system.
-    virtual bool deleteGesture(int index)=0; //!< Delete the recorded gesture with the specified index.
-    virtual bool deleteAllGestures()=0; //!< Delete recorded gestures.
-    virtual int  createGesture(const char*  name, Metadata* metadata=0)=0; //!< Create new gesture.
-    virtual double recognitionScore(bool all_samples=false)=0; //!< Get the gesture recognition score of the current neural network (0~1).
-        
-    virtual const char* getGestureName(int index)=0; //!< Get the name of a registered gesture.
-    virtual int         getGestureNameLength(int index)=0; //!< Get the length of the name of a registered gesture.
-    virtual int         copyGestureName(int index, char* buf, int buflen)=0; //!< Copy the name of a registered gesture to a buffer.
-    virtual Metadata*   getGestureMetadata(int index)=0; //!< Get the command of a registered gesture.
-    virtual int         getGestureNumberOfSamples(int index)=0; //!< Get the number of recorded samples of a registered gesture.
-    virtual int         getGestureSampleLength(int gesture_index, int sample_index, bool processed)=0; //!< Get the number of data points a sample has.
-    virtual int         getGestureSampleStroke(int gesture_index, int sample_index, bool processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size)=0; //!< Retrieve a sample stroke.
-    virtual int         getGestureMeanLength(int gesture_index)=0; //!< Get the number of samples of the gesture mean (average over samples).
-    virtual int         getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double hmd_p[3], double hmd_q[4], double* scale)=0; //!< Retrieve a gesture mean (average over samples).
-    virtual bool        deleteGestureSample(int gesture_index, int sample_index)=0; //!< Delete a gesture sample recording from the set.
-    virtual bool        deleteAllGestureSamples(int gesture_index)=0; //!< Delete all gesture sample recordings from the set.
+    /**
+    * Start new stroke (gesture motion).
+    * \param  hmd_p             Vector (x,y,z) of the current headset position.
+    * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
+    * \param  record_as_sample  Which gesture this stroke will be a sample for, or -1 to identify the gesture.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int startStroke(const double hmd_p[3], const double hmd_q[4], int record_as_sample=-1)=0;
 
-    virtual bool setGestureName(int index, const char* name)=0; //!< Set the name of a registered gesture.
-    virtual bool setGestureMetadata(int index, Metadata* metadata)=0; //!< Set the command of a registered gesture.
+    /**
+    * Continue stroke (gesture motion) data input (translational data only).
+    * \param    p               Vector (x,y,z) of the current controller position.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int contdStroke(const double p[3])=0;
 
-    virtual int  saveToFile(const char* path)=0; //!< Save the neural network and recorded training data to file.
-    virtual int  saveToStream(void* stream)=0; //!< Save the neural network and recorded training data to std::ofstream.
-    virtual int  loadFromFile(const char* path, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from file.
-    virtual int  loadFromBuffer(const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data buffer.
-    virtual int  loadFromStream(void* stream, MetadataCreatorFunction* createMetadata=0)=0; //!< Load the neural network and recorded training data from std::istream.
-    virtual int  importFromFile(const char* path, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from file.
-    virtual int  importFromBuffer(const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from buffer.
-    virtual int  importFromStream(void* stream, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0; //!< Import recorded gestures from std::istream.
+    /**
+    * Continue stroke (gesture motion) data input with rotational data in the form of a quaternion.
+    * \param    p               Vector (x,y,z) of the current controller position.
+    * \param    q               Quaternion (x,y,z,w) of the current controller rotation.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int contdStrokeQ(const double p[3], const double q[4])=0;
 
-    virtual bool importGestureSamples(const IGestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0; //!< Import recorded gesture samples from another gesture recognition object.
-    virtual bool importGestures(const IGestureRecognition* from_gro)=0; //!< Import recorded gesture samples from another gesture recognition object, merging gestures by name.
+    /**
+    * Continue stroke (gesture motion) data input with rotational data in the form of a Euler rotation.
+    * \param    p               Vector (x,y,z) of the current controller position.
+    * \param    r               Euler rotations (x,y,z) of the current controller rotation.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int contdStrokeE(const double p[3], const double r[3])=0;
 
-    virtual bool startTraining()=0; //!< Start train the Neural Network based on the the currently collected data.
-    virtual bool isTraining()=0; //!< Whether the Neural Network is currently training.
-    virtual void stopTraining()=0; //!< Stop the training process (last best result will be used).
+    /**
+    * Continue stroke (gesture motion) data input with a transformation matrix (translation and rotation).
+    * \param    m               Transformation matrix (4x4) of the current controller position and rotation.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int contdStrokeM(const double m[4][4])=0;
 
-    unsigned long maxTrainingTime; //!< Maximum training time in seconds.
-    TrainingCallbackFunction* trainingUpdateCallback; //!< Optional callback function to be called during training.
-    void*                     trainingUpdateCallbackMetadata; //!< Optional metadata to be provided with the callback during training.
-    TrainingCallbackFunction* trainingFinishCallback; //!< Optional callback function to be called when training is finished.
-    void*                     trainingFinishCallbackMetadata; //!< Optional metadata to be provided with the callback when training is finished.
+    /**
+    * End the stroke (gesture motion) and identify the gesture.
+    * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
+    * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
+    * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
+    * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
+    * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
+    */
+    virtual int endStroke(double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
 
-    /// Different coordinate system origins from which to interpret gestures.
+    /**
+    * End the stroke (gesture motion) and get gesture probabilities.
+    * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
+    * \param    n               The length of the array p.
+    * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
+    * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
+    * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
+    * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
+    * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
+    * \return  The number of probability values actually written into the p array, 0 on failure or when a stroke was recorded (recording mode).
+    */
+    virtual int endStrokeAndGetAllProbabilities(double p[], int n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
+    * End the stroke (gesture motion) and get similarity value.
+    * \param    similarity      [OUT] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
+    * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
+    * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
+    * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
+    * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
+    */
+    virtual int endStrokeAndGetSimilarity(double* similarity, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
+    * End the stroke (gesture motion) and get gesture probabilities and similarity values.
+    * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
+    * \param    s               [OUT] Array of length n to which to write the similarity values (each 0~1).
+    * \param    n               The length of the arrays p and s.
+    * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
+    * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
+    * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
+    * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
+    * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
+    * \return  The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).
+    */
+    virtual int endStrokeAndGetAllProbabilitiesAndSimilarities(double p[], double s[], int n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
+    * Cancel a started stroke (gesture motion).
+    * \return   Zero on success, an error code on failure.
+    */
+    virtual int cancelStroke()=0;
+
+    /**
+    * Continuous gesture identification.
+    * \param  hmd_p             Vector (x,y,z) of the current headset position.
+    * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
+    * \param  similarity        [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \return                   The ID of the identified gesture on success, an negative error code on failure.
+    */
+    virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0)=0;
+
+    /**
+    * Continuous gesture identification.
+    * \param  hmd_p             Vector (x,y,z) of the current headset position.
+    * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
+    * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
+    * \param    s               [OUT] Array of length n to which to write the similarity values (each 0~1).
+    * \param    n               The length of the arrays p and s.
+    * \return  The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).
+    */
+    virtual int contdIdentifyAllProbabilitiesAndSimilarities(const double hmd_p[3], const double hmd_q[4], double p[], double s[], int n)=0;
+
+    /**
+    * Continuous gesture recording.
+    * \param  hmd_p             Vector (x,y,z) of the current headset position.
+    * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
+    * \return                   The ID of the recorded gesture on success, an negative error code on failure.
+    */
+    virtual int contdRecord(const double hmd_p[3], const double hmd_q[4])=0;
+
+    /**
+    * Time frame in milliseconds for continuous gesture identification.
+    */
+    unsigned int contdIdentificationPeriod;
+
+    /**
+    * The number of samples to use for smoothing continuous gesture identification results.
+    */
+    unsigned int contdIdentificationSmoothing;
+
+    /**
+    * Get the number of gestures currently recorded in the system.
+    * \return                   The number of gestures currently recorded in the system.
+    */
+    virtual int numberOfGestures()=0;
+
+    /**
+    * Delete the recorded gesture with the specified index.
+    * \param    index           The ID (zero-based index) of the gesture to delete.
+    * \return                   True on success, false on failure.
+    */
+    virtual bool deleteGesture(int index)=0;
+
+    /**
+    * Delete all recorded gestures.
+    * \return                   True on success, false on failure.
+    */
+    virtual bool deleteAllGestures()=0;
+
+    /**
+    * Create new gesture.
+    * \param    name            The name for the gesture.
+    * \param    metadata        [OPTIONAL] Meta data to be stored with the gesture.
+    * \return                   New gesture ID or -1 on failure.
+    */
+    virtual int createGesture(const char* name, Metadata* metadata=0)=0;
+
+    /**
+    * Get the gesture recognition score of the current neural network (0~1).
+    * Here, 0 means that not a single gesture was correctly identified, and 1 means that 100% of gestures
+    * were correctly identified.
+    * \param    all_samples     Whether to use all recorded samples to estimate the recognition score,
+    *                           even those that were not used in the training of the AI.
+    * \return                   The gesture recognition score of the current neural network (0~1).
+    */
+    virtual double recognitionScore(bool all_samples=false)=0;
+
+    /**
+    * Get the name of a registered gesture.
+    * \param    index           The gesture ID of the gesture whose name to query.
+    * \return                   String name of the gesture, zero on failure.
+    */
+    virtual const char* getGestureName(int index)=0;
+
+    /**
+    * Get the length of the name of a registered gesture.
+    * \param    index           The gesture ID of the gesture whose name to query.
+    * \return                   The number of characters in the gesture name.
+    */
+    virtual int getGestureNameLength(int index)=0;
+
+    /**
+    * Copy the name of a registered gesture to a buffer.
+    * \param    index           The gesture ID of the gesture whose name to copy.
+    * \param    buf             [OUT] The string buffer to which to write the gesture name.
+    * \param    buflen          The length of the buf string buffer.
+    * \return                   The number of characters written to the buffer, zero on failure.
+    */
+    virtual int copyGestureName(int index, char* buf, int buflen)=0;
+
+    /**
+    * Get the metadata of a registered gesture.
+    * \param    index           The gesture ID of the gesture whose metadata to get.
+    * \return                   The metadata registered with the gesture, null on failure.
+    */
+    virtual Metadata* getGestureMetadata(int index)=0;
+
+    /**
+    * Get the number of recorded samples of a registered gesture.
+    * \param    index           The gesture ID of the gesture whose number of samples to query.
+    * \return                   The number of samples recorded for that gesture, a negative error code on failure.
+    */
+    virtual int getGestureNumberOfSamples(int index)=0;
+
+    /**
+    * Get the number of data points a sample has.
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+    * \param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+    * \param   processed       Whether the number of raw data points should be retrieved (false) or the number of processed data points (true).
+    * \return  The number of data points on that stroke sample, 0 if an error occurred.
+    */
+    virtual int getGestureSampleLength(int gesture_index, int sample_index, bool processed)=0;
+
+    /**
+    * Retrieve a sample stroke.
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the sample.
+    * \param   sample_index    The zero-based index (ID) of the sample to retrieve.
+    * \param   processed       Whether the raw data points should be retrieved (false) or the processed data points (true).
+    * \param   hmd_p           [OUT][OPTIONAL] A place to store the HMD positional data. May be zero if this data is not required.
+    * \param   hmd_q           [OUT][OPTIONAL] A place to store the HMD rotational data. May be zero if this data is not required.
+    * \param   p               [OUT][OPTIONAL] A place to store the stroke positional data. May be zero if this data is not required.
+    * \param   q               [OUT][OPTIONAL] A place to store the stroke rotational data. May be zero if this data is not required.
+    * \param   stroke_buf_size The length of p and/or q in number of data points. The function will at most write this many data points.
+    * \return  The number of stroke sample data points that have been written, 0 if an error occurred.
+    */
+    virtual int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size)=0;
+
+    /**
+    * Get the number of samples of the gesture mean (average over samples).
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the sample.
+    * \return  The number of stroke sample data points that the mean stroke consists of.
+    */
+    virtual int getGestureMeanLength(int gesture_index)=0;
+
+    /**
+    * Retrieve a gesture mean (average over samples).
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the sample.
+    * \param   p               [OUT] A place to store the stroke positional data. May be zero if this data is not required.
+    * \param   q               [OUT] A place to store the stroke rotational data. May be zero if this data is not required.
+    * \param   stroke_buf_size The length of p and/or q in number of data points. The function will at most write this many data points.
+    * \param   hmd_p           [OUT][OPTIONAL] A place to store the average gesture position relative to (ie. as seen by) the headset. May be zero if this data is not required.
+    * \param   hmd_q           [OUT][OPTIONAL] A place to store the average gesture rotation relative to (ie. as seen by) the headset. May be zero if this data is not required.
+    * \param   scale           [OUT][OPTIONAL] A place to store the average gesture Scale. May be zero if this data is not required.
+    * \return  The number of stroke sample data points that have been written, 0 if an error occurred.
+    */
+    virtual int getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double hmd_p[3], double hmd_q[4], double* scale)=0;
+
+    /**
+    * Delete a gesture sample recording from the set.
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to delete the sample.
+    * \param   sample_index    The zero-based index (ID) of the sample to delete.
+    * \return                  True on success, false on failure.
+    */
+    virtual bool deleteGestureSample(int gesture_index, int sample_index)=0;
+
+    /**
+    * Delete all gesture sample recordings from the set.
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to delete the sample.
+    * \return                  True on success, false on failure.
+    */
+    virtual bool deleteAllGestureSamples(int gesture_index)=0;
+
+    /**
+    * Set the name of a registered gesture.
+    * \param    index           The gesture ID of the gesture whose name to set.
+    * \param    name            The new name for the gesture.
+    * \return                   True on success, false on failure.
+    */
+    virtual bool setGestureName(int index, const char* name)=0;
+
+    /**
+    * Set the metadata of a registered gesture.
+    * \param    index           The gesture ID of the gesture whose metadata to set.
+    * \param    metadata        The new metadata for the gesture.
+    * \return                   True on success, false on failure.
+    */
+    virtual bool setGestureMetadata(int index, Metadata* metadata)=0;
+
+    /**
+    * Save the neural network and recorded training data to file.
+    * \param    path            The file path at which to save the AI and recorded data.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int saveToFile(const char* path)=0;
+
+    /**
+    * Save the neural network and recorded training data to std::ofstream.
+    * \param    stream      The std::ostream pointer to which to write the AI and recorded data.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int saveToStream(void* stream)=0;
+
+    /**
+    * Load the neural network and recorded training data from file.
+    * \param    path            The file path from which to load the AI and recorded data.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int loadFromFile(const char* path, MetadataCreatorFunction* createMetadata=0)=0;
+
+    /**
+    * Load the neural network and recorded training data buffer.
+    * \param    buffer          Memory buffer from which to load the AI and recorded data.
+    * \param    buffer_size     Size of the memory buffer in byte.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int loadFromBuffer(const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata=0)=0;
+
+    /**
+    * Load the neural network and recorded training data from std::istream.
+    * \param    stream          The std::istream from which to load the AI and recorded data.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int loadFromStream(void* stream, MetadataCreatorFunction* createMetadata=0)=0;
+
+    /**
+    * Import recorded gestures from file.
+    * Gestures of the same name will be merged into one. The optional 'mapping' parameter will
+    * inform you of how the merging was performed.
+    * After importing, you have to run the AI training process again for the changes to take place.
+    * \param    path            The file path from which to import gestures.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \param    mapping         [OUT][OPTIONAL] A vector expressing for each gesture index of the file into which gesture it was merged.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int importFromFile(const char* path, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0;
+
+    /**
+    * Import recorded gestures from buffer.
+    * Gestures of the same name will be merged into one. The optional 'mapping' parameter will
+    * inform you of how the merging was performed.
+    * After importing, you have to run the AI training process again for the changes to take place.
+    * \param    buffer          The memory buffer from which to import gestures.
+    * \param    buffer_size     The size of the memory buffer in byte.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \param    mapping         [OUT][OPTIONAL] A vector expressing for each gesture index of the file into which gesture it was merged.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int importFromBuffer(const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0;
+
+    /**
+    * Import recorded gestures from std::istream.
+    * Gestures of the same name will be merged into one. The optional 'mapping' parameter will
+    * inform you of how the merging was performed.
+    * After importing, you have to run the AI training process again for the changes to take place.
+    * \param    stream          The std::istream from which to import gestures.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \param    mapping         [OUT][OPTIONAL] A vector expressing for each gesture index of the file into which gesture it was merged.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int importFromStream(void* stream, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0;
+
+    /**
+    * Import recorded gesture samples from another gesture recognition object.
+    * \param   from_gro            The GestureRecognitionObject from where to import recorded gesture samples.
+    * \param   from_gesture_index  The index (ID) of the gesture (on the other GRO) to import.
+    * \param   into_gesture_index  The index (ID) of the gesture (on this object) to which the samples should be added.
+    * \return  True on success, false on failure (invalid parameter).
+    */
+    virtual bool importGestureSamples(const IGestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0;
+
+    /**
+    * Import recorded gesture samples from another gesture recognition object, merging gestures by name.
+    * Gestures with names which are not in the list of gestures yet will be appended.
+    * \param   from_gro        The GestureRecognitionObject from where to import gestures.
+    * \return  True on success, false on failure (invalid parameter).
+    */
+    virtual bool importGestures(const IGestureRecognition* from_gro)=0;
+
+    /**
+    * Start train the Neural Network based on the the currently collected data.
+    * \return   True on success, false on failure.
+    */
+    virtual bool startTraining()=0;
+
+    /**
+    * Whether the Neural Network is currently training.
+    * \return   True if the AI is currently training, false if not.
+    */
+    virtual bool isTraining()=0;
+
+    /**
+    * Stop the training process (last best result will be used).
+    */
+    virtual void stopTraining()=0;
+
+    /**
+    * Maximum training time in seconds.
+    */
+    unsigned long maxTrainingTime;
+
+    /**
+    * Optional callback function to be called during training.
+    */
+    TrainingCallbackFunction* trainingUpdateCallback;
+
+    /**
+    * Optional metadata to be provided with the callback during training.
+    */
+    void* trainingUpdateCallbackMetadata;
+
+    /**
+    * Optional callback function to be called when training is finished.
+    */
+    TrainingCallbackFunction* trainingFinishCallback;
+
+    /**
+    * Optional metadata to be provided with the callback when training is finished.
+    */
+    void* trainingFinishCallbackMetadata;
+
+    /**
+    * Different coordinate system origins from which to interpret gestures.
+    */
     enum FrameOfReference {
         Head  = GESTURERECOGNITION_FRAMEOFREFERENCE_HEAD  //!< Identifier for interpreting gestures as seen from the headset/HMD (user point of view). 
         ,
         World = GESTURERECOGNITION_FRAMEOFREFERENCE_WORLD //!< Identifier for interpreting gestures as seen from world origin (global coordinates).
     };
-    
-    /// Whether the rotation of the users head should be considered when recording and performing gestures.
+
+    /**
+    * Whether the rotation of the users head should be considered when recording and performing gestures.
+    */
     struct RotationalFrameOfReference {
         FrameOfReference x = Head; //!< Whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
         FrameOfReference y = Head; //!< Whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
         FrameOfReference z = Head; //!< Whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
     } rotationalFrameOfReference; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
 
-    virtual int runTests()=0; //!< Run internal tests to check for code correctness and data consistency.
-    
-    virtual void setDebugOutputFile(const char* path)=0; //!< Set where to write debug information.
+    /**
+    * Run internal tests to check for code correctness and data consistency.
+    */
+    virtual int runTests()=0;
+
+    /**
+    * Set where to write debug information.
+    */
+    virtual void setDebugOutputFile(const char* path)=0;
 };
 
 #endif // #ifdef __cplusplus

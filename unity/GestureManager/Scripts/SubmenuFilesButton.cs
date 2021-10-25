@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 
 public class SubmenuFilesButton : MonoBehaviour
 {
@@ -8,6 +9,9 @@ public class SubmenuFilesButton : MonoBehaviour
     public enum Operation {
         LoadGestureFile,
         SaveGestureFile,
+        FileSuggestionUp,
+        FileSuggestionDown,
+        FileSuggestionSelect
     };
     public Operation operation;
 
@@ -37,6 +41,37 @@ public class SubmenuFilesButton : MonoBehaviour
                 break;
             case Operation.SaveGestureFile:
                 gm.saveToFile();
+                break;
+            case Operation.FileSuggestionUp:
+                if (gm.file_suggestion > 0)
+                {
+                    gm.file_suggestion--;
+                }
+                break;
+            case Operation.FileSuggestionDown:
+                if (gm.file_suggestion + 1 < gm.file_suggestions.Count)
+                {
+                    gm.file_suggestion++;
+                }
+                break;
+            case Operation.FileSuggestionSelect:
+                if (gm.file_suggestion >= 0 && gm.file_suggestion < gm.file_suggestions.Count)
+                {
+                    if (gm.gr != null)
+                    {
+                        string dir = (gm.file_load_gestures.Contains("/") || gm.file_load_gestures.Contains("\\"))
+                                   ? Path.GetDirectoryName(gm.file_load_gestures).Replace('\\', '/') + "/"
+                                   : "";
+                        gm.file_load_gestures = dir + gm.file_suggestions[gm.file_suggestion];
+                    } else if (gm.gc != null)
+                    {
+                        string dir = (gm.file_load_combinations.Contains("/") || gm.file_load_combinations.Contains("\\"))
+                                   ? Path.GetDirectoryName(gm.file_load_combinations).Replace('\\', '/') + "/"
+                                   : "";
+                        gm.file_load_combinations = dir + gm.file_suggestions[gm.file_suggestion];
+                    }
+                }
+                
                 break;
         }
         GestureManagerVR.setInputFocus(null);
