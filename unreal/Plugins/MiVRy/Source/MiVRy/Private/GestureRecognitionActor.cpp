@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  *
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -76,7 +76,7 @@ int AGestureRecognitionActor::startStroke(const FVector& HMD_Position, const FRo
 int AGestureRecognitionActor::startStrokeQ(const FVector& HMD_Position, const FQuat& HMD_Rotation, int RecordAsSample)
 {
 	if (this->gro == nullptr) {
-		return -1;
+		return -99;
 	}
 	double p[3];
 	double q[4];
@@ -108,7 +108,7 @@ int AGestureRecognitionActor::contdStroke(const FVector& HandPosition, const FRo
 int AGestureRecognitionActor::contdStrokeQ(const FVector& HandPosition, const FQuat& HandRotation)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	double p[3];
 	double q[4];
@@ -144,7 +144,7 @@ int AGestureRecognitionActor::endStroke(float& Similarity, FVector& GesturePosit
 int AGestureRecognitionActor::endStrokeQ(float& Similarity, FVector& GesturePosition, FQuat& GestureRotation, float& GestureScale)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	double similarity = -1;
 	double pos[3] = {0,0,0};
@@ -194,39 +194,44 @@ int AGestureRecognitionActor::endStrokeQ(float& Similarity, FVector& GesturePosi
 int AGestureRecognitionActor::endStrokeAndGetAllProbabilities(TArray<float>& Probabilities, FVector& GesturePosition, FRotator& GestureRotation, float& GestureScale)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	FQuat quat;
-	int gesture_id = this->endStrokeAndGetAllProbabilitiesQ(Probabilities, GesturePosition, quat, GestureScale);
+	int ret = this->endStrokeAndGetAllProbabilitiesQ(Probabilities, GesturePosition, quat, GestureScale);
 	GestureRotation = quat.Rotator();
-	return gesture_id;
+	return ret;
 }
 
 int AGestureRecognitionActor::endStrokeAndGetAllProbabilitiesQ(TArray<float>& Probabilities, FVector& GesturePosition, FQuat& GestureRotation, float& GestureScale)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	const int num_gestures = this->gro->numberOfGestures();
 	if (num_gestures <= 0) {
-		return -1;
+		return IGestureRecognition::Error_NoGestures;
 	}
 	double* p = new double[num_gestures];
 	for (int i = 0; i < num_gestures; i++) {
 		p[i] = -1;
 	}
+	int n = num_gestures;
 	double pos[3] = {0,0,0};
 	double scale = 1;
 	double dir0[3] = {1,0,0};
 	double dir1[3] = {0,1,0};
 	double dir2[3] = {0,0,1};
-	int gesture_id = this->gro->endStrokeAndGetAllProbabilities(p, num_gestures, pos, &scale, dir0, dir1, dir2);
-	Probabilities.SetNum(num_gestures);
-	for (int i = 0; i < num_gestures; i++) {
+	int ret = this->gro->endStrokeAndGetAllProbabilities(p, &n, pos, &scale, dir0, dir1, dir2);
+	if (ret != 0) {
+		Probabilities.SetNum(0);
+		return ret;
+	}
+	Probabilities.SetNum(n);
+	for (int i = 0; i < n; i++) {
 		Probabilities[i] = (float)p[i];
 	}
 	delete[] p;
-		if (this->UnityCombatibilityMode) {
+	if (this->UnityCombatibilityMode) {
 		GesturePosition.X = float(pos[2]) * 100.0f; // Unreal.X = front = Unity.Z
 		GesturePosition.Y = float(pos[0]) * 100.0f; // Unreal.Y = right = Unity.X
 		GesturePosition.Z = float(pos[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
@@ -259,29 +264,30 @@ int AGestureRecognitionActor::endStrokeAndGetAllProbabilitiesQ(TArray<float>& Pr
 		rm.M[2][2] = (float)dir2[2];
 		GestureRotation = rm.ToQuat();
 	}
-	return gesture_id;
+	return 0;
 }
 
 int AGestureRecognitionActor::endStrokeAndGetAllProbabilitiesAndSimilarities(TArray<float>& Probabilities, TArray<float>& Similarities, FVector& GesturePosition, FRotator& GestureRotation, float& GestureScale)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	FQuat quat;
-	int gesture_id = this->endStrokeAndGetAllProbabilitiesAndSimilaritiesQ(Probabilities, Similarities, GesturePosition, quat, GestureScale);
+	int ret = this->endStrokeAndGetAllProbabilitiesAndSimilaritiesQ(Probabilities, Similarities, GesturePosition, quat, GestureScale);
 	GestureRotation = quat.Rotator();
-	return gesture_id;
+	return ret;
 }
 
 int AGestureRecognitionActor::endStrokeAndGetAllProbabilitiesAndSimilaritiesQ(TArray<float>& Probabilities, TArray<float>& Similarities, FVector& GesturePosition, FQuat& GestureRotation, float& GestureScale)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	const int num_gestures = this->gro->numberOfGestures();
 	if (num_gestures <= 0) {
-		return -1;
+		return IGestureRecognition::Error_NoGestures;
 	}
+	int n = num_gestures;
 	double* p = new double[num_gestures];
 	double* s = new double[num_gestures];
 	for (int i = 0; i < num_gestures; i++) {
@@ -293,10 +299,15 @@ int AGestureRecognitionActor::endStrokeAndGetAllProbabilitiesAndSimilaritiesQ(TA
 	double dir0[3] = {1,0,0};
 	double dir1[3] = {0,1,0};
 	double dir2[3] = {0,0,1};
-	int gesture_id = this->gro->endStrokeAndGetAllProbabilitiesAndSimilarities(p, s, num_gestures, pos, &scale, dir0, dir1, dir2);
-	Probabilities.SetNum(num_gestures);
-	Similarities.SetNum(num_gestures);
-	for (int i = 0; i < num_gestures; i++) {
+	int ret = this->gro->endStrokeAndGetAllProbabilitiesAndSimilarities(p, s, &n, pos, &scale, dir0, dir1, dir2);
+	if (ret != 0) {
+		Probabilities.SetNum(0);
+		Similarities.SetNum(0);
+		return ret;
+	}
+	Probabilities.SetNum(n);
+	Similarities.SetNum(n);
+	for (int i = 0; i < n; i++) {
 		Probabilities[i] = (float)p[i];
 		Similarities[i] = (float)s[i];
 	}
@@ -335,13 +346,21 @@ int AGestureRecognitionActor::endStrokeAndGetAllProbabilitiesAndSimilaritiesQ(TA
 		rm.M[2][2] = (float)dir2[2];
 		GestureRotation = rm.ToQuat();
 	}
-	return gesture_id;
+	return 0;
+}
+
+bool AGestureRecognitionActor::isStrokeStarted()
+{
+	if (!this->gro) {
+		return false;
+	}
+	return this->gro->isStrokeStarted();
 }
 
 int AGestureRecognitionActor::cancelStroke()
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return this->gro->cancelStroke();
 }
@@ -349,7 +368,7 @@ int AGestureRecognitionActor::cancelStroke()
 int AGestureRecognitionActor::contdIdentify(const FVector& HMD_Position, const FRotator& HMD_Rotation, float& Similarity)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	FQuat quat = HMD_Rotation.Quaternion();
 	double hmd_p[3];
@@ -377,15 +396,16 @@ int AGestureRecognitionActor::contdIdentify(const FVector& HMD_Position, const F
 	return ret;
 }
 
-int AGestureRecognitionActor::contdIdentifyAllProbabilitiesAndSimilarities(const FVector& HMD_Position, const FRotator& HMD_Rotation, TArray<float>& Probabilities, TArray<float>& Similarities)
+int AGestureRecognitionActor::contdIdentifyAndGetAllProbabilitiesAndSimilarities(const FVector& HMD_Position, const FRotator& HMD_Rotation, TArray<float>& Probabilities, TArray<float>& Similarities)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	const int num_gestures = this->gro->numberOfGestures();
 	if (num_gestures <= 0) {
-		return -1;
+		return IGestureRecognition::Error_NoGestures;
 	}
+	int n = num_gestures;
 	double* p = new double[num_gestures];
 	double* s = new double[num_gestures];
 	FQuat quat = HMD_Rotation.Quaternion();
@@ -408,27 +428,27 @@ int AGestureRecognitionActor::contdIdentifyAllProbabilitiesAndSimilarities(const
 		hmd_q[2] = quat.Z;
 		hmd_q[3] = quat.W;
 	}
-	int ret = this->gro->contdIdentifyAllProbabilitiesAndSimilarities(hmd_p, hmd_q, p, s, num_gestures);
-	if (ret < 0) {
+	int ret = this->gro->contdIdentifyAndGetAllProbabilitiesAndSimilarities(hmd_p, hmd_q, p, s, &n);
+	if (ret != 0) {
 		delete[] p;
 		delete[] s;
 		return ret;
 	}
-	Probabilities.SetNum(num_gestures);
-	Similarities.SetNum(num_gestures);
-	for (int i = 0; i < num_gestures; i++) {
+	Probabilities.SetNum(n);
+	Similarities.SetNum(n);
+	for (int i = 0; i < n; i++) {
 		Probabilities[i] = (float)p[i];
 		Similarities[i] = (float)s[i];
 	}
 	delete[] p;
 	delete[] s;
-	return ret;
+	return 0;
 }
 
 int AGestureRecognitionActor::contdRecord(const FVector& HMD_Position, const FRotator& HMD_Rotation)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	FQuat HMD_Quaternion = HMD_Rotation.Quaternion();
 	double hmd_p[3];
@@ -457,7 +477,7 @@ int AGestureRecognitionActor::contdRecord(const FVector& HMD_Position, const FRo
 int AGestureRecognitionActor::GetContinuousGestureIdentificationPeriod()
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return (int)this->gro->contdIdentificationPeriod;
 }
@@ -465,7 +485,7 @@ int AGestureRecognitionActor::GetContinuousGestureIdentificationPeriod()
 int AGestureRecognitionActor::SetContinuousGestureIdentificationPeriod(int PeriodInMs)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	this->gro->contdIdentificationPeriod = (unsigned int)PeriodInMs;
 	return 0;
@@ -474,7 +494,7 @@ int AGestureRecognitionActor::SetContinuousGestureIdentificationPeriod(int Perio
 int AGestureRecognitionActor::GetContinuousGestureIdentificationSmoothing()
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return (int)this->gro->contdIdentificationSmoothing;
 }
@@ -482,7 +502,7 @@ int AGestureRecognitionActor::GetContinuousGestureIdentificationSmoothing()
 int AGestureRecognitionActor::SetContinuousGestureIdentificationSmoothing(int NumberOfSamples)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	this->gro->contdIdentificationSmoothing = (unsigned int)NumberOfSamples;
 	return 0;
@@ -491,7 +511,7 @@ int AGestureRecognitionActor::SetContinuousGestureIdentificationSmoothing(int Nu
 int AGestureRecognitionActor::numberOfGestures()
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return this->gro->numberOfGestures();
 }
@@ -499,7 +519,7 @@ int AGestureRecognitionActor::numberOfGestures()
 int AGestureRecognitionActor::deleteGesture(int index)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return this->gro->deleteGesture(index);
 }
@@ -507,7 +527,7 @@ int AGestureRecognitionActor::deleteGesture(int index)
 int AGestureRecognitionActor::deleteAllGestures()
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return this->gro->deleteAllGestures();
 }
@@ -515,7 +535,7 @@ int AGestureRecognitionActor::deleteAllGestures()
 int AGestureRecognitionActor::createGesture(const FString& name)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	const char* name_str = TCHAR_TO_ANSI(*name);
 	return this->gro->createGesture(name_str, nullptr);
@@ -524,7 +544,7 @@ int AGestureRecognitionActor::createGesture(const FString& name)
 float AGestureRecognitionActor::recognitionScore()
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return (float)this->gro->recognitionScore();
 }
@@ -540,7 +560,7 @@ FString AGestureRecognitionActor::getGestureName(int index)
 int AGestureRecognitionActor::setGestureName(int index, const FString& name)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	const char* name_str = TCHAR_TO_ANSI(*name);
 	return this->gro->setGestureName(index, name_str);
@@ -549,7 +569,7 @@ int AGestureRecognitionActor::setGestureName(int index, const FString& name)
 int AGestureRecognitionActor::getGestureNumberOfSamples(int index)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return this->gro->getGestureNumberOfSamples(index);
 }
@@ -557,7 +577,7 @@ int AGestureRecognitionActor::getGestureNumberOfSamples(int index)
 int AGestureRecognitionActor::getGestureSampleLength(int gesture_index, int sample_index, bool processed)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return this->gro->getGestureSampleLength(gesture_index, sample_index, processed);
 }
@@ -565,7 +585,7 @@ int AGestureRecognitionActor::getGestureSampleLength(int gesture_index, int samp
 int AGestureRecognitionActor::getGestureSampleStroke(int gesture_index, int sample_index, bool processed, FVector& HMD_Location, FRotator& HMD_Rotation, TArray<FVector>& Locations, TArray<FRotator>& Rotations)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	const int sample_len = this->gro->getGestureSampleLength(gesture_index, sample_index, processed);
 	if (sample_len <= 0) {
@@ -634,7 +654,7 @@ int AGestureRecognitionActor::getGestureSampleStroke(int gesture_index, int samp
 int AGestureRecognitionActor::getGestureMeanLength(int gesture_index)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return this->gro->getGestureMeanLength(gesture_index);
 }
@@ -642,7 +662,7 @@ int AGestureRecognitionActor::getGestureMeanLength(int gesture_index)
 int AGestureRecognitionActor::getGestureMeanStroke(int gesture_index, TArray<FVector>& Locations, TArray<FRotator>& Rotations, FVector& GestureLocation, FRotator& GestureRotation, float& GestureScale)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	const int mean_len = this->gro->getGestureMeanLength(gesture_index);
 	if (mean_len <= 0) {
@@ -704,23 +724,23 @@ int AGestureRecognitionActor::getGestureMeanStroke(int gesture_index, TArray<FVe
 int AGestureRecognitionActor::deleteGestureSample(int gesture_index, int sample_index)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
-	return this->gro->deleteGestureSample(gesture_index, sample_index) ? 0 : -1;
+	return this->gro->deleteGestureSample(gesture_index, sample_index);
 }
 
 int AGestureRecognitionActor::deleteAllGestureSamples(int gesture_index)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
-	return this->gro->deleteAllGestureSamples(gesture_index) ? 0 : -1;
+	return this->gro->deleteAllGestureSamples(gesture_index);
 }
 
 int AGestureRecognitionActor::saveToFile(const FFilePath& path)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	FString path_str = path.FilePath;
 	if (FPaths::IsRelative(path_str)) {
@@ -733,7 +753,7 @@ int AGestureRecognitionActor::saveToFile(const FFilePath& path)
 int AGestureRecognitionActor::loadFromFile(const FFilePath& path)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	FString path_str = path.FilePath;
 	if (FPaths::IsRelative(path_str)) {
@@ -745,7 +765,7 @@ int AGestureRecognitionActor::loadFromFile(const FFilePath& path)
 int AGestureRecognitionActor::importFromFile(const FFilePath& path)
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	FString path_str = path.FilePath;
 	if (FPaths::IsRelative(path_str)) {
@@ -757,7 +777,7 @@ int AGestureRecognitionActor::importFromFile(const FFilePath& path)
 int AGestureRecognitionActor::startTraining()
 {
 	if (this->gro == nullptr) {
-		return -1;
+		return -99;
 	}
 	this->gro->trainingUpdateCallback = (IGestureRecognition::TrainingCallbackFunction*)&TrainingCallbackFunction;
 	this->gro->trainingFinishCallback = (IGestureRecognition::TrainingCallbackFunction*)&TrainingCallbackFunction;
@@ -785,7 +805,7 @@ void AGestureRecognitionActor::stopTraining()
 int AGestureRecognitionActor::getMaxTrainingTime()
 {
 	if (!this->gro) {
-		return -1;
+		return -99;
 	}
 	return (int)this->gro->maxTrainingTime;
 }

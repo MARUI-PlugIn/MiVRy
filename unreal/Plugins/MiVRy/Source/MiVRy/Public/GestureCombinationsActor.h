@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  *
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -143,6 +143,12 @@ public:
 	int endStrokeQ(int part, FVector& GesturePosition, FQuat& GestureRotation, float& GestureScale);
 
 	/**
+	* Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+	* \return   True if a gesture motion (stroke) was started and is ongoing, false if not.
+	*/
+	bool isStrokeStarted(int part);
+
+	/**
 	* Cancel a gesture motion for one hand or part of the combination.
 	* @param part The hand side or part index for which to cancel the gesture.
 	* @return Zero on success, an error code on failure.
@@ -244,18 +250,18 @@ public:
 	* Delete the recorded gesture with the specified index.
 	* @param part The combination part or hand side index for which delete a gesture.
 	* @param index The ID of the gesture to delete.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Delete Gesture"))
-	bool deleteGesture(int part, int index);
+	int deleteGesture(int part, int index);
 
 	/**
 	* Delete recorded gestures.
 	* @param part The combination part or hand side index for which to delete the gestures.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Delete All Gestures"))
-	bool deleteAllGestures(int part);
+	int deleteAllGestures(int part);
 
 	/**
 	* Create new gesture.
@@ -364,29 +370,29 @@ public:
 	* @param part The combination part or hand side index.
 	* @param gesture_index The gesture ID.
 	* @param sample_index The index number (zero-based) of the recorded sample.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Delete Gesture Sample"))
-	bool deleteGestureSample(int part, int gesture_index, int sample_index);
+	int deleteGestureSample(int part, int gesture_index, int sample_index);
 
 	/**
 	* Delete all gesture sample recordings of a gesture.
 	* @param part The combination part or hand side index.
 	* @param gesture_index The gesture ID.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Delete All Gesture Samples"))
-	bool deleteAllGestureSamples(int part, int gesture_index);
+	int deleteAllGestureSamples(int part, int gesture_index);
 
 	/**
 	* Set the name of a registered gesture.
 	* @param part The combination part or hand side index.
 	* @param index The gesture ID.
 	* @param name The new name for the gesture.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Name"))
-	bool setGestureName(int part, int index, const FString& name);
+	int setGestureName(int part, int index, const FString& name);
 
 	/**
 	* Save the neural network and recorded training data to file.
@@ -422,17 +428,17 @@ public:
 	/**
 	* Delete the gesture combination with the specified index.
 	* @param index The ID/index of the gesture combination to delete.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Delete Gesture Combination"))
-	bool deleteGestureCombination(int index);
+	int deleteGestureCombination(int index);
 
 	/**
 	* Delete recorded gestures.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Delete All Gesture Combinations"))
-	bool deleteAllGestureCombinations();
+	int deleteAllGestureCombinations();
 
 	/**
 	* Create new gesture combination.
@@ -447,10 +453,10 @@ public:
 	* @param combination_index The gesture combination ID for which to set the part's gesture.
 	* @param part The combination part or hand side index.
 	* @param gesture_index The gesture ID.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Combination Part Gesture"))
-	bool setCombinationPartGesture(int combination_index, int part, int gesture_index);
+	int setCombinationPartGesture(int combination_index, int part, int gesture_index);
 
 	/**
 	* Get which gesture this multi-gesture expects for this part.
@@ -473,17 +479,17 @@ public:
 	* Set the name of a registered multi-gesture.
 	* @param index The ID of the gesture combination.
 	* @param name The new name for the gesture combination.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Combination Name"))
-	bool setGestureCombinationName(int index, const FString& name);
+	int setGestureCombinationName(int index, const FString& name);
 
 	/**
 	* Start train the Neural Network based on the the currently collected data.
-	* @return True on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Start Training"))
-	bool startTraining(); 
+	int startTraining(); 
 
 	/**
 	* Whether the Neural Network is currently training.

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SubmenuCombinationButton : MonoBehaviour
+public class SubmenuCombinationButton : MonoBehaviour, GestureManagerButton
 {
     [System.Serializable]
     public enum Operation {
@@ -19,6 +19,9 @@ public class SubmenuCombinationButton : MonoBehaviour
 
     private SubmenuCombination submenuCombination;
 
+    [SerializeField] private Material inactiveButtonMaterial;
+    [SerializeField] private Material activeButtonMaterial;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -32,6 +35,10 @@ public class SubmenuCombinationButton : MonoBehaviour
             return;
         if (GestureManagerVR.isGesturing)
             return;
+        if (GestureManagerVR.activeButton != null)
+            return;
+        GestureManagerVR.activeButton = this;
+        this.GetComponent<Renderer>().material = activeButtonMaterial;
         switch (this.operation)
         {
             case Operation.CreateCombination:
@@ -150,5 +157,19 @@ public class SubmenuCombinationButton : MonoBehaviour
         }
         GestureManagerVR.setInputFocus(null);
         this.submenuCombination.refresh();
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.name.EndsWith("pointer") && (Object)GestureManagerVR.activeButton == this)
+            GestureManagerVR.activeButton = null;
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+    }
+
+    private void OnDisable()
+    {
+        if ((Object)GestureManagerVR.activeButton == this)
+            GestureManagerVR.activeButton = null;
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
     }
 }

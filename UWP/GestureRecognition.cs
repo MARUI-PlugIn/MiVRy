@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - VR gesture recognition library plug-in for Unity.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -120,6 +120,9 @@
  * (-9) : Return code for: no gestures registered.
  * (-10) : Return code for: the neural network is inconsistent - re-training might solve the issue.
  * (-11) : Return code for: file or object exists and can't be overwritten.
+ * (-12) : Return code for: gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).
+ * (-13) : Return code for: gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).
+ * (-14) : Return code for: the gesture recognition/combinations object is internally corrupted or inconsistent.
  */
 
 using System.Collections;
@@ -167,6 +170,12 @@ public class GestureRecognition
                 return "The neural network is inconsistent - re-training might solve the issue.";
             case -11:
                 return "File or object exists and can't be overwritten.";
+            case -12:
+                return "Gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).";
+            case -13:
+                return "Gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).";
+            case -14:
+                return "The gesture recognition/combinations object is internally corrupted or inconsistent.";
         }
         return "Unknown error.";
     }
@@ -808,24 +817,17 @@ public class GestureRecognition
     /// If the gesture (stroke) was started in identification mode, the gesture recognition
     /// library will calculate and return the probability for each recorded gesture.
     /// </summary>
+    /// <param name="p">List of probability estimate values, where 1.0 is the highest and 0.0 is the lowest.</param>
     /// <returns>
-    /// List of probability estimate values, where 1.0 is the highest and 0.0 is the lowest.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public double[] endStrokeAndGetAllProbabilities()
+    public int endStrokeAndGetAllProbabilities(ref double[] p)
     {
         int num_gestures = this.numberOfGestures();
-        double[] p = new double[num_gestures];
-        int n = GestureRecognition_endStrokeAndGetAllProbabilities(m_gro, p, num_gestures, null, null, null, null, null);
-        if (n == num_gestures)
-        {
-            return p;
-        }
-        double[] p2 = new double[n];
-        for (int i = 0; i < n; i++)
-        {
-            p2[i] = p[i];
-        }
-        return p2;
+        p = new double[num_gestures];
+        int[] _n = new int[1];
+        _n[0] = num_gestures;
+        return GestureRecognition_endStrokeAndGetAllProbabilities(m_gro, p, _n, null, null, null, null, null);
     }
     //                                                      ____________________________________
     //_____________________________________________________/ endStrokeAndGetAllProbabilities()
@@ -837,20 +839,36 @@ public class GestureRecognition
     /// If the gesture (stroke) was started in identification mode, the gesture recognition
     /// library will calculate and return the probability for each recorded gesture.
     /// </summary>
+    /// <param name="p">List of probability estimate values, where 1.0 is the highest and 0.0 is the lowest.</param>
+    /// <param name="s">List of similarity values, where 1.0 is perfect similarity and 0.0 no similarity at all.</param>
     /// <returns>
-    /// List of probability estimate values, where 1.0 is the highest and 0.0 is the lowest.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public int endStrokeAndGetAllProbabilities(ref double[] p, ref double[] s)
+    public int endStrokeAndGetAllProbabilitiesAndSimilarities(ref double[] p, ref double[] s)
     {
         int num_gestures = this.numberOfGestures();
         p = new double[num_gestures];
         s = new double[num_gestures];
+        int[] _n = new int[1];
+        _n[0] = num_gestures;
         double[] pos = new double[3];
         double[] scale = new double[1];
         double[] dir0 = new double[3];
         double[] dir1 = new double[3];
         double[] dir2 = new double[3];
-        return GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(m_gro, p, s, num_gestures, pos, scale, dir0, dir1, dir2);
+        return GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(m_gro, p, s, _n, pos, scale, dir0, dir1, dir2);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/        isStrokeStarted()
+    /// <summary>
+    /// Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+    /// </summary>
+    /// <returns>
+    /// True if a gesture motion (stroke) was started and is ongoing, false if not.
+    /// </returns>
+    public bool isStrokeStarted()
+    {
+        return GestureRecognition_isStrokeStarted(m_gro) != 0;
     }
     //                                                      ____________________________________
     //_____________________________________________________/        cancelStroke()
@@ -864,7 +882,6 @@ public class GestureRecognition
     {
         return GestureRecognition_cancelStroke(m_gro);
     }
-    
     //                                                      ____________________________________
     //_____________________________________________________/        contdIdentify()
     /// <summary>
@@ -884,6 +901,19 @@ public class GestureRecognition
         int ret = GestureRecognition_contdIdentify(m_gro, _hmd_p, _hmd_q, _similarity);
         similarity = _similarity[0];
         return ret;
+    }
+    //                                    ______________________________________________________
+    //___________________________________/ contdIdentifyAndGetAllProbabilitiesAndSimilarities()
+    public int contdIdentifyAndGetAllProbabilitiesAndSimilarities(IntPtr gro, Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s)
+    {
+        double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
+        double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
+        int num_gestures = this.numberOfGestures();
+        p = new double[num_gestures];
+        s = new double[num_gestures];
+        int[] _n = new int[1];
+        _n[0] = num_gestures;
+        return GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(m_gro, _hmd_p, _hmd_q, p, s, _n);
     }
     //                                                      ____________________________________
     //_____________________________________________________/        contdRecord()
@@ -965,11 +995,11 @@ public class GestureRecognition
     /// </summary>
     /// <param name="index">ID of the gesture to delete.</param>
     /// <returns>
-    /// False on failure, true on success.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteGesture(int index)
+    public int deleteGesture(int index)
     {
-        return GestureRecognition_deleteGesture(m_gro, index) != 0;
+        return GestureRecognition_deleteGesture(m_gro, index);
     }
     //                                                          ________________________________
     //_________________________________________________________/      deleteAllGestures()
@@ -977,11 +1007,11 @@ public class GestureRecognition
     /// Delete all currently registered gestures.
     /// </summary>
     /// <returns>
-    /// False on failure, true on success.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteAllGestures()
+    public int deleteAllGestures()
     {
-        return GestureRecognition_deleteAllGestures(m_gro) != 0;
+        return GestureRecognition_deleteAllGestures(m_gro);
     }
     //                                                          ________________________________
     //_________________________________________________________/      createGesture()
@@ -1173,11 +1203,11 @@ public class GestureRecognition
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to delete the sample.</param>
     /// <param name="sample_index">The zero-based index(ID) of the sample to delete.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteGestureSample(int gesture_index, int sample_index)
+    public int deleteGestureSample(int gesture_index, int sample_index)
     {
-        return GestureRecognition_deleteGestureSample(m_gro, gesture_index, sample_index) != 0;
+        return GestureRecognition_deleteGestureSample(m_gro, gesture_index, sample_index);
     }
     //                                                          ________________________________
     //_________________________________________________________/    deleteAllGestureSamples()
@@ -1186,11 +1216,11 @@ public class GestureRecognition
     /// </summary>
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to delete the sample.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteAllGestureSamples(int gesture_index)
+    public int deleteAllGestureSamples(int gesture_index)
     {
-        return GestureRecognition_deleteAllGestureSamples(m_gro, gesture_index) != 0;
+        return GestureRecognition_deleteAllGestureSamples(m_gro, gesture_index);
     }
     //                                                          ________________________________
     //_________________________________________________________/       setGestureName()
@@ -1200,11 +1230,11 @@ public class GestureRecognition
     /// <param name="index">ID of the gesture whose name to set.</param>
     /// <param name="name">The new name of the gesture.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool setGestureName(int index, string name)
+    public int setGestureName(int index, string name)
     {
-        return GestureRecognition_setGestureName(m_gro, index, name) != 0;
+        return GestureRecognition_setGestureName(m_gro, index, name);
     }
     //                                                          ________________________________
     //_________________________________________________________/      saveToFile()
@@ -1280,11 +1310,11 @@ public class GestureRecognition
     /// <param name="from_gesture_index">The index(ID) of the gesture(on the other GRO) to import.</param>
     /// <param name="into_gesture_index">The index (ID) of the gesture (on this object) to which the samples should be added.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool importGestureSamples(GestureRecognition from_gro, int from_gesture_index, int into_gesture_index)
+    public int importGestureSamples(GestureRecognition from_gro, int from_gesture_index, int into_gesture_index)
     {
-        return GestureRecognition_importGestureSamples(m_gro, from_gro.m_gro, from_gesture_index, into_gesture_index) != 0;
+        return GestureRecognition_importGestureSamples(m_gro, from_gro.m_gro, from_gesture_index, into_gesture_index);
     }
     //                                                          ________________________________
     //_________________________________________________________/     importGestures()
@@ -1294,11 +1324,11 @@ public class GestureRecognition
     /// </summary>
     /// <param name="from_gro">The GestureRecognitionObject from where to import gestures.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool importGestures(GestureRecognition from_gro)
+    public int importGestures(GestureRecognition from_gro)
     {
-        return GestureRecognition_importGestures(m_gro, from_gro.m_gro) != 0;
+        return GestureRecognition_importGestures(m_gro, from_gro.m_gro);
     }
     //                                                          ________________________________
     //_________________________________________________________/      startTraining()
@@ -1309,12 +1339,11 @@ public class GestureRecognition
     /// and identify future gestures.
     /// </summary>
     /// <returns>
-    /// False if starting the learning process failed, true if the learning process
-    /// was successfully started.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool startTraining()
+    public int startTraining()
     {
-        return GestureRecognition_startTraining(m_gro) != 0;
+        return GestureRecognition_startTraining(m_gro);
     }
     //                                                          ________________________________
     //_________________________________________________________/       isTraining()
@@ -1323,8 +1352,8 @@ public class GestureRecognition
     /// gesture identification.
     /// </summary>
     /// <returns>
-    /// False if the gesture recognition library is NOT currently in the learning process,
-    /// true if it is learning.
+    /// True if the gesture recognition library is currently in the learning process,
+    /// false if not.
     /// </returns>
     public bool isTraining()
     {
@@ -1444,16 +1473,20 @@ public class GestureRecognition
     [DllImport(libfile, EntryPoint = "GestureRecognition_endStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_endStroke(IntPtr gro, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
     [DllImport(libfile, EntryPoint = "GestureRecognition_endStrokeAndGetAllProbabilities", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_endStrokeAndGetAllProbabilities(IntPtr gro, double[] p, int n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
+    public static extern int GestureRecognition_endStrokeAndGetAllProbabilities(IntPtr gro, double[] p, int[] n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
     [DllImport(libfile, EntryPoint = "GestureRecognition_endStrokeAndGetSimilarity", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_endStrokeAndGetSimilarity(IntPtr gro, double[] similarity, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
     [DllImport(libfile, EntryPoint = "GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] p, double[] s, int n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
+    public static extern int GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] p, double[] s, int[] n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_isStrokeStarted", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_isStrokeStarted(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_cancelStroke(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentify", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_contdIdentify(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] similarity);
-    [DllImport(libfile, EntryPoint = "GestureRecognition_contdRecord", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] p, double[] s, int[] n);
+   [DllImport(libfile, EntryPoint = "GestureRecognition_contdRecord", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_contdRecord(IntPtr gro, double[] hmd_p, double[] hmd_q);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getContdIdentificationPeriod(IntPtr gro);

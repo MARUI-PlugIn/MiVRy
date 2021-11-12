@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SubmenuGestureButton : MonoBehaviour
+public class SubmenuGestureButton : MonoBehaviour, GestureManagerButton
 {
     public TextMesh gestureNameText;
     public TextMesh gestureSamplesText;
@@ -22,6 +22,9 @@ public class SubmenuGestureButton : MonoBehaviour
 
     private SubmenuGesture submenuGesture;
 
+    [SerializeField] private Material inactiveButtonMaterial;
+    [SerializeField] private Material activeButtonMaterial;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +38,10 @@ public class SubmenuGestureButton : MonoBehaviour
             return;
         if (GestureManagerVR.isGesturing)
             return;
+        if (GestureManagerVR.activeButton != null)
+            return;
+        GestureManagerVR.activeButton = this;
+        this.GetComponent<Renderer>().material = activeButtonMaterial;
         switch (this.operation)
         {
             case Operation.CreateGesture:
@@ -145,6 +152,20 @@ public class SubmenuGestureButton : MonoBehaviour
                 break;
         }
         GestureManagerVR.setInputFocus(null);
-        this.submenuGesture.refesh();
+        this.submenuGesture.refresh();
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.name.EndsWith("pointer") && (Object)GestureManagerVR.activeButton == this)
+            GestureManagerVR.activeButton = null;
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+    }
+
+    private void OnDisable()
+    {
+        if ((Object)GestureManagerVR.activeButton == this)
+            GestureManagerVR.activeButton = null;
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
     }
 }

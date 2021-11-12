@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  *
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -50,25 +50,25 @@ struct FMiVRyGesturePart
 	* Which side (hand) performed this gesture part.
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
-    GestureRecognition_Side Side;
+    GestureRecognition_Side Side = GestureRecognition_Side::Left;
 
 	/**
 	* The location where the gesture part was performed.
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
-	FVector Position;
+	FVector Position = FVector::ZeroVector;
 
 	/**
 	* The orientation/direction in whicht the gesture part was performed.
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
-	FRotator Rotation;
+	FRotator Rotation = FRotator{0,0,0};
 
 	/**
 	* The size / scale at which the gesture part was performed.
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
-	float Scale;
+	float Scale = 0;
 
 	/**
 	* Primary axis along which the gesture was performed.
@@ -76,7 +76,7 @@ struct FMiVRyGesturePart
 	* will have the primary direction "downwards".
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
-	FVector PrimaryDirection;
+	FVector PrimaryDirection = FVector::ForwardVector;
 
 	/**
 	* Secondary axis along which the gesture was performed.
@@ -84,13 +84,13 @@ struct FMiVRyGesturePart
 	* will have the secondary direction "right".
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
-	FVector SecondaryDirection;
+	FVector SecondaryDirection = FVector::RightVector;
 
 	/**
 	* The gesture ID (index) of this part.
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
-	int PartGestureID;
+	int PartGestureID = -1;
 };
 
 

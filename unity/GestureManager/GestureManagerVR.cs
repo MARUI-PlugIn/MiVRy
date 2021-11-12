@@ -21,6 +21,8 @@ public class GestureManagerVR : MonoBehaviour
     private GameObject submenuRecord = null;
     private GameObject submenuTraining = null;
 
+    public static GestureManagerButton activeButton = null;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -149,7 +151,7 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuFileSuggestions.SetActive(true);
             me.submenuFileSuggestions.GetComponent<SubmenuFileSuggestions>().refresh();
             me.submenuGesture.SetActive(true);
-            me.submenuGesture.GetComponent<SubmenuGesture>().refesh();
+            me.submenuGesture.GetComponent<SubmenuGesture>().refresh();
             me.submenuCombination.SetActive(false);
             me.submenuRecord.SetActive(true);
             me.submenuRecord.GetComponent<SubmenuRecord>().refresh();
@@ -165,7 +167,7 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuFileSuggestions.SetActive(true);
             me.submenuFileSuggestions.GetComponent<SubmenuFileSuggestions>().refresh();
             me.submenuGesture.SetActive(true);
-            me.submenuGesture.GetComponent<SubmenuGesture>().refesh();
+            me.submenuGesture.GetComponent<SubmenuGesture>().refresh();
             me.submenuCombination.SetActive(true);
             me.submenuCombination.GetComponent<SubmenuCombination>().refresh();
             me.submenuRecord.SetActive(true);
@@ -213,5 +215,40 @@ public class GestureManagerVR : MonoBehaviour
                 return false;
             return me.gestureManager.gesture_started;
         }
+    }
+
+    public static bool setSubmenuGesture(int gesture_id)
+    {
+        if (me == null || me.submenuGesture == null)
+            return false;
+        GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().CurrentGesture = gesture_id;
+        GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().refresh();
+        return true;
+    }
+
+    public static bool setSubmenuCombination(int combination_id, int part=-1, int gesture_id=-1)
+    {
+        if (me == null || me.submenuCombination == null || me.gestureManager == null || me.gestureManager.gc == null)
+            return false;
+        if (gesture_id<0)
+        {
+            for (part = me.gestureManager.gc.numberOfParts()-1; part >=0 ; part--)
+            {
+                gesture_id = me.gestureManager.gc.getCombinationPartGesture(combination_id, part);
+                if (gesture_id >= 0)
+                    break;
+            }
+        }
+        GestureManagerVR.me.submenuCombination.GetComponent<SubmenuCombination>().CurrentCombination = combination_id;
+        GestureManagerVR.me.submenuCombination.GetComponent<SubmenuCombination>().CurrentPart = part;
+        GestureManagerVR.me.submenuCombination.GetComponent<SubmenuCombination>().CurrentGesture = gesture_id;
+        GestureManagerVR.me.submenuCombination.GetComponent<SubmenuCombination>().refresh();
+        if (me.submenuGesture != null)
+        {
+            GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().CurrentGesture = gesture_id;
+            GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().CurrentPart = part;
+            GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().refresh();
+        }
+        return true;
     }
 }

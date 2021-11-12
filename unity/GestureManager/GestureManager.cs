@@ -90,10 +90,10 @@ public class GestureManager : MonoBehaviour
     public int file_load_subgestures_i = 0;
     public string file_load_gestures = "Samples/Sample_OneHanded_Gestures.dat";
     public string file_import_gestures = "Samples/Sample_Pixie_Gestures.dat";
-    public string file_save_combinations = "Sample_TwoHanded_MyGestures.dat";
-    // public string file_save_subgestures = "Sample_TwoHanded_MyGesturesLeft.dat";
+    public string file_save_combinations = "Samples/Sample_TwoHanded_MyGestures.dat";
+    // public string file_save_subgestures = "Samples/Sample_TwoHanded_MyGesturesLeft.dat";
     // public int file_save_subgestures_i = 0;
-    public string file_save_gestures = "Sample_OneHanded_MyGestures.dat";
+    public string file_save_gestures = "Samples/Sample_OneHanded_MyGestures.dat";
 
     public string create_combination_name = "(new gesture combination name)";
     public string create_gesture_name = "(new gesture name)";

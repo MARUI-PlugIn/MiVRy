@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  *
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -143,7 +143,7 @@ public:
 	* @param GesturePosition The position where the gesture was performed.
 	* @param GestureRotation The direction/rotation in which the gesture was performed.
 	* @param GestureScale The scale (size) at which the gesture was performed.
-	* @return The ID of the gesture identified, a negative error code on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "End Stroke and get all Probabilities"))
 	int endStrokeAndGetAllProbabilities(TArray<float>& Probabilities, FVector& GesturePosition, FRotator& GestureRotation, float& GestureScale);
@@ -154,7 +154,7 @@ public:
 	* @param GesturePosition The position where the gesture was performed.
 	* @param GestureRotation The direction/rotation in which the gesture was performed.
 	* @param GestureScale The scale (size) at which the gesture was performed.
-	* @return The ID of the gesture identified, a negative error code on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "End Stroke and get all Probabilities"))
 	int endStrokeAndGetAllProbabilitiesQ(TArray<float>& Probabilities, FVector& GesturePosition, FQuat& GestureRotation, float& GestureScale);
@@ -167,7 +167,7 @@ public:
 	* @param GesturePosition The position where the gesture was performed.
 	* @param GestureRotation The direction/rotation in which the gesture was performed.
 	* @param GestureScale The scale (size) at which the gesture was performed.
-	* @return The ID of the gesture identified, a negative error code on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "End Stroke and get all Probabilities and Similarities"))
 	int endStrokeAndGetAllProbabilitiesAndSimilarities(TArray<float>& Probabilities, TArray<float>& Similarities, FVector& GesturePosition, FRotator& GestureRotation, float& GestureScale);
@@ -180,10 +180,16 @@ public:
 	* @param GesturePosition The position where the gesture was performed.
 	* @param GestureRotation The direction/rotation in which the gesture was performed.
 	* @param GestureScale The scale (size) at which the gesture was performed.
-	* @return The ID of the gesture identified, a negative error code on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "End Stroke and get all Probabilities and Similarities"))
 	int endStrokeAndGetAllProbabilitiesAndSimilaritiesQ(TArray<float>& Probabilities, TArray<float>& Similarities, FVector& GesturePosition, FQuat& GestureRotation, float& GestureScale);
+
+	/**
+	* Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+	* \return   True if a gesture motion (stroke) was started and is ongoing, false if not.
+	*/
+	bool isStrokeStarted();
 	
 	/**
 	* Cancel a started gesture motion.
@@ -210,10 +216,10 @@ public:
 	* @param HMD_Rotation Current orientation/rotation of the headset.
 	* @param Probabilities Probability estimates for each registered gesture that the performed motion was this gesture.
 	* @param Similarities Similarity of the performed gesture motion with each registered gesture (0~1).
-	* @return The Gesture ID/index of the identified gesture, a negative error code on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Continuous Identify Gesture and get all Probabilities and Similarities"))
-	int contdIdentifyAllProbabilitiesAndSimilarities(const FVector& HMD_Position, const FRotator& HMD_Rotation, TArray<float>& Probabilities, TArray<float>& Similarities);
+	int contdIdentifyAndGetAllProbabilitiesAndSimilarities(const FVector& HMD_Position, const FRotator& HMD_Rotation, TArray<float>& Probabilities, TArray<float>& Similarities);
 
 	/**
 	* Continuous gesture recording.
@@ -280,7 +286,7 @@ public:
 	/**
 	* Create new gesture.
 	* @param name Name of the new gesture.
-	* @return Zero on success, an error code on failure.
+	* @return The ID of the newly created gesture, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Create New Gesture"))
 	int createGesture(const FString& name);

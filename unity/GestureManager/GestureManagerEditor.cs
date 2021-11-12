@@ -132,37 +132,37 @@ public class GestureManagerEditor : UnityEditor.Editor
                 string new_gesture_name = EditorGUILayout.TextField(gesture_name);
                 if (gesture_name != new_gesture_name)
                 {
-                    bool success = gm.gr.setGestureName(i, new_gesture_name);
-                    if (!success)
+                    int ret = gm.gr.setGestureName(i, new_gesture_name);
+                    if (ret != 0)
                     {
-                        Debug.Log("[ERROR] Failed to rename gesture.");
+                        Debug.Log("[ERROR] Failed to rename gesture: " + GestureRecognition.getErrorMessage(ret));
                     }
                 }
                 EditorGUILayout.LabelField(gesture_samples.ToString() + " samples", GUILayout.Width(70));
                 if (GUILayout.Button("Delete Last Sample"))
                 {
-                    bool success = gm.gr.deleteGestureSample(i, gesture_samples-1);
-                    if (!success)
+                    int ret = gm.gr.deleteGestureSample(i, gesture_samples-1);
+                    if (ret != 0)
                     {
-                        Debug.Log("[ERROR] Failed to delete gesture sample.");
+                        Debug.Log("[ERROR] Failed to delete gesture sample: " + GestureRecognition.getErrorMessage(ret));
                     }
 
                 }
                 if (GUILayout.Button("Delete All Samples"))
                 {
-                    bool success = gm.gr.deleteAllGestureSamples(i);
-                    if (!success)
+                    int ret = gm.gr.deleteAllGestureSamples(i);
+                    if (ret != 0)
                     {
-                        Debug.Log("[ERROR] Failed to delete gesture samples.");
+                        Debug.Log("[ERROR] Failed to delete gesture samples: " + GestureRecognition.getErrorMessage(ret));
                     }
 
                 }
                 if (GUILayout.Button("Delete Gesture"))
                 {
-                    bool success = gm.gr.deleteGesture(i);
-                    if (!success)
+                    int ret = gm.gr.deleteGesture(i);
+                    if (ret != 0)
                     {
-                        Debug.Log("[ERROR] Failed to delete gesture.");
+                        Debug.Log("[ERROR] Failed to delete gesture: " + GestureRecognition.getErrorMessage(ret));
                     }
 
                 }
@@ -189,12 +189,15 @@ public class GestureManagerEditor : UnityEditor.Editor
                 if (ret != 0)
                 {
                     Debug.Log($"[ERROR] Failed to load gesture file ({ret}).");
-                } else if (gm.gr.importGestures(importGR))
-                {
-                    Debug.Log("Gesture file imported successfully");
-                } else
-                {
-                    Debug.Log("[ERROR] Failed to import gesture file.");
+                } else {
+                    ret = gm.gr.importGestures(importGR);
+                    if (ret != 0)
+                    {
+                        Debug.Log($"[ERROR] Failed to import gesture file ({ret})");
+                    } else
+                    {
+                        Debug.Log("Gesture file imported successfully");
+                    }
                 }
             }
         }
@@ -209,18 +212,18 @@ public class GestureManagerEditor : UnityEditor.Editor
                 string new_combination_name = EditorGUILayout.TextField(combination_name);
                 if (combination_name != new_combination_name)
                 {
-                    bool success = gm.gc.setGestureCombinationName(combination_id, new_combination_name);
-                    if (!success)
+                    int ret = gm.gc.setGestureCombinationName(combination_id, new_combination_name);
+                    if (ret != 0)
                     {
-                        Debug.Log("[ERROR] Failed to rename GestureCombination.");
+                        Debug.Log("[ERROR] Failed to rename GestureCombination: " + GestureRecognition.getErrorMessage(ret));
                     }
                 }
                 if (GUILayout.Button("Delete"))
                 {
-                    bool success = gm.gc.deleteGestureCombination(combination_id);
-                    if (!success)
+                    int ret = gm.gc.deleteGestureCombination(combination_id);
+                    if (ret != 0)
                     {
-                        Debug.Log("[ERROR] Failed to delete gesture.");
+                        Debug.Log("[ERROR] Failed to delete gesture: " + GestureRecognition.getErrorMessage(ret));
                     }
 
                 }
@@ -241,10 +244,10 @@ public class GestureManagerEditor : UnityEditor.Editor
                     GUILayout.EndHorizontal();
                     if (new_connected_gesture_id != connected_gesture_id)
                     {
-                        bool success = gm.gc.setCombinationPartGesture(combination_id, i, new_connected_gesture_id);
-                        if (!success)
+                        int ret = gm.gc.setCombinationPartGesture(combination_id, i, new_connected_gesture_id);
+                        if (ret != 0)
                         {
-                            Debug.Log("[ERROR] Failed to change GestureCombination.");
+                            Debug.Log("[ERROR] Failed to change GestureCombination: " + GestureRecognition.getErrorMessage(ret));
                         }
                     }
                 }
@@ -275,35 +278,35 @@ public class GestureManagerEditor : UnityEditor.Editor
                     string new_gesture_name = EditorGUILayout.TextField(gesture_name);
                     if (gesture_name != new_gesture_name)
                     {
-                        bool success = gm.gc.setGestureName(part, i, new_gesture_name);
-                        if (!success)
+                        int ret = gm.gc.setGestureName(part, i, new_gesture_name);
+                        if (ret != 0)
                         {
-                            Debug.Log("[ERROR] Failed to rename gesture.");
+                            Debug.Log("[ERROR] Failed to rename gesture: " + GestureRecognition.getErrorMessage(ret));
                         }
                     }
                     EditorGUILayout.LabelField(gesture_samples.ToString() + " samples", GUILayout.Width(70));
                     if (GUILayout.Button("Delete Last Sample"))
                     {
-                        bool success = gm.gc.deleteGestureSample(part, i, gesture_samples-1);
-                        if (!success)
+                        int ret = gm.gc.deleteGestureSample(part, i, gesture_samples-1);
+                        if (ret != 0)
                         {
-                            Debug.Log("[ERROR] Failed to delete gesture sample.");
+                            Debug.Log("[ERROR] Failed to delete gesture sample: " + GestureRecognition.getErrorMessage(ret));
                         }
                     }
                     if (GUILayout.Button("Delete All Samples"))
                     {
-                        bool success = gm.gc.deleteAllGestureSamples(part, i);
-                        if (!success)
+                        int ret = gm.gc.deleteAllGestureSamples(part, i);
+                        if (ret != 0)
                         {
-                            Debug.Log("[ERROR] Failed to delete gesture samples.");
+                            Debug.Log("[ERROR] Failed to delete gesture samples: " + GestureRecognition.getErrorMessage(ret));
                         }
                     }
                     if (GUILayout.Button("Delete"))
                     {
-                        bool success = gm.gc.deleteGesture(part, i);
-                        if (!success)
+                        int ret = gm.gc.deleteGesture(part, i);
+                        if (ret != 0)
                         {
-                            Debug.Log("[ERROR] Failed to delete gesture.");
+                            Debug.Log("[ERROR] Failed to delete gesture: " + GestureRecognition.getErrorMessage(ret));
                         }
                     }
                     GUILayout.EndHorizontal();
@@ -425,8 +428,16 @@ public class GestureManagerEditor : UnityEditor.Editor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
             {
-                gm.training_started = gm.gr.startTraining();
-                Debug.Log((gm.training_started ? "Training successfully started" : "[ERROR] Failed to start training."));
+                int ret = gm.gr.startTraining();
+                if (ret == 0)
+                {
+                    gm.training_started = true;
+                    Debug.Log("Training started");
+                } else
+                {
+                    gm.training_started = false;
+                    Debug.Log("[ERROR] Failed to start training: " + GestureRecognition.getErrorMessage(ret));
+                }
             }
             if (GUILayout.Button("Stop training"))
             {
@@ -440,8 +451,17 @@ public class GestureManagerEditor : UnityEditor.Editor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
             {
-                gm.training_started = gm.gc.startTraining();
-                Debug.Log((gm.training_started ? "Training successfully started" : "[ERROR] Failed to start training."));
+                int ret = gm.gc.startTraining();
+                if (ret == 0)
+                {
+                    gm.training_started = true;
+                    Debug.Log("Training started");
+                }
+                else
+                {
+                    gm.training_started = false;
+                    Debug.Log("[ERROR] Failed to start training: " + GestureRecognition.getErrorMessage(ret));
+                }
             }
             if (GUILayout.Button("Stop training"))
             {

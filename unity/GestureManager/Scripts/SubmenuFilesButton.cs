@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-public class SubmenuFilesButton : MonoBehaviour
+public class SubmenuFilesButton : MonoBehaviour, GestureManagerButton
 {
     [System.Serializable]
     public enum Operation {
@@ -15,17 +15,8 @@ public class SubmenuFilesButton : MonoBehaviour
     };
     public Operation operation;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
+    [SerializeField] private Material inactiveButtonMaterial;
+    [SerializeField] private Material activeButtonMaterial;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -34,6 +25,10 @@ public class SubmenuFilesButton : MonoBehaviour
             return;
         if (GestureManagerVR.isGesturing)
             return;
+        if (GestureManagerVR.activeButton != null)
+            return;
+        GestureManagerVR.activeButton = this;
+        this.GetComponent<Renderer>().material = activeButtonMaterial;
         switch (this.operation)
         {
             case Operation.LoadGestureFile:
@@ -76,5 +71,19 @@ public class SubmenuFilesButton : MonoBehaviour
         }
         GestureManagerVR.setInputFocus(null);
         GestureManagerVR.refresh();
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.name.EndsWith("pointer") && (Object)GestureManagerVR.activeButton == this)
+            GestureManagerVR.activeButton = null;
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+    }
+
+    private void OnDisable()
+    {
+        if ((Object)GestureManagerVR.activeButton == this)
+            GestureManagerVR.activeButton = null;
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
     }
 }

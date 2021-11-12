@@ -23,7 +23,7 @@ public class SubmenuGesture : MonoBehaviour
     public int CurrentPart
     {
         get { return currentPart; }
-        set { currentPart = value; refesh(); }
+        set { currentPart = value; refresh(); }
     }
 
     private int currentGesture = -1;
@@ -31,13 +31,13 @@ public class SubmenuGesture : MonoBehaviour
     public int CurrentGesture
     {
         get { return currentGesture; }
-        set { currentGesture = value; refesh(); }
+        set { currentGesture = value; refresh(); }
     }
 
     void Start()
     {
         this.init();
-        this.refesh();
+        this.refresh();
     }
 
     private void init()
@@ -88,7 +88,7 @@ public class SubmenuGesture : MonoBehaviour
         this.initialized = true;
     }
 
-    public void refesh()
+    public void refresh()
     {
         if (!this.initialized)
             this.init();

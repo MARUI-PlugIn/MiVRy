@@ -1,6 +1,6 @@
 /*
  * GestureCombinations - VR gesture recognition library for multi-part gesture combinations.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -155,6 +155,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeE(void* gco, int part, const double p[3], const double r[3]); //!< Continue stroke data input - rotation as Euler angles (rad).
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeM(void* gco, int part, const double m[4][4]); //!< Continue stroke data input - position and rotation as transformation matrix.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_endStroke(void* gco, int part, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and identify the gesture.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_isStrokeStarted(void* gco, int part); //!< Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_cancelStroke(void* gco, int part); //!< Cancel a started stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_identifyGestureCombination(void* gco, double* similarity); //!< Return the most likely gesture candidate for the previous multi-gesture.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0); //!< Continuous gesture identification.
@@ -315,16 +316,22 @@ public:
     virtual int contdStrokeM(int part, const double m[4][4])=0;
 
     /**
-    * End the stroke (gesture motion) and identify the gesture.
+    * End the stroke (gesture motion) of one sub-gesture (part/side).
     * \param    part            The sub-gesture index (or side) of the gesture motion.
     * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
     * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
     * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
     * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
     * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
-    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
+    * \return                   Zero on success, or a negative error code on failure.
     */
     virtual int endStroke(int part, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
+    * Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+    * \return   True if a gesture motion (stroke) was started and is ongoing, false if not.
+    */
+    virtual bool isStrokeStarted(int part)=0;
 
     /**
     * Cancel a started stroke (gesture motion).
@@ -399,23 +406,23 @@ public:
     * Delete the recorded gesture with the specified index.
     * \param    part            The sub-gesture index (or side).
     * \param    index           The ID of the gesture to delete.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool deleteGesture(int part, int index)=0;
+    virtual int deleteGesture(int part, int index)=0;
 
     /**
     * Delete all recorded gestures of one sub-gesture (eg. side).
     * \param    part            The sub-gesture index (or side).
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool deleteAllGestures(int part)=0;
+    virtual int deleteAllGestures(int part)=0;
 
     /**
     * Create new gesture.
     * \param    part            The sub-gesture index (or side).
     * \param    name            The name for the new gesture.
     * \param    metadata        [OPTIONAL] Metadata to be associated with the gesture.
-    * \return  New gesture ID or -1 on failure.
+    * \return  New gesture ID or a negative error code on failure.
     */
     virtual int createGesture(int part, const char*  name, IGestureRecognition::Metadata* metadata=0)=0;
 
@@ -532,34 +539,34 @@ public:
     * \param   part            The sub-gesture index (or side).
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to delete the sample.
     * \param   sample_index    The zero-based index (ID) of the sample to delete.
-    * \return                  True on success, false on failure.
+    * \return                  Zero on success, a negative error code on failure.
     */
-    virtual bool deleteGestureSample(int part, int gesture_index, int sample_index)=0;
+    virtual int deleteGestureSample(int part, int gesture_index, int sample_index)=0;
 
     /**
     * Delete all gesture sample recordings from the set.
     * \param   part            The sub-gesture index (or side).
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to delete the sample.
-    * \return                  True on success, false on failure.
+    * \return                  Zero on success, a negative error code on failure.
     */
-    virtual bool deleteAllGestureSamples(int part, int gesture_index)=0;
+    virtual int deleteAllGestureSamples(int part, int gesture_index)=0;
 
     /**
     * Set the name of a registered gesture.
     * \param    part        The sub-gesture index (or side).
     * \param    index       The zero-based index (ID) of the gesture to rename.
     * \param    name        The new name for the gesture.
-    * \return               True on success, false on failure.
+    * \return               Zero on success, a negative error code on failure.
     */
-    virtual bool setGestureName(int part, int index, const char* name)=0;
+    virtual int setGestureName(int part, int index, const char* name)=0;
 
     /**
     * Set the metadata of a registered gesture.
     * \param    part            The sub-gesture index (or side).
     * \param    metadata        The new metadata to be stored with the gesture.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool setGestureMetadata(int part, int index, IGestureRecognition::Metadata* metadata)=0;
+    virtual int setGestureMetadata(int part, int index, IGestureRecognition::Metadata* metadata)=0;
 
     /**
     * Save the neural network and recorded training data to file.
@@ -663,15 +670,15 @@ public:
     /**
     * Delete the recorded gesture combination with the specified index.
     * \param    index           The ID (zero-based index) of the gesture combination to delete.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool deleteGestureCombination(int index)=0;
+    virtual int deleteGestureCombination(int index)=0;
 
     /**
     * Delete all gesture combinations.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool deleteAllGestureCombinations()=0;
+    virtual int deleteAllGestureCombinations()=0;
 
     /**
     * Create new gesture combination.
@@ -685,9 +692,9 @@ public:
     * \param    combination_index The gesture combination ID.
     * \param    part            The sub-gesture index (or side).
     * \param    gesture_index   The gesture ID on the i's part which to be set as expected gesture for this part(side).
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool setCombinationPartGesture(int combination_index, int part, int gesture_index)=0;
+    virtual int setCombinationPartGesture(int combination_index, int part, int gesture_index)=0;
 
     /**
     * Get which gesture this multi-gesture expects for step i.
@@ -724,15 +731,15 @@ public:
     * Set the name of a registered multi-gesture.
     * \param    index           The gesture combination ID.
     * \param    name            The new name for the gesture combination.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool setGestureCombinationName(int index, const char* name)=0;
+    virtual int setGestureCombinationName(int index, const char* name)=0;
 
     /**
     * Start train the Neural Network based on the the currently collected data.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool startTraining()=0;
+    virtual int startTraining()=0;
 
     /**
     * Whether the Neural Network is currently training.

@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  *
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -84,7 +84,7 @@ int AGestureCombinationsActor::startStroke(int part, const FVector& HMD_Position
 int AGestureCombinationsActor::startStrokeQ(int part, const FVector& HMD_Position, const FQuat& HMD_Rotation, int record_as_sample)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	double p[3];
 	double q[4];
 	if (this->UnityCombatibilityMode) {
@@ -116,7 +116,7 @@ int AGestureCombinationsActor::contdStroke(int part, const FVector& HandPosition
 int AGestureCombinationsActor::contdStrokeQ(int part, const FVector& HandPosition, const FQuat& HandRotation)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	double p[3];
 	double q[4];
 	if (this->UnityCombatibilityMode) {
@@ -150,7 +150,7 @@ int AGestureCombinationsActor::endStroke(int part, FVector& GesturePosition, FRo
 int AGestureCombinationsActor::endStrokeQ(int part, FVector& GesturePosition, FQuat& GestureRotation, float& GestureScale)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	double pos[3] = {0,0,0};
 	double scale = 1;
 	double dir0[3] = {1,0,0};
@@ -194,10 +194,18 @@ int AGestureCombinationsActor::endStrokeQ(int part, FVector& GesturePosition, FQ
 }
 
 
+bool AGestureCombinationsActor::isStrokeStarted(int part)
+{
+	if (!this->gco)
+		return false;
+	return this->gco->isStrokeStarted(part);
+}
+
+
 int AGestureCombinationsActor::cancelStroke(int part)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->cancelStroke(part);
 }
 
@@ -205,7 +213,7 @@ int AGestureCombinationsActor::cancelStroke(int part)
 int AGestureCombinationsActor::identifyGestureCombination(float& similarity)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	double s = 0;
 	int ret = this->gco->identifyGestureCombination(&s);
 	similarity = (float)s;
@@ -215,7 +223,7 @@ int AGestureCombinationsActor::identifyGestureCombination(float& similarity)
 int AGestureCombinationsActor::contdIdentify(const FVector& HMD_Location, const FRotator& HMD_Rotation, float& Similarity)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	FQuat quaternion = HMD_Rotation.Quaternion();
 	return this->contdIdentifyQ(HMD_Location, quaternion, Similarity);
 }
@@ -223,7 +231,7 @@ int AGestureCombinationsActor::contdIdentify(const FVector& HMD_Location, const 
 int AGestureCombinationsActor::contdIdentifyQ(const FVector& HMD_Location, const FQuat& HMD_Rotation, float& Similarity)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	double hmd_p[3];
 	double hmd_q[4];
 	if (this->UnityCombatibilityMode) {
@@ -252,7 +260,7 @@ int AGestureCombinationsActor::contdIdentifyQ(const FVector& HMD_Location, const
 int AGestureCombinationsActor::contdRecord(const FVector& HMD_Location, const FRotator& HMD_Rotation)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	FQuat quaternion = HMD_Rotation.Quaternion();
 	return this->contdRecordQ(HMD_Location, quaternion);
 }
@@ -260,7 +268,7 @@ int AGestureCombinationsActor::contdRecord(const FVector& HMD_Location, const FR
 int AGestureCombinationsActor::contdRecordQ(const FVector& HMD_Location, const FQuat& HMD_Rotation)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	double hmd_p[3];
 	double hmd_q[4];
 	if (this->UnityCombatibilityMode) {
@@ -286,51 +294,51 @@ int AGestureCombinationsActor::contdRecordQ(const FVector& HMD_Location, const F
 int AGestureCombinationsActor::getContdIdentificationPeriod(int part)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->getContdIdentificationPeriod(part);
 }
 
 int AGestureCombinationsActor::setContdIdentificationPeriod(int part, int ms)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->setContdIdentificationPeriod(part, ms);
 }
 
 int AGestureCombinationsActor::getContdIdentificationSmoothing(int part)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->getContdIdentificationSmoothing(part);
 }
 
 int AGestureCombinationsActor::setContdIdentificationSmoothing(int part, int samples)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->setContdIdentificationSmoothing(part, samples);
 }
 
 int AGestureCombinationsActor::numberOfGestures(int part)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->numberOfGestures(part);
 }
 
 
-bool AGestureCombinationsActor::deleteGesture(int part, int index)
+int AGestureCombinationsActor::deleteGesture(int part, int index)
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	return this->gco->deleteGesture(part, index);
 }
 
 
-bool AGestureCombinationsActor::deleteAllGestures(int part)
+int AGestureCombinationsActor::deleteAllGestures(int part)
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	return this->gco->deleteAllGestures(part);
 }
 
@@ -338,7 +346,7 @@ bool AGestureCombinationsActor::deleteAllGestures(int part)
 int AGestureCombinationsActor::createGesture(int part, const FString& name)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	const char* name_str = TCHAR_TO_ANSI(*name);
 	return this->gco->createGesture(part, name_str, nullptr);
 }
@@ -347,7 +355,7 @@ int AGestureCombinationsActor::createGesture(int part, const FString& name)
 int AGestureCombinationsActor::copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x, bool mirror_y, bool mirror_z)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->copyGesture(from_part, from_gesture_index, to_part, to_gesture_index, mirror_x, mirror_y, mirror_z);
 }
 
@@ -355,7 +363,7 @@ int AGestureCombinationsActor::copyGesture(int from_part, int from_gesture_index
 float AGestureCombinationsActor::gestureRecognitionScore(int part, bool all_samples)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return (float)this->gco->gestureRecognitionScore(part, all_samples);
 }
 
@@ -370,21 +378,21 @@ FString AGestureCombinationsActor::getGestureName(int part, int index)
 int AGestureCombinationsActor::getGestureNumberOfSamples(int part, int index)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->getGestureNumberOfSamples(part, index);
 }
 
 int AGestureCombinationsActor::getGestureSampleLength(int part, int gesture_index, int sample_index, bool processed)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->getGestureSampleLength(part, gesture_index, sample_index, processed);
 }
 
 int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_index, int sample_index, bool processed, FVector& HMD_Location, FRotator& HMD_Rotation, TArray<FVector>& Locations, TArray<FRotator>& Rotations)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	
 	int sample_len = this->gco->getGestureSampleLength(part, gesture_index, sample_index, processed);
 	if (sample_len <= 0)
@@ -397,7 +405,7 @@ int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_inde
 	if (ret < 0) {
 		delete[] p;
 		delete[] q;
-		return -1;
+		return ret;
 	}
 	const int len = (sample_len < ret) ? sample_len : ret;
 	Locations.SetNum(len);
@@ -450,14 +458,14 @@ int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_inde
 int AGestureCombinationsActor::getGestureMeanLength(int part, int gesture_index)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->getGestureMeanLength(part, gesture_index);
 }
 
 int AGestureCombinationsActor::getGestureMeanStroke(int part, int gesture_index, TArray<FVector>& Locations, TArray<FRotator>& Rotations, FVector& GestureLocation, FRotator& GestureRotation, float& GestureScale)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 
 	int mean_len = this->gco->getGestureMeanLength(part, gesture_index);
 	if (mean_len <= 0)
@@ -473,7 +481,7 @@ int AGestureCombinationsActor::getGestureMeanStroke(int part, int gesture_index,
 		delete[] q;
 		Locations.Empty(0);
 		Rotations.Empty(0);
-		return -1;
+		return ret;
 	}
 	FQuat quat;
 	if (this->UnityCombatibilityMode) {
@@ -515,21 +523,21 @@ int AGestureCombinationsActor::getGestureMeanStroke(int part, int gesture_index,
 	return len;
 }
 
-bool AGestureCombinationsActor::deleteGestureSample(int part, int gesture_index, int sample_index)
+int AGestureCombinationsActor::deleteGestureSample(int part, int gesture_index, int sample_index)
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	return this->gco->deleteGestureSample(part, gesture_index, sample_index);
 }
 
-bool AGestureCombinationsActor::deleteAllGestureSamples(int part, int gesture_index)
+int AGestureCombinationsActor::deleteAllGestureSamples(int part, int gesture_index)
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	return this->gco->deleteAllGestureSamples(part, gesture_index);
 }
 
-bool AGestureCombinationsActor::setGestureName(int part, int index, const FString& name)
+int AGestureCombinationsActor::setGestureName(int part, int index, const FString& name)
 {
 	if (!this->gco)
 		return false;
@@ -540,7 +548,7 @@ bool AGestureCombinationsActor::setGestureName(int part, int index, const FStrin
 int AGestureCombinationsActor::saveToFile(const FFilePath& path)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	FString path_str = path.FilePath;
 	if (FPaths::IsRelative(path_str)) {
 		path_str = FPaths::Combine(FPaths::ProjectDir(), path_str);
@@ -551,7 +559,7 @@ int AGestureCombinationsActor::saveToFile(const FFilePath& path)
 int AGestureCombinationsActor::loadFromFile(const FFilePath& path)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	FString path_str = path.FilePath;
 	if (FPaths::IsRelative(path_str)) {
 		path_str = FPaths::Combine(FPaths::ProjectDir(), path_str);
@@ -562,7 +570,7 @@ int AGestureCombinationsActor::loadFromFile(const FFilePath& path)
 int AGestureCombinationsActor::importFromFile(const FFilePath& path)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	FString path_str = path.FilePath;
 	if (FPaths::IsRelative(path_str)) {
 		path_str = FPaths::Combine(FPaths::ProjectDir(), path_str);
@@ -573,43 +581,43 @@ int AGestureCombinationsActor::importFromFile(const FFilePath& path)
 int AGestureCombinationsActor::numberOfGestureCombinations()
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->numberOfGestureCombinations();
 }
 
-bool AGestureCombinationsActor::deleteGestureCombination(int index)
+int AGestureCombinationsActor::deleteGestureCombination(int index)
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	return this->gco->deleteGestureCombination(index);
 }
 
-bool AGestureCombinationsActor::deleteAllGestureCombinations()
+int AGestureCombinationsActor::deleteAllGestureCombinations()
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	return this->gco->deleteAllGestureCombinations();
 }
 
 int AGestureCombinationsActor::createGestureCombination(const FString& name)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	const char* name_str = TCHAR_TO_ANSI(*name);
 	return this->gco->createGestureCombination(name_str);
 }
 
-bool AGestureCombinationsActor::setCombinationPartGesture(int combination_index, int part, int gesture_index)
+int AGestureCombinationsActor::setCombinationPartGesture(int combination_index, int part, int gesture_index)
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	return this->gco->setCombinationPartGesture(combination_index, part, gesture_index);
 }
 
 int AGestureCombinationsActor::getCombinationPartGesture(int combination_index, int part)
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return this->gco->getCombinationPartGesture(combination_index, part);
 }
 
@@ -620,19 +628,19 @@ FString AGestureCombinationsActor::getGestureCombinationName(int index)
 	return this->gco->getGestureCombinationName(index);
 }
 
-bool AGestureCombinationsActor::setGestureCombinationName(int index, const FString& name)
+int AGestureCombinationsActor::setGestureCombinationName(int index, const FString& name)
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	const char* name_str = TCHAR_TO_ANSI(*name);
 	return this->gco->setGestureCombinationName(index, name_str);
 }
 
 
-bool AGestureCombinationsActor::startTraining()
+int AGestureCombinationsActor::startTraining()
 {
 	if (!this->gco)
-		return false;
+		return -99;
 	this->gco->trainingUpdateCallback = (IGestureRecognition::TrainingCallbackFunction*)&TrainingCallbackFunction;
 	this->gco->trainingFinishCallback = (IGestureRecognition::TrainingCallbackFunction*)&TrainingCallbackFunction;
 	this->gco->trainingUpdateCallbackMetadata = &this->TrainingUpdateMetadata;
@@ -658,7 +666,7 @@ void AGestureCombinationsActor::stopTraining()
 float AGestureCombinationsActor::recognitionScore()
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return (float)this->gco->recognitionScore();
 }
 
@@ -666,7 +674,7 @@ float AGestureCombinationsActor::recognitionScore()
 int AGestureCombinationsActor::getMaxTrainingTime()
 {
 	if (!this->gco)
-		return -1;
+		return -99;
 	return (int)this->gco->getMaxTrainingTime();
 }
 

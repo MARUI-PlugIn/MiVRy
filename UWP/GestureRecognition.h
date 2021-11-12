@@ -1,6 +1,6 @@
 /*
  * MiVRy - 3D gesture recognition library.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -123,6 +123,9 @@
 #define GESTURERECOGNITION_RESULT_ERROR_NOGESTURES         -9  //!< Return code for: no gestures registered.
 #define GESTURERECOGNITION_RESULT_ERROR_NNINCONSISTENT    -10  //!< Return code for: the neural network is inconsistent - re-training might solve the issue.
 #define GESTURERECOGNITION_RESULT_ERROR_CANNOTOVERWRITE   -11  //!< Return code for: file or object exists and can't be overwritten.
+#define GESTURERECOGNITION_RESULT_ERROR_STROKENOTSTARTED  -12  //!< Return code for: gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).
+#define GESTURERECOGNITION_RESULT_ERROR_STROKENOTENDED    -13  //!< Return code for: gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).
+#define GESTURERECOGNITION_RESULT_ERROR_INTERNALLYCORRUPT -14  //!< Return code for: the gesture recognition/combinations object is internally corrupted or inconsistent.
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -151,12 +154,14 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStrokeE(void* gro, const double p[3], const double r[3]); //!< Continue stroke data input with rotational data in the form of a Euler rotation.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStrokeM(void* gro, const double m[4][4]); //!< Continue stroke data input with a transformation matrix (translation and rotation).
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStroke(void* gro, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and identify the gesture.
-    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilities(void* gro, double p[], int n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilities(void* gro, double p[], int* n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetSimilarity(void* gro, double* similarity, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get similarity value.
-    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(void* gro, double p[], double s[], int n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities and similarity values.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(void* gro, double p[], double s[], int* n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities and similarity values.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_isStrokeStarted(void* gro); //!< Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_cancelStroke(void* gro); //!< Cancel a started stroke.
 
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentify(void* gro, const double hmd_p[3], const double hmd_q[4], double* similarity); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(void* gro, const double hmd_p[3], const double hmd_q[4], double p[], double s[], int* n);
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdRecord(void* gro, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getContdIdentificationPeriod(void* gro); //!< Get time frame for continuous gesture identification in milliseconds.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_setContdIdentificationPeriod(void* gro, int ms); //!< Set time frame for continuous gesture identification in milliseconds.
@@ -257,6 +262,12 @@ public:
         Error_NNInconsistent = GESTURERECOGNITION_RESULT_ERROR_NNINCONSISTENT //!< Return code for: the neural network is inconsistent - re-training might solve the issue.
         ,
         Error_CannotOverwrite = GESTURERECOGNITION_RESULT_ERROR_CANNOTOVERWRITE //!< Return code for: file or object exists and can't be overwritten.
+        ,
+        Error_StrokeNotStarted = GESTURERECOGNITION_RESULT_ERROR_STROKENOTSTARTED //!< Return code for: gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).
+        ,
+        Error_StrokeNotEnded = GESTURERECOGNITION_RESULT_ERROR_STROKENOTENDED //!< Return code for: gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).
+        ,
+        Error_InternallyCorrupted = GESTURERECOGNITION_RESULT_ERROR_INTERNALLYCORRUPT //!< Return code for: the gesture recognition/combinations object is internally corrupted or inconsistent.
     };
 
     /**
@@ -352,15 +363,15 @@ public:
     /**
     * End the stroke (gesture motion) and get gesture probabilities.
     * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
-    * \param    n               The length of the array p.
+    * \param    n               [IN/OUT] The length of the array p. Will be overwritten with the number of probability values actually written into the p array.
     * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
     * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
     * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
     * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
     * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
-    * \return  The number of probability values actually written into the p array, 0 on failure or when a stroke was recorded (recording mode).
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual int endStrokeAndGetAllProbabilities(double p[], int n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+    virtual int endStrokeAndGetAllProbabilities(double p[], int* n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
 
     /**
     * End the stroke (gesture motion) and get similarity value.
@@ -378,15 +389,21 @@ public:
     * End the stroke (gesture motion) and get gesture probabilities and similarity values.
     * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
     * \param    s               [OUT] Array of length n to which to write the similarity values (each 0~1).
-    * \param    n               The length of the arrays p and s.
+    * \param    n               [IN/OUT] The length of the arrays p and s. Will be overwritten with the number of probability values actually written into the p and s arrays.
     * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
     * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
     * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
     * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
     * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
-    * \return  The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual int endStrokeAndGetAllProbabilitiesAndSimilarities(double p[], double s[], int n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+    virtual int endStrokeAndGetAllProbabilitiesAndSimilarities(double p[], double s[], int* n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
+    * Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+    * \return   True if a gesture motion (stroke) was started and is ongoing, false if not.
+    */
+    virtual bool isStrokeStarted()=0;
 
     /**
     * Cancel a started stroke (gesture motion).
@@ -409,10 +426,10 @@ public:
     * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
     * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
     * \param    s               [OUT] Array of length n to which to write the similarity values (each 0~1).
-    * \param    n               The length of the arrays p and s.
+    * \param    n               [IN/OUT] The length of the arrays p and s. Will be overwritten with the number of probability values actually written into the p and s arrays.
     * \return  The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).
     */
-    virtual int contdIdentifyAllProbabilitiesAndSimilarities(const double hmd_p[3], const double hmd_q[4], double p[], double s[], int n)=0;
+    virtual int contdIdentifyAndGetAllProbabilitiesAndSimilarities(const double hmd_p[3], const double hmd_q[4], double p[], double s[], int* n)=0;
 
     /**
     * Continuous gesture recording.
@@ -441,21 +458,21 @@ public:
     /**
     * Delete the recorded gesture with the specified index.
     * \param    index           The ID (zero-based index) of the gesture to delete.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool deleteGesture(int index)=0;
+    virtual int deleteGesture(int index)=0;
 
     /**
     * Delete all recorded gestures.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool deleteAllGestures()=0;
+    virtual int deleteAllGestures()=0;
 
     /**
     * Create new gesture.
     * \param    name            The name for the gesture.
     * \param    metadata        [OPTIONAL] Meta data to be stored with the gesture.
-    * \return                   New gesture ID or -1 on failure.
+    * \return                   New gesture ID or a negative error code on failure.
     */
     virtual int createGesture(const char* name, Metadata* metadata=0)=0;
 
@@ -553,32 +570,32 @@ public:
     * Delete a gesture sample recording from the set.
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to delete the sample.
     * \param   sample_index    The zero-based index (ID) of the sample to delete.
-    * \return                  True on success, false on failure.
+    * \return                  Zero on success, a negative error code on failure.
     */
-    virtual bool deleteGestureSample(int gesture_index, int sample_index)=0;
+    virtual int deleteGestureSample(int gesture_index, int sample_index)=0;
 
     /**
     * Delete all gesture sample recordings from the set.
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to delete the sample.
-    * \return                  True on success, false on failure.
+    * \return                  Zero on success, a negative error code on failure.
     */
-    virtual bool deleteAllGestureSamples(int gesture_index)=0;
+    virtual int deleteAllGestureSamples(int gesture_index)=0;
 
     /**
     * Set the name of a registered gesture.
     * \param    index           The gesture ID of the gesture whose name to set.
     * \param    name            The new name for the gesture.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool setGestureName(int index, const char* name)=0;
+    virtual int setGestureName(int index, const char* name)=0;
 
     /**
     * Set the metadata of a registered gesture.
     * \param    index           The gesture ID of the gesture whose metadata to set.
     * \param    metadata        The new metadata for the gesture.
-    * \return                   True on success, false on failure.
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual bool setGestureMetadata(int index, Metadata* metadata)=0;
+    virtual int setGestureMetadata(int index, Metadata* metadata)=0;
 
     /**
     * Save the neural network and recorded training data to file.
@@ -661,23 +678,23 @@ public:
     * \param   from_gro            The GestureRecognitionObject from where to import recorded gesture samples.
     * \param   from_gesture_index  The index (ID) of the gesture (on the other GRO) to import.
     * \param   into_gesture_index  The index (ID) of the gesture (on this object) to which the samples should be added.
-    * \return  True on success, false on failure (invalid parameter).
+    * \return                      Zero on success, a negative error code on failure.
     */
-    virtual bool importGestureSamples(const IGestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0;
+    virtual int importGestureSamples(const IGestureRecognition* from_gro, int from_gesture_index, int into_gesture_index)=0;
 
     /**
     * Import recorded gesture samples from another gesture recognition object, merging gestures by name.
     * Gestures with names which are not in the list of gestures yet will be appended.
     * \param   from_gro        The GestureRecognitionObject from where to import gestures.
-    * \return  True on success, false on failure (invalid parameter).
+    * \return                  Zero on success, a negative error code on failure.
     */
-    virtual bool importGestures(const IGestureRecognition* from_gro)=0;
+    virtual int importGestures(const IGestureRecognition* from_gro)=0;
 
     /**
     * Start train the Neural Network based on the the currently collected data.
     * \return   True on success, false on failure.
     */
-    virtual bool startTraining()=0;
+    virtual int startTraining()=0;
 
     /**
     * Whether the Neural Network is currently training.

@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
- * Version 1.19
+ * Version 1.20
  * Copyright (c) 2021 MARUI-PlugIn (inc.)
  * 
  * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
@@ -151,6 +151,9 @@
  * (-9) : Return code for: no gestures registered.
  * (-10) : Return code for: the neural network is inconsistent - re-training might solve the issue.
  * (-11) : Return code for: file or object exists and can't be overwritten.
+ * (-12) : Return code for: gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).
+ * (-13) : Return code for: gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).
+ * (-14) : Return code for: the gesture recognition/combinations object is internally corrupted or inconsistent.
  */
 
 using System.Collections;
@@ -670,6 +673,19 @@ public class GestureCombinations
     {
         return GestureCombinations_endStroke(m_gc, part, null, null, null, null, null) != 0;
     }
+    //                                                      ____________________________________
+    //_____________________________________________________/        isStrokeStarted()
+    /// <summary>
+    /// Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+    /// </summary>
+    /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
+    /// <returns>
+    /// True if a gesture motion (stroke) was started and is ongoing, false if not.
+    /// </returns>
+    public bool isStrokeStarted(int part)
+    {
+        return GestureCombinations_isStrokeStarted(m_gc, part) != 0;
+    }
     //                                                          ________________________________
     //_________________________________________________________/         cancelStroke()
     /// <summary>
@@ -677,11 +693,11 @@ public class GestureCombinations
     /// </summary>
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, an error code on failure.
     /// </returns>
-    public bool cancelStroke(int part)
+    public int cancelStroke(int part)
     {
-        return GestureCombinations_cancelStroke(m_gc, part) != 0;
+        return GestureCombinations_cancelStroke(m_gc, part);
     }
     //                                                          ________________________________
     //_________________________________________________________/    identifyGestureCombination()
@@ -835,11 +851,11 @@ public class GestureCombinations
     /// </summary>
     /// <param name="index">The index of the multi-gesture to delete.</param>
     /// <returns>
-    /// True if the deletion was successfull, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteGestureCombination(int index)
+    public int deleteGestureCombination(int index)
     {
-        return GestureCombinations_deleteGestureCombination(m_gc, index) != 0;
+        return GestureCombinations_deleteGestureCombination(m_gc, index);
     }
     //                                                          ________________________________
     //_________________________________________________________/    deleteAllGestureCombinations()
@@ -847,11 +863,11 @@ public class GestureCombinations
     /// Delete all registered multi-gestures.
     /// </summary>
     /// <returns>
-    /// True if the deletion was successfull, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteAllGestureCombinations()
+    public int deleteAllGestureCombinations()
     {
-        return GestureCombinations_deleteAllGestureCombinations(m_gc) != 0;
+        return GestureCombinations_deleteAllGestureCombinations(m_gc);
     }
     //                                                          ________________________________
     //_________________________________________________________/    createGestureCombination()
@@ -860,7 +876,7 @@ public class GestureCombinations
     /// </summary>
     /// <param name="name">A name for the multi-gesture to create.</param>
     /// <returns>
-    /// The ID (index) of the newly created Multi-Gesture, -1 if an error occurred.
+    /// The ID (index) of the newly created Multi-Gesture, a negative error code if an error occurred.
     /// </returns>
     public int createGestureCombination(string name)
     {
@@ -875,11 +891,11 @@ public class GestureCombinations
     /// <param name="part">The index of the sub-gesture.</param>
     /// <param name="gesture_index">The index of the gesture expected for this sub-gesture.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool setCombinationPartGesture(int combination_index, int part, int gesture_index)
+    public int setCombinationPartGesture(int combination_index, int part, int gesture_index)
     {
-        return GestureCombinations_setCombinationPartGesture(m_gc, combination_index, part, gesture_index) != 0;
+        return GestureCombinations_setCombinationPartGesture(m_gc, combination_index, part, gesture_index);
     }
     //                                                          ________________________________
     //_________________________________________________________/  getCombinationPartGesture()
@@ -923,11 +939,11 @@ public class GestureCombinations
     /// <param name="index">ID of the multi-gesture whose name to set.</param>
     /// <param name="name">The new name of the multi-gesture.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool setGestureCombinationName(int index, string name)
+    public int setGestureCombinationName(int index, string name)
     {
-        return GestureCombinations_setGestureCombinationName(m_gc, index, name) != 0;
+        return GestureCombinations_setGestureCombinationName(m_gc, index, name);
     }
     //                                                          ________________________________
     //_________________________________________________________/      numberOfGestures()
@@ -950,11 +966,11 @@ public class GestureCombinations
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="index">ID of the gesture to delete.</param>
     /// <returns>
-    /// False on failure, true on success.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteGesture(int part, int index)
+    public int deleteGesture(int part, int index)
     {
-        return GestureCombinations_deleteGesture(m_gc, part, index) != 0;
+        return GestureCombinations_deleteGesture(m_gc, part, index);
     }
     //                                                          ________________________________
     //_________________________________________________________/      deleteAllGestures()
@@ -963,11 +979,11 @@ public class GestureCombinations
     /// </summary>
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <returns>
-    /// False on failure, true on success.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteAllGestures(int part)
+    public int deleteAllGestures(int part)
     {
-        return GestureCombinations_deleteAllGestures(m_gc, part) != 0;
+        return GestureCombinations_deleteAllGestures(m_gc, part);
     }
     //                                                          ________________________________
     //_________________________________________________________/      createGesture()
@@ -1185,11 +1201,11 @@ public class GestureCombinations
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to delete the sample.</param>
     /// <param name="sample_index">The zero-based index(ID) of the sample to delete.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteGestureSample(int part, int gesture_index, int sample_index)
+    public int deleteGestureSample(int part, int gesture_index, int sample_index)
     {
-        return GestureCombinations_deleteGestureSample(m_gc, part, gesture_index, sample_index) != 0;
+        return GestureCombinations_deleteGestureSample(m_gc, part, gesture_index, sample_index);
     }
     //                                                          ________________________________
     //_________________________________________________________/    deleteAllGestureSamples()
@@ -1199,11 +1215,11 @@ public class GestureCombinations
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to delete the sample.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool deleteAllGestureSamples(int part, int gesture_index)
+    public int deleteAllGestureSamples(int part, int gesture_index)
     {
-        return GestureCombinations_deleteAllGestureSamples(m_gc, part, gesture_index) != 0;
+        return GestureCombinations_deleteAllGestureSamples(m_gc, part, gesture_index);
     }
     //                                                          ________________________________
     //_________________________________________________________/       setGestureName()
@@ -1214,11 +1230,11 @@ public class GestureCombinations
     /// <param name="index">ID of the gesture whose name to set.</param>
     /// <param name="name">The new name of the gesture.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool setGestureName(int part, int index, string name)
+    public int setGestureName(int part, int index, string name)
     {
-        return GestureCombinations_setGestureName(m_gc, part, index, name) != 0;
+        return GestureCombinations_setGestureName(m_gc, part, index, name);
     }
     //                                                          ________________________________
     //_________________________________________________________/      saveToFile()
@@ -1336,12 +1352,11 @@ public class GestureCombinations
     /// and identify future gestures.
     /// </summary>
     /// <returns>
-    /// False if starting the learning process failed, true if the learning process
-    /// was successfully started.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool startTraining()
+    public int startTraining()
     {
-        return GestureCombinations_startTraining(m_gc) != 0;
+        return GestureCombinations_startTraining(m_gc);
     }
     //                                                          ________________________________
     //_________________________________________________________/       isTraining()
@@ -1350,8 +1365,8 @@ public class GestureCombinations
     /// gesture identification.
     /// </summary>
     /// <returns>
-    /// False if the gesture recognition library is NOT currently in the learning process,
-    /// true if it is learning.
+    /// True if the gesture recognition library is currently in the learning process,
+    /// false if not.
     /// </returns>
     public bool isTraining()
     {
@@ -1483,6 +1498,8 @@ public class GestureCombinations
     public static extern int GestureCombinations_contdStrokeM(IntPtr gco, int part, double[,] m); //!< Continue stroke data input.
     [DllImport(libfile, EntryPoint = "GestureCombinations_endStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_endStroke(IntPtr gco, int part, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2); //!< End the stroke and identify the gesture.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_isStrokeStarted", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_isStrokeStarted(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_cancelStroke(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_identifyGestureCombination", CallingConvention = CallingConvention.Cdecl)]
