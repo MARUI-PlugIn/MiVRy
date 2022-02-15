@@ -1,22 +1,8 @@
 ﻿/*
- * MiVRy - VR gesture recognition library for multi-part gesture combinations plug-in for Unity.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- * 
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software 
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
@@ -329,6 +315,18 @@ public class GestureCombinations
         {
             GestureCombinations_delete(m_gc);
         }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/      activateLicense()
+    /// <summary>
+    /// Provide a license to enable additional functionality.
+    /// </summary>
+    /// <param name="license_name">The license name text.</param>
+    /// <param name="license_key">The license key text.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int activateLicense(string license_name, string license_key)
+    {
+        return GestureCombinations_activateLicense(m_gc, license_name, license_key);
     }
     //                                                          ________________________________
     //_________________________________________________________/         startStroke()
@@ -673,6 +671,26 @@ public class GestureCombinations
     {
         return GestureCombinations_endStroke(m_gc, part, null, null, null, null, null) != 0;
     }
+    //                                                __________________________________________
+    //_______________________________________________/  getPartProbabilitiesAndSimilarities()
+    /// <summary>
+    /// Get all the probabilities and similarities (for each registered gesture) of the last gesture performance.
+    /// </summary>
+    /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
+    /// <param name="p">Array to receive the propability values (0~1) for each registered gesture.</param>
+    /// <param name="s">Array to receive the similarity values(0~1) for each registered gesture.</param>
+    /// <returns>
+    /// Zero on success, or a negative error code on failure.
+    /// </returns>
+    public int getPartProbabilitiesAndSimilarities(int part, ref double[] p, ref double[] s)
+    {
+        int num_gestures = this.numberOfGestures(part);
+        p = new double[num_gestures];
+        s = new double[num_gestures];
+        int[] _n = new int[1];
+        _n[0] = num_gestures;
+        return GestureCombinations_getPartProbabilitiesAndSimilarities(m_gc, part, p, s, _n);
+    }
     //                                                      ____________________________________
     //_____________________________________________________/        isStrokeStarted()
     /// <summary>
@@ -700,7 +718,7 @@ public class GestureCombinations
         return GestureCombinations_cancelStroke(m_gc, part);
     }
     //                                                          ________________________________
-    //_________________________________________________________/    identifyGestureCombination()
+    //_________________________________________________________/   identifyGestureCombination()
     /// <summary>
     /// Calculate the most likely candidate of a multi-gesture (combination) from the last
     /// performed strokes for each of the sub-gestures.
@@ -710,8 +728,16 @@ public class GestureCombinations
     /// </returns>
     public int identifyGestureCombination()
     {
+        int num_parts = this.numberOfParts();
+        if (num_parts < 0)
+        {
+            return -99;
+        }
+        double[] _probability = new double[1];
         double[] _similarity = new double[1];
-        int gesture_id = GestureCombinations_identifyGestureCombination(m_gc, _similarity);
+        double[] _parts_probabilities = new double[num_parts];
+        double[] _parts_similarities = new double[num_parts];
+        int gesture_id = GestureCombinations_identifyGestureCombination(m_gc, _probability, _similarity, _parts_probabilities, _parts_similarities);
         return gesture_id;
     }
     //                                                          ________________________________
@@ -720,13 +746,51 @@ public class GestureCombinations
     /// Calculate the most likely candidate of a multi-gesture (combination) from the last
     /// performed strokes for each of the sub-gestures.
     /// </summary>
+    /// <param name="similarity">The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.</param>
     /// <returns>
     /// The ID of the identified multi-gesture. -1 if an error occurred.
     /// </returns>
     public int identifyGestureCombination(ref double similarity)
     {
+        int num_parts = this.numberOfParts();
+        if (num_parts < 0)
+        {
+            return -99;
+        }
+        double[] _probability = new double[1];
         double[] _similarity = new double[1];
-        int gesture_id = GestureCombinations_identifyGestureCombination(m_gc, _similarity);
+        double[] _parts_probabilities = new double[num_parts];
+        double[] _parts_similarities = new double[num_parts];
+        int gesture_id = GestureCombinations_identifyGestureCombination(m_gc, _probability, _similarity, _parts_probabilities, _parts_similarities);
+        similarity = _similarity[0];
+        return gesture_id;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/   identifyGestureCombination()
+    /// <summary>
+    /// Calculate the most likely candidate of a multi-gesture (combination) from the last
+    /// performed strokes for each of the sub-gestures.
+    /// </summary>
+    /// <param name="probability">The probability (0~1) expressing how likely the performed gesture motion was actually the identified gesture.</param>
+    /// <param name="similarity">The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.</param>
+    /// <param name="parts_probabilities">The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.</param>
+    /// <param name="parts_similarities">The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.</param>
+    /// <returns>
+    /// The ID of the identified multi-gesture. -1 if an error occurred.
+    /// </returns>
+    public int identifyGestureCombination(ref double probability, ref double similarity, ref double[] parts_probabilities, ref double[] parts_similarities)
+    {
+        int num_parts = this.numberOfParts();
+        if (num_parts < 0)
+        {
+            return -99;
+        }
+        double[] _probability = new double[1];
+        double[] _similarity = new double[1];
+        parts_probabilities = new double[num_parts];
+        parts_similarities = new double[num_parts];
+        int gesture_id = GestureCombinations_identifyGestureCombination(m_gc, _probability, _similarity, parts_probabilities, parts_similarities);
+        probability = _probability[0];
         similarity = _similarity[0];
         return gesture_id;
     }
@@ -1344,6 +1408,112 @@ public class GestureCombinations
         return GestureCombinations_loadGestureFromBuffer(m_gc, part, buffer, buffer.Length, null);
     }
     //                                                          ________________________________
+    //_________________________________________________________/    loadFromFileAsync()
+    /// <summary>
+    /// Load a previously saved gesture recognition artificial intelligence from a file, asynchronously.
+    /// The function will return immediately, while the loading process will continue in the background.
+    /// Use isLoading() to check if the loading process is still ongoing.
+    /// </summary>
+    /// <param name="path">File system path and filename from where to load.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int loadFromFileAsync(string path)
+    {
+        return GestureCombinations_loadFromFileAsync(m_gc, path, null);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     loadFromBufferAsync()
+    /// <summary>
+    /// Load a previously saved gesture recognition artificial intelligence from a byte buffer, asynchronously.
+    /// The function will return immediately, while the loading process will continue in the background.
+    /// Use isLoading() to check if the loading process is still ongoing.
+    /// </summary>
+    /// <param name="buffer">The byte buffer containing the artificial intelligence.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int loadFromBufferAsync(byte[] buffer)
+    {
+        return GestureCombinations_loadFromBufferAsync(m_gc, buffer, buffer.Length, null);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingUpdateCallbackFunction()
+    /// <summary>
+    /// Set the callback function be called (repeatedly) during loading. Set to null for no callback.
+    /// </summary>
+    /// <param name="callback_function">The function be called during loading.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingUpdateCallbackFunction(LoadingCallbackFunction callback_function)
+    {
+        return GestureCombinations_setLoadingUpdateCallbackFunction(m_gc, callback_function);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingUpdateCallbackMetadata()
+    /// <summary>
+    /// Set the metadata object to be sent to the callback function be called during loading.
+    /// </summary>
+    /// <param name="callback_metadata">The metadata object to be sent to the function be called during loading.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingUpdateCallbackMetadata(IntPtr callback_metadata)
+    {
+        return GestureCombinations_setLoadingUpdateCallbackMetadata(m_gc, callback_metadata);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingFinishCallbackFunction()
+    /// <summary>
+    /// Set the callback function be called when loading finishes. Set to null for no callback.
+    /// </summary>
+    /// <param name="callback_function">The function be called when loading is finished.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingFinishCallbackFunction(LoadingCallbackFunction callback_function)
+    {
+        return GestureCombinations_setLoadingFinishCallbackFunction(m_gc, callback_function);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingFinishCallbackMetadata()
+    /// <summary>
+    /// Set the metadata object to be sent to the callback function be called when loading finishes.
+    /// </summary>
+    /// <param name="callback_metadata">The metadata object to be sent to the function be called when loading is finished.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingFinishCallbackMetadata(IntPtr callback_metadata)
+    {
+        return GestureCombinations_setLoadingFinishCallbackMetadata(m_gc, callback_metadata);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    isLoading()
+    /// <summary>
+    /// hether the Neural Network is currently loading from a file or buffer.
+    /// </summary>
+    /// <returns>
+    /// True if the AI is currently loading (from file or buffer), false if not.
+    /// </returns>
+    public bool isLoading()
+    {
+        return GestureCombinations_isLoading(m_gc) == 1;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    cancelLoading()
+    /// <summary>
+    /// Cancel a currently running loading process.
+    /// </summary>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int cancelLoading()
+    {
+        return GestureCombinations_cancelLoading(m_gc);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      startTraining()
     /// <summary>
     /// Start the learning process.
@@ -1379,9 +1549,12 @@ public class GestureCombinations
     /// Due to the asynchronous nature of the learning process ("learning in background")
     /// it may take a moment before the training in the background is actually stopped.
     /// </summary>
-    public void stopTraining()
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int stopTraining()
     {
-        GestureCombinations_stopTraining(m_gc);
+        return GestureCombinations_stopTraining(m_gc);
     }
     //                                                          ________________________________
     //_________________________________________________________/     recognitionScore()
@@ -1475,6 +1648,8 @@ public class GestureCombinations
     public delegate IntPtr MetadataCreatorFunction();
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void TrainingCallbackFunction(double performace, IntPtr metadata);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void LoadingCallbackFunction(int result, IntPtr metadata);
 
     public const string libfile = "gesturerecognition";
 
@@ -1482,6 +1657,8 @@ public class GestureCombinations
     public static extern IntPtr GestureCombinations_create(int number_of_parts); //!< Create new instance.
     [DllImport(libfile, EntryPoint = "GestureCombinations_delete", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureCombinations_delete(IntPtr gco); //!< Delete instance.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_activateLicense", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_activateLicense(IntPtr gco, string license_name, string license_key);
     [DllImport(libfile, EntryPoint = "GestureCombinations_numberOfParts", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_numberOfParts(IntPtr gco);
     [DllImport(libfile, EntryPoint = "GestureCombinations_startStroke", CallingConvention = CallingConvention.Cdecl)]
@@ -1498,12 +1675,14 @@ public class GestureCombinations
     public static extern int GestureCombinations_contdStrokeM(IntPtr gco, int part, double[,] m); //!< Continue stroke data input.
     [DllImport(libfile, EntryPoint = "GestureCombinations_endStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_endStroke(IntPtr gco, int part, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2); //!< End the stroke and identify the gesture.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getPartProbabilitiesAndSimilarities", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getPartProbabilitiesAndSimilarities(IntPtr gco, int part, double[] p, double[] s, int[] n);
     [DllImport(libfile, EntryPoint = "GestureCombinations_isStrokeStarted", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_isStrokeStarted(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_cancelStroke(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_identifyGestureCombination", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_identifyGestureCombination(IntPtr gco, double[] similarity); //!< Return the most likely gesture candidate for the previous gesture combination.
+    public static extern int GestureCombinations_identifyGestureCombination(IntPtr gco, double[] probability, double[] similarity, double[] parts_probabilities, double[] parts_similarities);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdIdentify", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_contdIdentify(IntPtr gco, double[] hmd_p, double[] hmd_q, double[] similarity);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdRecord", CallingConvention = CallingConvention.Cdecl)]
@@ -1570,6 +1749,22 @@ public class GestureCombinations
     public static extern int GestureCombinations_loadGestureFromFile(IntPtr gco, int part, string path, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadGestureFromBuffer", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_loadGestureFromBuffer(IntPtr gco, int part, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromFileAsync", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_loadFromFileAsync(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromBufferAsync", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_loadFromBufferAsync(IntPtr gro, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setLoadingUpdateCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setLoadingUpdateCallbackFunction(IntPtr gro, LoadingCallbackFunction cbf);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setLoadingUpdateCallbackMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setLoadingUpdateCallbackMetadata(IntPtr gro, IntPtr cbf);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setLoadingFinishCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setLoadingFinishCallbackFunction(IntPtr gro, LoadingCallbackFunction cbf);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setLoadingFinishCallbackMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setLoadingFinishCallbackMetadata(IntPtr gro, IntPtr cbf);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_isLoading", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_isLoading(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_cancelLoading", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_cancelLoading(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureCombinations_numberOfGestureCombinations", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_numberOfGestureCombinations(IntPtr gco); //!< Get the number of gestures currently recorded in the part's system.
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteGestureCombination", CallingConvention = CallingConvention.Cdecl)]
@@ -1595,7 +1790,7 @@ public class GestureCombinations
     [DllImport(libfile, EntryPoint = "GestureCombinations_isTraining", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_isTraining(IntPtr gco); //!< Whether the artificial intelligence is currently training.
     [DllImport(libfile, EntryPoint = "GestureCombinations_stopTraining", CallingConvention = CallingConvention.Cdecl)]
-    public static extern void GestureCombinations_stopTraining(IntPtr gco); //!< Stop the training process (last best result will be used).
+    public static extern int GestureCombinations_stopTraining(IntPtr gco); //!< Stop the training process (last best result will be used).
     [DllImport(libfile, EntryPoint = "GestureCombinations_recognitionScore", CallingConvention = CallingConvention.Cdecl)]
     public static extern double GestureCombinations_recognitionScore(IntPtr gco); //!< Get the gesture recognition score of the current artificial intelligence (0~1).
     [DllImport(libfile, EntryPoint = "GestureCombinations_getMaxTrainingTime", CallingConvention = CallingConvention.Cdecl)]

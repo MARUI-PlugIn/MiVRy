@@ -1,22 +1,8 @@
 ﻿/*
- * MiVRy - VR gesture recognition library plug-in for Unity.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * MiVRy - 3D gesture recognition library.
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- * 
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software 
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
@@ -123,6 +109,8 @@
  * (-12) : Return code for: gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).
  * (-13) : Return code for: gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).
  * (-14) : Return code for: the gesture recognition/combinations object is internally corrupted or inconsistent.
+ * (-15) : The operation could not be performed because the AI is loading a gesture database file.
+ * (-16) : The provided license key is not valid or the operation is not permitted under the current license.
  */
 
 using System.Collections;
@@ -176,6 +164,10 @@ public class GestureRecognition
                 return "Gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).";
             case -14:
                 return "The gesture recognition/combinations object is internally corrupted or inconsistent.";
+            case -15:
+                return "The operation could not be performed because the AI is loading a gesture database file.";
+            case -16:
+                return "The provided license key is not valid or the operation is not permitted under the current license.";
         }
         return "Unknown error.";
     }
@@ -342,6 +334,18 @@ public class GestureRecognition
         {
             GestureRecognition_delete(m_gro);
         }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/      activateLicense()
+    /// <summary>
+    /// Provide a license to enable additional functionality.
+    /// </summary>
+    /// <param name="license_name">The license name text.</param>
+    /// <param name="license_key">The license key text.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int activateLicense(string license_name, string license_key)
+    {
+        return GestureRecognition_activateLicense(m_gro, license_name, license_key);
     }
     //                                                          ________________________________
     //_________________________________________________________/         startStroke()
@@ -904,7 +908,15 @@ public class GestureRecognition
     }
     //                                    ______________________________________________________
     //___________________________________/ contdIdentifyAndGetAllProbabilitiesAndSimilarities()
-    public int contdIdentifyAndGetAllProbabilitiesAndSimilarities(IntPtr gro, Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s)
+    /// <summary>
+    /// Continuous gesture identification.
+    /// </summary>
+    /// <param name="hmd_p">Vector(x, y, z) of the current headset position.</param>
+    /// <param name="hmd_q">Quaternion(x, y, z, w) of the current headset rotation.</param>
+    /// <param name="p">Array to which to write the probability values (each 0~1).</param>
+    /// <param name="s">Array to which to write the similarity values (each 0~1).</param>
+    /// <returns>The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).</returns>
+    public int contdIdentifyAndGetAllProbabilitiesAndSimilarities(Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
@@ -1331,6 +1343,113 @@ public class GestureRecognition
         return GestureRecognition_importGestures(m_gro, from_gro.m_gro);
     }
     //                                                          ________________________________
+    //_________________________________________________________/    loadFromFileAsync()
+    /// <summary>
+    /// Load a previously saved gesture recognition artificial intelligence from a file, asynchronously.
+    /// The function will return immediately, while the loading process will continue in the background.
+    /// Use isLoading() to check if the loading process is still ongoing.
+    /// </summary>
+    /// <param name="path">File system path and filename from where to load.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int loadFromFileAsync(string path)
+    {
+        return GestureRecognition_loadFromFileAsync(m_gro, path, null);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     loadFromBufferAsync()
+    /// <summary>
+    /// Load a previously saved gesture recognition artificial intelligence from a byte buffer, asynchronously.
+    /// The function will return immediately, while the loading process will continue in the background.
+    /// Use isLoading() to check if the loading process is still ongoing.
+    /// </summary>
+    /// <param name="buffer">The byte buffer containing the artificial intelligence.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int loadFromBufferAsync(byte[] buffer)
+    {
+        return GestureRecognition_loadFromBufferAsync(m_gro, buffer, buffer.Length, null);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingUpdateCallbackFunction()
+    /// <summary>
+    /// Set the callback function to be called (repeatedly) during loading.
+    /// Set to null for no callback.
+    /// </summary>
+    /// <param name="callback_function">The function to be called during loading.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingCallbackUpdateFunction(LoadingCallbackFunction callback_function)
+    {
+        return GestureRecognition_setLoadingUpdateCallbackFunction(m_gro, callback_function);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingUpdateCallbackMetadata()
+    /// <summary>
+    /// Set the metadata object to be sent to the callback function during loading.
+    /// </summary>
+    /// <param name="callback_metadata">The metadata object to be sent to the function during loading.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingUpdateCallbackMetadata(IntPtr callback_metadata)
+    {
+        return GestureRecognition_setLoadingUpdateCallbackMetadata(m_gro, callback_metadata);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingFinishCallbackFunction()
+    /// <summary>
+    /// Set the callback function to call when loading finishes. Set to null for no callback.
+    /// </summary>
+    /// <param name="callback_function">The function to call when loading is finished.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingFinishCallbackFunction(LoadingCallbackFunction callback_function)
+    {
+        return GestureRecognition_setLoadingFinishCallbackFunction(m_gro, callback_function);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setLoadingFinishCallbackMetadata()
+    /// <summary>
+    /// Set the metadata object to be sent to the callback function to call when loading finishes.
+    /// </summary>
+    /// <param name="callback_metadata">The metadata object to be sent to the function to call when loading is finished.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setLoadingFinishCallbackMetadata(IntPtr callback_metadata)
+    {
+        return GestureRecognition_setLoadingFinishCallbackMetadata(m_gro, callback_metadata);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    isLoading()
+    /// <summary>
+    /// hether the Neural Network is currently loading from a file or buffer.
+    /// </summary>
+    /// <returns>
+    /// True if the AI is currently loading (from file or buffer), false if not.
+    /// </returns>
+    public bool isLoading()
+    {
+        return GestureRecognition_isLoading(m_gro) == 1;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    cancelLoading()
+    /// <summary>
+    /// Cancel a currently running loading process.
+    /// </summary>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int cancelLoading()
+    {
+        return GestureRecognition_cancelLoading(m_gro);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      startTraining()
     /// <summary>
     /// Start the learning process.
@@ -1366,9 +1485,12 @@ public class GestureRecognition
     /// Due to the asynchronous nature of the learning process ("learning in background")
     /// it may take a moment before the training in the background is actually stopped.
     /// </summary>
-    public void stopTraining()
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int stopTraining()
     {
-        GestureRecognition_stopTraining(m_gro);
+        return GestureRecognition_stopTraining(m_gro);
     }
     //                                                          ________________________________
     //_________________________________________________________/     getMaxTrainingTime()
@@ -1451,6 +1573,8 @@ public class GestureRecognition
     public delegate IntPtr MetadataCreatorFunction();
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void TrainingCallbackFunction(double performace, IntPtr metadata);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void LoadingCallbackFunction(int status, IntPtr metadata);
 
     public const string libfile = "gesturerecognition";
 
@@ -1458,6 +1582,8 @@ public class GestureRecognition
     public static extern IntPtr GestureRecognition_create();
     [DllImport(libfile, EntryPoint = "GestureRecognition_delete", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureRecognition_delete(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_activateLicense", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_activateLicense(IntPtr gro, string license_name, string license_key);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_startStroke(IntPtr gro, double[] hmd_p, double[] hmd_q, int record_as_sample);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startStrokeM", CallingConvention = CallingConvention.Cdecl)]
@@ -1546,12 +1672,28 @@ public class GestureRecognition
     public static extern int GestureRecognition_importGestureSamples(IntPtr gro, IntPtr from_gro, int from_gesture_index, int into_gesture_index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importGestures", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_importGestures(IntPtr gro, IntPtr from_gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromFileAsync", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_loadFromFileAsync(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromBufferAsync", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_loadFromBufferAsync(IntPtr gro, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setLoadingUpdateCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setLoadingUpdateCallbackFunction(IntPtr gro, LoadingCallbackFunction cbf);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setLoadingUpdateCallbackMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setLoadingUpdateCallbackMetadata(IntPtr gro, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setLoadingFinishCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setLoadingFinishCallbackFunction(IntPtr gro, LoadingCallbackFunction cbf);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setLoadingFinishCallbackMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setLoadingFinishCallbackMetadata(IntPtr gro, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_isLoading", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_isLoading(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_cancelLoading", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_cancelLoading(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startTraining", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_startTraining(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_isTraining", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_isTraining(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_stopTraining", CallingConvention = CallingConvention.Cdecl)]
-    public static extern void GestureRecognition_stopTraining(IntPtr gro);
+    public static extern int GestureRecognition_stopTraining(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getMaxTrainingTime", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getMaxTrainingTime(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_setMaxTrainingTime", CallingConvention = CallingConvention.Cdecl)]
