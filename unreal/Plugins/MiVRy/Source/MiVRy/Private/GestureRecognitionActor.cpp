@@ -1,22 +1,8 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- *
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -43,6 +29,8 @@ AGestureRecognitionActor::AGestureRecognitionActor()
 	TrainingUpdateMetadata.delegate = &this->OnTrainingUpdateDelegate;
 	TrainingFinishMetadata.actor = this;
 	TrainingFinishMetadata.delegate = &this->OnTrainingFinishDelegate;
+	LoadingFinishMetadata.actor = this;
+	LoadingFinishMetadata.delegate = &this->OnLoadingFinishDelegate;
 }
 
 AGestureRecognitionActor::~AGestureRecognitionActor()
@@ -60,6 +48,13 @@ void AGestureRecognitionActor::BeginPlay()
 	this->gro = (IGestureRecognition*)GestureRecognition_create();
 	if (this->gro == nullptr) {
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("GestureRecognition::create returned null"));
+	} else if (this->LicenseName.IsEmpty() == false) {
+		const char* license_name = TCHAR_TO_ANSI(*this->LicenseName);
+		const char* license_key = TCHAR_TO_ANSI(*this->LicenseKey);
+		int ret = this->gro->activateLicense(license_name, license_key);
+		if (ret != 0) {
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString("Failed to activate license: ") + UMiVRyUtil::errorCodeToString(ret)));
+		}
 	}
 }
 
@@ -78,25 +73,20 @@ int AGestureRecognitionActor::startStrokeQ(const FVector& HMD_Position, const FQ
 	if (this->gro == nullptr) {
 		return -99;
 	}
+	if (this->UnityCombatibilityMode) {
+		double m[4][4];
+		UMiVRyUtil::toUnityCoords(HMD_Position, HMD_Rotation, false, m);
+		return this->gro->startStroke(m, RecordAsSample);
+	}
 	double p[3];
 	double q[4];
-	if (this->UnityCombatibilityMode) {
-		p[0] = HMD_Position.Y * 0.01f; // Unity.X = right = Unreal.Y
-		p[1] = HMD_Position.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		p[2] = HMD_Position.X * 0.01f; // Unity.Z = front = Unreal.X
-		q[0] = HMD_Rotation.Y;
-		q[1] = HMD_Rotation.Z;
-		q[2] = HMD_Rotation.X;
-		q[3] = HMD_Rotation.W;
-	} else {
-		p[0] = HMD_Position.X;
-		p[1] = HMD_Position.Y;
-		p[2] = HMD_Position.Z;
-		q[0] = HMD_Rotation.X;
-		q[1] = HMD_Rotation.Y;
-		q[2] = HMD_Rotation.Z;
-		q[3] = HMD_Rotation.W;
-	}
+	p[0] = HMD_Position.X;
+	p[1] = HMD_Position.Y;
+	p[2] = HMD_Position.Z;
+	q[0] = HMD_Rotation.X;
+	q[1] = HMD_Rotation.Y;
+	q[2] = HMD_Rotation.Z;
+	q[3] = HMD_Rotation.W;
 	return this->gro->startStroke(p, q, RecordAsSample);
 }
 
@@ -110,27 +100,21 @@ int AGestureRecognitionActor::contdStrokeQ(const FVector& HandPosition, const FQ
 	if (!this->gro) {
 		return -99;
 	}
+	if (this->UnityCombatibilityMode) {
+		double m[4][4];
+		UMiVRyUtil::toUnityCoords(HandPosition, HandRotation, true, m);
+		return this->gro->contdStrokeM(m);
+	}
 	double p[3];
 	double q[4];
-	if (this->UnityCombatibilityMode) {
-		p[0] = HandPosition.Y * 0.01f; // Unity.X = right = Unreal.Y
-		p[1] = HandPosition.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		p[2] = HandPosition.X * 0.01f; // Unity.Z = front = Unreal.X
-		q[0] = HandRotation.Y;
-		q[1] = HandRotation.Z;
-		q[2] = HandRotation.X;
-		q[3] = HandRotation.W;
-	} else {
-		p[0] = HandPosition.X;
-		p[1] = HandPosition.Y;
-		p[2] = HandPosition.Z;
-		q[0] = HandRotation.X;
-		q[1] = HandRotation.Y;
-		q[2] = HandRotation.Z;
-		q[3] = HandRotation.W;
-	}
+	p[0] = HandPosition.X;
+	p[1] = HandPosition.Y;
+	p[2] = HandPosition.Z;
+	q[0] = HandRotation.X;
+	q[1] = HandRotation.Y;
+	q[2] = HandRotation.Z;
+	q[3] = HandRotation.W;
 	return this->gro->contdStrokeQ(p, q);
-	return 0;
 }
 
 int AGestureRecognitionActor::endStroke(float& Similarity, FVector& GesturePosition, FRotator& GestureRotation, float& GestureScale)
@@ -371,26 +355,23 @@ int AGestureRecognitionActor::contdIdentify(const FVector& HMD_Position, const F
 		return -99;
 	}
 	FQuat quat = HMD_Rotation.Quaternion();
+	double similarity = -1;
+	if (this->UnityCombatibilityMode) {
+		double hmd_m[4][4];
+		UMiVRyUtil::toUnityCoords(HMD_Position, quat, false, hmd_m);
+		int ret = this->gro->contdIdentifyM(hmd_m, &similarity);
+		Similarity = (float)similarity;
+		return ret;
+	}
 	double hmd_p[3];
 	double hmd_q[4];
-	if (this->UnityCombatibilityMode) {
-		hmd_p[0] = HMD_Position.Y * 0.01f; // Unity.X = right = Unreal.Y
-		hmd_p[1] = HMD_Position.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		hmd_p[2] = HMD_Position.X * 0.01f; // Unity.Z = front = Unreal.X
-		hmd_q[0] = quat.Y;
-		hmd_q[1] = quat.Z;
-		hmd_q[2] = quat.X;
-		hmd_q[3] = quat.W;
-	} else {
-		hmd_p[0] = HMD_Position.X;
-		hmd_p[1] = HMD_Position.Y;
-		hmd_p[2] = HMD_Position.Z;
-		hmd_q[0] = quat.X;
-		hmd_q[1] = quat.Y;
-		hmd_q[2] = quat.Z;
-		hmd_q[3] = quat.W;
-	}
-	double similarity = -1;
+	hmd_p[0] = HMD_Position.X;
+	hmd_p[1] = HMD_Position.Y;
+	hmd_p[2] = HMD_Position.Z;
+	hmd_q[0] = quat.X;
+	hmd_q[1] = quat.Y;
+	hmd_q[2] = quat.Z;
+	hmd_q[3] = quat.W;
 	int ret = this->gro->contdIdentify(hmd_p, hmd_q, &similarity);
 	Similarity = (float)similarity;
 	return ret;
@@ -409,17 +390,14 @@ int AGestureRecognitionActor::contdIdentifyAndGetAllProbabilitiesAndSimilarities
 	double* p = new double[num_gestures];
 	double* s = new double[num_gestures];
 	FQuat quat = HMD_Rotation.Quaternion();
-	double hmd_p[3];
-	double hmd_q[4];
+	int ret;
 	if (this->UnityCombatibilityMode) {
-		hmd_p[0] = HMD_Position.Y * 0.01f; // Unity.X = right = Unreal.Y
-		hmd_p[1] = HMD_Position.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		hmd_p[2] = HMD_Position.X * 0.01f; // Unity.Z = front = Unreal.X
-		hmd_q[0] = quat.Y;
-		hmd_q[1] = quat.Z;
-		hmd_q[2] = quat.X;
-		hmd_q[3] = quat.W;
+		double hmd_m[4][4];
+		UMiVRyUtil::toUnityCoords(HMD_Position, quat, false, hmd_m);
+		ret = this->gro->contdIdentifyAndGetAllProbabilitiesAndSimilaritiesM(hmd_m, p, s, &n);
 	} else {
+		double hmd_p[3];
+		double hmd_q[4];
 		hmd_p[0] = HMD_Position.X;
 		hmd_p[1] = HMD_Position.Y;
 		hmd_p[2] = HMD_Position.Z;
@@ -427,8 +405,8 @@ int AGestureRecognitionActor::contdIdentifyAndGetAllProbabilitiesAndSimilarities
 		hmd_q[1] = quat.Y;
 		hmd_q[2] = quat.Z;
 		hmd_q[3] = quat.W;
+		ret = this->gro->contdIdentifyAndGetAllProbabilitiesAndSimilarities(hmd_p, hmd_q, p, s, &n);
 	}
-	int ret = this->gro->contdIdentifyAndGetAllProbabilitiesAndSimilarities(hmd_p, hmd_q, p, s, &n);
 	if (ret != 0) {
 		delete[] p;
 		delete[] s;
@@ -451,27 +429,21 @@ int AGestureRecognitionActor::contdRecord(const FVector& HMD_Position, const FRo
 		return -99;
 	}
 	FQuat HMD_Quaternion = HMD_Rotation.Quaternion();
-	double hmd_p[3];
-	double hmd_q[4];	
 	if (this->UnityCombatibilityMode) {
-		hmd_p[0] = HMD_Position.Y * 0.01f; // Unity.X = right = Unreal.Y
-		hmd_p[1] = HMD_Position.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		hmd_p[2] = HMD_Position.X * 0.01f; // Unity.Z = front = Unreal.X
-		hmd_q[0] = HMD_Quaternion.Y;
-		hmd_q[1] = HMD_Quaternion.Z;
-		hmd_q[2] = HMD_Quaternion.X;
-		hmd_q[3] = HMD_Quaternion.W;
-	} else {
-		hmd_p[0] = HMD_Position.X;
-		hmd_p[1] = HMD_Position.Y;
-		hmd_p[2] = HMD_Position.Z;
-		hmd_q[0] = HMD_Quaternion.X;
-		hmd_q[1] = HMD_Quaternion.Y;
-		hmd_q[2] = HMD_Quaternion.Z;
-		hmd_q[3] = HMD_Quaternion.W;
+		double hmd_m[4][4];
+		UMiVRyUtil::toUnityCoords(HMD_Position, HMD_Quaternion, false, hmd_m);
+		return this->gro->contdRecordM(hmd_m);
 	}
-	int ret = this->gro->contdRecord(hmd_p, hmd_q);
-	return ret;
+	double hmd_p[3];
+	double hmd_q[4];
+	hmd_p[0] = HMD_Position.X;
+	hmd_p[1] = HMD_Position.Y;
+	hmd_p[2] = HMD_Position.Z;
+	hmd_q[0] = HMD_Quaternion.X;
+	hmd_q[1] = HMD_Quaternion.Y;
+	hmd_q[2] = HMD_Quaternion.Z;
+	hmd_q[3] = HMD_Quaternion.W;
+	return this->gro->contdRecord(hmd_p, hmd_q);
 }
 
 int AGestureRecognitionActor::GetContinuousGestureIdentificationPeriod()
@@ -603,29 +575,10 @@ int AGestureRecognitionActor::getGestureSampleStroke(int gesture_index, int samp
 		Rotations.Empty(0);
 		return ret;
 	}
-	const int len = (ret < sample_len) ? ret : sample_len;
-	Locations.SetNum(len);
-	Rotations.SetNum(len);
 	FQuat quat;
 	if (this->UnityCombatibilityMode) {
-		HMD_Location.X = (float)hmd_p[2] * 100.0f; // Unreal.X = front = Unity.Z
-		HMD_Location.Y = (float)hmd_p[0] * 100.0f; // Unreal.Y = right = Unity.X
-		HMD_Location.Z = (float)hmd_p[1] * 100.0f; // Unreal.Z = up    = Unity.Y
-		quat.X = (float)hmd_q[2]; // Unreal.X = front = Unity.Z
-		quat.Y = (float)hmd_q[0]; // Unreal.Y = right = Unity.X
-		quat.Z = (float)hmd_q[1]; // Unreal.Z = up    = Unity.Y
-		quat.W = (float)hmd_q[3];
+		UMiVRyUtil::fromUnityCoords(hmd_p, hmd_q, false, HMD_Location, quat);
 		HMD_Rotation = quat.Rotator();
-		for (int i = 0; i < len; i++) {
-			Locations[i].X = (float)p[3 * i + 2] * 100.0f; // Unreal.X = front = Unity.Z
-			Locations[i].Y = (float)p[3 * i + 0] * 100.0f; // Unreal.Y = right = Unity.X
-			Locations[i].Z = (float)p[3 * i + 1] * 100.0f; // Unreal.Z = up    = Unity.Y
-			quat.X = (float)q[4 * i + 2]; // Unreal.X = front = Unity.Z
-			quat.Y = (float)q[4 * i + 0]; // Unreal.Y = right = Unity.X
-			quat.Z = (float)q[4 * i + 1]; // Unreal.Z = up    = Unity.Y
-			quat.W = (float)q[4 * i + 3];
-			Rotations[i] = quat.Rotator();
-		}
 	} else {
 		HMD_Location.X = (float)hmd_p[0];
 		HMD_Location.Y = (float)hmd_p[1];
@@ -635,16 +588,35 @@ int AGestureRecognitionActor::getGestureSampleStroke(int gesture_index, int samp
 		quat.Z = (float)hmd_q[2];
 		quat.W = (float)hmd_q[3];
 		HMD_Rotation = quat.Rotator();
-		for (int i = 0; i < len; i++) {
-			Locations[i].X = (float)p[3 * i + 0];
-			Locations[i].Y = (float)p[3 * i + 1];
-			Locations[i].Z = (float)p[3 * i + 2];
-			quat.X = (float)q[4 * i + 0];
-			quat.Y = (float)q[4 * i + 1];
-			quat.Z = (float)q[4 * i + 2];
-			quat.W = (float)q[4 * i + 3];
-			Rotations[i] = quat.Rotator();
+	}
+	const int len = (ret < sample_len) ? ret : sample_len;
+	Locations.SetNum(len);
+	Rotations.SetNum(len);
+	for (int i = 0; i < len; i++) {
+		Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
+		Locations[i].Y = (float)p[3 * i + 1]; // y = secondary axis
+		Locations[i].Z = (float)p[3 * i + 2]; // z = least-significant axis
+		quat.X = (float)q[4 * i + 0];
+		quat.Y = (float)q[4 * i + 1];
+		quat.Z = (float)q[4 * i + 2];
+		quat.W = (float)q[4 * i + 3];
+		if (this->UnityCombatibilityMode) {
+			const FVector xaxis = quat.GetAxisX();
+			const FVector yaxis = quat.GetAxisY();
+			const FVector zaxis = quat.GetAxisZ();
+			FRotationMatrix m(FRotator::ZeroRotator);
+			m.M[0][0] = -yaxis.Z;
+			m.M[0][1] = -yaxis.X;
+			m.M[0][2] = -yaxis.Y;
+			m.M[1][0] = xaxis.Z;
+			m.M[1][1] = xaxis.X;
+			m.M[1][2] = xaxis.Y;
+			m.M[2][0] = zaxis.Z;
+			m.M[2][1] = zaxis.X;
+			m.M[2][2] = zaxis.Y;
+			quat = m.ToQuat();
 		}
+		Rotations[i] = quat.Rotator();
 	}
 	delete[] p;
 	delete[] q;
@@ -681,15 +653,12 @@ int AGestureRecognitionActor::getGestureMeanStroke(int gesture_index, TArray<FVe
 		Rotations.Empty(0);
 		return ret;
 	}
+	const int len = (ret < mean_len) ? ret : mean_len;
+	Locations.SetNum(len);
+	Rotations.SetNum(len);
 	FQuat quat;
 	if (this->UnityCombatibilityMode) {
-		GestureLocation.X = (float)hmd_p[2] * 100.0f; // Unreal.X = front = Unity.Z
-		GestureLocation.Y = (float)hmd_p[0] * 100.0f; // Unreal.Y = right = Unity.X
-		GestureLocation.Z = (float)hmd_p[1] * 100.0f; // Unreal.Z = up    = Unity.Y
-		quat.X = (float)hmd_q[2]; // Unreal.X = front = Unity.Z
-		quat.Y = (float)hmd_q[0]; // Unreal.Y = right = Unity.X
-		quat.Z = (float)hmd_q[1]; // Unreal.Z = up    = Unity.Y
-		quat.W = (float)hmd_q[3];
+		UMiVRyUtil::fromUnityCoords(hmd_p, hmd_q, false, GestureLocation, quat);
 		GestureRotation = quat.Rotator();
 		GestureScale = (float)scale * 100.0f;
 	} else {
@@ -700,20 +669,35 @@ int AGestureRecognitionActor::getGestureMeanStroke(int gesture_index, TArray<FVe
 		quat.Y = (float)hmd_q[1];
 		quat.Z = (float)hmd_q[2];
 		quat.W = (float)hmd_q[3];
+		quat.Normalize();
 		GestureRotation = quat.Rotator();
 		GestureScale = (float)scale;
 	}
-	const int len = (ret < mean_len) ? ret : mean_len;
-	Locations.SetNum(len);
-	Rotations.SetNum(len);
 	for (int i = 0; i < len; i++) {
-		Locations[i].X = (float)p[3 * i + 0];
-		Locations[i].Y = (float)p[3 * i + 1];
-		Locations[i].Z = (float)p[3 * i + 2];
+		Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
+		Locations[i].Y = (float)p[3 * i + 1]; // y = secondary axis
+		Locations[i].Z = (float)p[3 * i + 2]; // z = least-significant axis
 		quat.X = (float)q[4 * i + 0];
 		quat.Y = (float)q[4 * i + 1];
 		quat.Z = (float)q[4 * i + 2];
 		quat.W = (float)q[4 * i + 3];
+		quat.Normalize();
+		if (this->UnityCombatibilityMode) {
+			const FVector xaxis = quat.GetAxisX();
+			const FVector yaxis = quat.GetAxisY();
+			const FVector zaxis = quat.GetAxisZ();
+			FRotationMatrix m(FRotator::ZeroRotator);
+			m.M[0][0] = -yaxis.Z;
+			m.M[0][1] = -yaxis.X;
+			m.M[0][2] = -yaxis.Y;
+			m.M[1][0] = xaxis.Z;
+			m.M[1][1] = xaxis.X;
+			m.M[1][2] = xaxis.Y;
+			m.M[2][0] = zaxis.Z;
+			m.M[2][1] = zaxis.X;
+			m.M[2][2] = zaxis.Y;
+			quat = m.ToQuat();
+		}
 		Rotations[i] = quat.Rotator();
 	}
 	delete[] p;
@@ -755,11 +739,26 @@ int AGestureRecognitionActor::loadFromFile(const FFilePath& path)
 	if (!this->gro) {
 		return -99;
 	}
-	FString path_str = path.FilePath;
-	if (FPaths::IsRelative(path_str)) {
-		path_str = FPaths::Combine(FPaths::ProjectDir(), path_str);
+	FString path_str;
+	GestureRecognition_Result result;
+	UMiVRyUtil::findFile(path.FilePath, result, path_str);
+	if (result == GestureRecognition_Result::Then) {
+		return this->gro->loadFromFile(TCHAR_TO_ANSI(*path_str), nullptr);
 	}
-	return this->gro->loadFromFile(TCHAR_TO_ANSI(*path_str), nullptr);
+	TArray<uint8> buffer;
+	UMiVRyUtil::readFileToBuffer(path.FilePath, result, buffer);
+	if (result == GestureRecognition_Result::Then) {
+		return this->gro->loadFromBuffer((const char*)buffer.GetData(), buffer.Num(), nullptr);
+	}
+	return -3;
+}
+
+int AGestureRecognitionActor::loadFromBuffer(const TArray<uint8>& buffer)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	return this->gro->loadFromBuffer((const char*)buffer.GetData(), buffer.Num(), nullptr);
 }
 
 int AGestureRecognitionActor::importFromFile(const FFilePath& path)
@@ -767,12 +766,93 @@ int AGestureRecognitionActor::importFromFile(const FFilePath& path)
 	if (!this->gro) {
 		return -99;
 	}
-	FString path_str = path.FilePath;
-	if (FPaths::IsRelative(path_str)) {
-		path_str = FPaths::Combine(FPaths::ProjectDir(), path_str);
+	FString path_str;
+	GestureRecognition_Result result;
+	UMiVRyUtil::findFile(path.FilePath, result, path_str);
+	if (result == GestureRecognition_Result::Then) {
+		return this->gro->importFromFile(TCHAR_TO_ANSI(*path_str), nullptr);
 	}
-	return this->gro->importFromFile(TCHAR_TO_ANSI(*path_str), nullptr);
+	TArray<uint8> buffer;
+	UMiVRyUtil::readFileToBuffer(path.FilePath, result, buffer);
+	if (result == GestureRecognition_Result::Then) {
+		return this->gro->importFromBuffer((const char*)buffer.GetData(), buffer.Num(), nullptr);
+	}
+	return -3;
 }
+
+int AGestureRecognitionActor::importFromBuffer(const TArray<uint8>& buffer)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	return this->gro->importFromBuffer((const char*)buffer.GetData(), buffer.Num(), nullptr);
+}
+
+int AGestureRecognitionActor::loadFromFileAsync(const FFilePath& path)
+{
+	if (!this->gro)
+		return -99;
+	int ret;
+	ret = this->gro->setLoadingUpdateCallbackFunction((IGestureRecognition::LoadingCallbackFunction*)&LoadingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setLoadingFinishCallbackFunction((IGestureRecognition::LoadingCallbackFunction*)&LoadingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setLoadingUpdateCallbackMetadata(&this->LoadingUpdateMetadata);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setLoadingFinishCallbackMetadata(&this->LoadingFinishMetadata);
+	if (ret != 0)
+		return ret;
+	FString path_str;
+	GestureRecognition_Result result;
+	UMiVRyUtil::findFile(path.FilePath, result, path_str);
+	if (result == GestureRecognition_Result::Then) {
+		return this->gro->loadFromFileAsync(TCHAR_TO_ANSI(*path_str), nullptr);
+	}
+	TArray<uint8> buffer;
+	UMiVRyUtil::readFileToBuffer(path.FilePath, result, buffer);
+	if (result == GestureRecognition_Result::Then) {
+		return this->gro->loadFromBufferAsync((const char*)buffer.GetData(), buffer.Num(), nullptr);
+	}
+	return -3;
+}
+
+int AGestureRecognitionActor::loadFromBufferAsync(const TArray<uint8>& buffer)
+{
+	if (!this->gro)
+		return -99;
+	int ret;
+	ret = this->gro->setLoadingUpdateCallbackFunction((IGestureRecognition::LoadingCallbackFunction*)&LoadingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setLoadingFinishCallbackFunction((IGestureRecognition::LoadingCallbackFunction*)&LoadingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setLoadingUpdateCallbackMetadata(&this->LoadingUpdateMetadata);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setLoadingFinishCallbackMetadata(&this->LoadingFinishMetadata);
+	if (ret != 0)
+		return ret;
+	return this->gro->loadFromBufferAsync((const char*)buffer.GetData(), buffer.Num(), nullptr);
+}
+
+bool AGestureRecognitionActor::isLoading()
+{
+	if (!this->gro)
+		return false;
+	return this->gro->isLoading();
+}
+
+int AGestureRecognitionActor::cancelLoading()
+{
+	if (!this->gro)
+		return -99;
+	return this->gro->cancelLoading();
+}
+
 
 int AGestureRecognitionActor::startTraining()
 {
@@ -872,4 +952,12 @@ void AGestureRecognitionActor::TrainingCallbackFunction(double performance, Trai
 		return;
 	}
 	metadata->delegate->Broadcast(metadata->actor, performance);
+};
+
+void AGestureRecognitionActor::LoadingCallbackFunction(int result, LoadingCallbackMetadata* metadata)
+{
+	if (!metadata || !metadata->delegate || !metadata->actor) {
+		return;
+	}
+	metadata->delegate->Broadcast(metadata->actor, result);
 };

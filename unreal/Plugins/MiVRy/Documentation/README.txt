@@ -1,8 +1,7 @@
 ADVANCED GESTURE RECOGNITION PLUG-IN FOR UNREAL
 Copyright (c) 2021 MARUI-PlugIn (inc.)
 
-[IMPORTANT!] This plug-in is free for non-commercial use. Commercial use is prohibited. See the license statement below.
-If you want to use this plug-in in a commercial application, please contact us at support@marui-plugin.com for a commercial license.
+[IMPORTANT!] This plug-in is free to use. However, the “free” license use is limited to 100 gesture recognitions (or 100 seconds of continuous gesture recognition) per session. To unlock unlimited gesture recognition, please purchase a license at https://www.marui-plugin.com/mivry/ 
 
 Documentation for the MiVRy GestureRecognition plug-in is available at:
 https://www.marui-plugin.com/documentation-mivry-unreal/
@@ -35,8 +34,5 @@ Draw a large 3d cube and there it will appear, with the appropriate scale and or
 
 
 ### License:
-This software is free to use for non-commercial purposes. You may use this software in part or in full for any project that does not pursue financial gain, including free software  and projectes completed for evaluation or educational purposes only. Any use for commercial purposes is prohibited.
-You may not sell or rent any software that includes this software in part or in full, either in it's original form or in altered form.
-If you wish to use this software in a commercial application, please contact us at support@marui-plugin.com to obtain a commercial license.
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY  OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 

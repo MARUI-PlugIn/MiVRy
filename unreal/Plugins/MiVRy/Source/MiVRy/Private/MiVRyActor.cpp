@@ -1,22 +1,8 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- *
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -139,6 +125,15 @@ void AMiVRyActor::BeginPlay()
 	int ret = this->gro->loadFromBuffer((const char*)file_contents.GetData(), file_contents.Num(), nullptr);
 	if (ret == 0) {
 		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully loaded gesture database file."));
+		if (this->LicenseName.IsEmpty() == false) {
+			const char* license_name = TCHAR_TO_ANSI(*this->LicenseName);
+			const char* license_key = TCHAR_TO_ANSI(*this->LicenseKey);
+			ret = this->gro->activateLicense(license_name, license_key);
+			if (ret != 0) {
+				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
+				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
+			}
+		}
 		return; // successfully loaded
 	} // else: failed to load
 	delete this->gro;
@@ -153,6 +148,15 @@ void AMiVRyActor::BeginPlay()
 	ret = this->gco->loadFromBuffer((const char*)file_contents.GetData(), file_contents.Num(), nullptr);
 	if (ret == 0) {
 		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully loaded gesture database file."));
+		if (this->LicenseName.IsEmpty() == false) {
+			const char* license_name = TCHAR_TO_ANSI(*this->LicenseName);
+			const char* license_key = TCHAR_TO_ANSI(*this->LicenseKey);
+			ret = this->gco->activateLicense(license_name, license_key);
+			if (ret != 0) {
+				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
+				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
+			}
+		}
 		return; // successfully loaded
 	} // else: failed to load
 	delete this->gco;
@@ -205,17 +209,24 @@ void AMiVRyActor::Tick(float DeltaTime)
 			rotation = data.GripRotation.Rotator();
 		}
 		FQuat quaternion = rotation.Quaternion();
-		double p[3];
-		double q[4];
+
 		if (this->UnityGestureDatabaseFile) {
-			p[0] = location.Y * 0.01f; // Unity.X = right = Unreal.Y
-			p[1] = location.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-			p[2] = location.X * 0.01f; // Unity.Z = front = Unreal.X
-			q[0] = quaternion.Y;
-			q[1] = quaternion.Z;
-			q[2] = quaternion.X;
-			q[3] = quaternion.W;
+			double m[4][4];
+			UMiVRyUtil::toUnityCoords(location, quaternion, true, m);
+			if (this->gro) {
+				int ret = this->gro->contdStrokeM(m);
+				if (ret != 0)
+					UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureRecognition::contdStroke() failed with %i"), ret);
+			} else if (this->gco) {
+				int ret = this->gco->contdStrokeM(side, m);
+				if (ret != 0)
+					UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::contdStroke() failed with %i"), ret);
+			} else {
+				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.Tick] GestureRecognition object was not created. Failed to load database file?"));
+			}
 		} else {
+			double p[3];
+			double q[4];
 			p[0] = location.X;
 			p[1] = location.Y;
 			p[2] = location.Z;
@@ -223,17 +234,17 @@ void AMiVRyActor::Tick(float DeltaTime)
 			q[1] = quaternion.Y;
 			q[2] = quaternion.Z;
 			q[3] = quaternion.W;
-		}
-		if (this->gro) {
-			int ret = this->gro->contdStrokeQ(p, q);
-			if (ret != 0)
-				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureRecognition::contdStroke() failed with %i"), ret);
-		} else if (this->gco) {
-			int ret = this->gco->contdStrokeQ(side, p, q);
-			if (ret != 0)
-				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::contdStroke() failed with %i"), ret);
-		} else {
-			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.Tick] GestureRecognition object was not created. Failed to load database file?"));
+			if (this->gro) {
+				int ret = this->gro->contdStrokeQ(p, q);
+				if (ret != 0)
+					UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureRecognition::contdStroke() failed with %i"), ret);
+			} else if (this->gco) {
+				int ret = this->gco->contdStrokeQ(side, p, q);
+				if (ret != 0)
+					UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::contdStroke() failed with %i"), ret);
+			} else {
+				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.Tick] GestureRecognition object was not created. Failed to load database file?"));
+			}
 		}
 	}
 }
@@ -249,17 +260,32 @@ void AMiVRyActor::startGesturing(GestureRecognition_Result& Result, int& ErrorCo
 	FVector location = camManager->GetCameraLocation();
 	FRotator rotation = camManager->GetCameraRotation();
 	FQuat quaternion = rotation.Quaternion();
-	double p[3];
-	double q[4];
 	if (this->UnityGestureDatabaseFile) {
-		p[0] = location.Y * 0.01f; // Unity.X = right = Unreal.Y
-		p[1] = location.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		p[2] = location.X * 0.01f; // Unity.Z = front = Unreal.X
-		q[0] = quaternion.Y;
-		q[1] = quaternion.Z;
-		q[2] = quaternion.X;
-		q[3] = quaternion.W;
+		double m[4][4];
+		UMiVRyUtil::toUnityCoords(location, quaternion, false, m);
+		if (this->gro) {
+			ErrorCode = this->gro->startStroke(m, -1);
+			if (ErrorCode != 0) {
+				Result = GestureRecognition_Result::Error;
+				return;
+			}
+			Result = GestureRecognition_Result::Then;
+			this->side_active[(uint8)side] = true;
+			return;
+		}
+		if (this->gco) {
+			ErrorCode = this->gco->startStroke((int)side, m, -1);
+			if (ErrorCode != 0) {
+				Result = GestureRecognition_Result::Error;
+				return;
+			}
+			this->side_active[(uint8)side] = true;
+			Result = GestureRecognition_Result::Then;
+			return;
+		}
 	} else {
+		double p[3];
+		double q[4];
 		p[0] = location.X;
 		p[1] = location.Y;
 		p[2] = location.Z;
@@ -267,27 +293,28 @@ void AMiVRyActor::startGesturing(GestureRecognition_Result& Result, int& ErrorCo
 		q[1] = quaternion.Y;
 		q[2] = quaternion.Z;
 		q[3] = quaternion.W;
-	}
-	if (this->gro) {
-		ErrorCode = this->gro->startStroke(p, q, -1);
-		if (ErrorCode != 0) {
-			Result = GestureRecognition_Result::Error;
+		if (this->gro) {
+			ErrorCode = this->gro->startStroke(p, q, -1);
+			if (ErrorCode != 0) {
+				Result = GestureRecognition_Result::Error;
+				return;
+			}
+			Result = GestureRecognition_Result::Then;
+			this->side_active[(uint8)side] = true;
 			return;
 		}
-		Result = GestureRecognition_Result::Then;
-		this->side_active[(uint8)side] = true;
-		return;
-	}
-	if (this->gco) {
-		ErrorCode = this->gco->startStroke((int)side, p, q, -1);
-		if (ErrorCode != 0) {
-			Result = GestureRecognition_Result::Error;
+		if (this->gco) {
+			ErrorCode = this->gco->startStroke((int)side, p, q, -1);
+			if (ErrorCode != 0) {
+				Result = GestureRecognition_Result::Error;
+				return;
+			}
+			this->side_active[(uint8)side] = true;
+			Result = GestureRecognition_Result::Then;
 			return;
 		}
-		this->side_active[(uint8)side] = true;
-		Result = GestureRecognition_Result::Then;
-		return;
 	}
+	
 	UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.startGesturing] GestureRecognition object was not created. Failed to load database file?"));
 	ErrorCode = -1;
 	Result = GestureRecognition_Result::Error;
@@ -433,7 +460,7 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 			// UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] waiting for other hand on side %i"), (uint8)side);
 			return;
 		}
-		this->gesture_id = this->gco->identifyGestureCombination(&this->similarity);
+		this->gesture_id = this->gco->identifyGestureCombination(nullptr, &this->similarity);
 		if (this->gesture_id < 0) {
 			Result = GestureRecognition_Identification::FailedToIdentify;
 			for (int i = 0; i < parts.Num(); i++) {
@@ -500,13 +527,7 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 		}
 		FQuat quat;
 		if (this->UnityGestureDatabaseFile) {
-			GestureLocation.X = (float)hmd_p[2] * 100.0f; // Unreal.X = front = Unity.Z
-			GestureLocation.Y = (float)hmd_p[0] * 100.0f; // Unreal.Y = right = Unity.X
-			GestureLocation.Z = (float)hmd_p[1] * 100.0f; // Unreal.Z = up    = Unity.Y
-			quat.X = (float)hmd_q[2]; // Unreal.X = front = Unity.Z
-			quat.Y = (float)hmd_q[0]; // Unreal.Y = right = Unity.X
-			quat.Z = (float)hmd_q[1]; // Unreal.Z = up    = Unity.Y
-			quat.W = (float)hmd_q[3];
+			UMiVRyUtil::fromUnityCoords(hmd_p, hmd_q, false, GestureLocation, quat);
 			GestureRotation = quat.Rotator();
 			GestureScale = (float)scale * 100.0f;
 		} else {
@@ -517,6 +538,7 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 			quat.Y = (float)hmd_q[1];
 			quat.Z = (float)hmd_q[2];
 			quat.W = (float)hmd_q[3];
+			quat.Normalize();
 			GestureRotation = quat.Rotator();
 			GestureScale = (float)scale;
 		}
@@ -524,13 +546,30 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 		Locations.SetNum(len);
 		Rotations.SetNum(len);
 		for (int i = 0; i < len; i++) {
-			Locations[i].X = (float)p[3 * i + 0];
-			Locations[i].Y = (float)p[3 * i + 1];
-			Locations[i].Z = (float)p[3 * i + 2];
+			Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
+			Locations[i].Y = (float)p[3 * i + 1]; // y = secondary axis
+			Locations[i].Z = (float)p[3 * i + 2]; // z = least-significant axis
 			quat.X = (float)q[4 * i + 0];
 			quat.Y = (float)q[4 * i + 1];
 			quat.Z = (float)q[4 * i + 2];
 			quat.W = (float)q[4 * i + 3];
+			quat.Normalize();
+			if (this->UnityGestureDatabaseFile) {
+				const FVector xaxis = quat.GetAxisX();
+				const FVector yaxis = quat.GetAxisY();
+				const FVector zaxis = quat.GetAxisZ();
+				FRotationMatrix m(FRotator::ZeroRotator);
+				m.M[0][0] = -yaxis.Z;
+				m.M[0][1] = -yaxis.X;
+				m.M[0][2] = -yaxis.Y;
+				m.M[1][0] = xaxis.Z;
+				m.M[1][1] = xaxis.X;
+				m.M[1][2] = xaxis.Y;
+				m.M[2][0] = zaxis.Z;
+				m.M[2][1] = zaxis.X;
+				m.M[2][2] = zaxis.Y;
+				quat = m.ToQuat();
+			}
 			Rotations[i] = quat.Rotator();
 		}
 		delete[] p;
@@ -554,13 +593,7 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 		}
 		FQuat quat;
 		if (this->UnityGestureDatabaseFile) {
-			GestureLocation.X = (float)hmd_p[2] * 100.0f; // Unreal.X = front = Unity.Z
-			GestureLocation.Y = (float)hmd_p[0] * 100.0f; // Unreal.Y = right = Unity.X
-			GestureLocation.Z = (float)hmd_p[1] * 100.0f; // Unreal.Z = up    = Unity.Y
-			quat.X = (float)hmd_q[2];
-			quat.Y = (float)hmd_q[0];
-			quat.Z = (float)hmd_q[1];
-			quat.W = (float)hmd_q[3];
+			UMiVRyUtil::fromUnityCoords(hmd_p, hmd_q, false, GestureLocation, quat);
 			GestureRotation = quat.Rotator();
 			GestureScale = (float)scale * 100.0f;
 		} else {
@@ -571,6 +604,7 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 			quat.Y = (float)hmd_q[1];
 			quat.Z = (float)hmd_q[2];
 			quat.W = (float)hmd_q[3];
+			quat.Normalize();
 			GestureRotation = quat.Rotator();
 			GestureScale = (float)scale;
 		}
@@ -578,13 +612,30 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 		Locations.SetNum(len);
 		Rotations.SetNum(len);
 		for (int i = 0; i < len; i++) {
-			Locations[i].X = (float)p[3 * i + 0];
-			Locations[i].Y = (float)p[3 * i + 1];
-			Locations[i].Z = (float)p[3 * i + 2];
+			Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
+			Locations[i].Y = (float)p[3 * i + 1]; // y = secondary axis
+			Locations[i].Z = (float)p[3 * i + 2]; // z = least-significant axis
 			quat.X = (float)q[4 * i + 0];
 			quat.Y = (float)q[4 * i + 1];
 			quat.Z = (float)q[4 * i + 2];
 			quat.W = (float)q[4 * i + 3];
+			quat.Normalize();
+			if (this->UnityGestureDatabaseFile) {
+				const FVector xaxis = quat.GetAxisX();
+				const FVector yaxis = quat.GetAxisY();
+				const FVector zaxis = quat.GetAxisZ();
+				FRotationMatrix m(FRotator::ZeroRotator);
+				m.M[0][0] = -yaxis.Z;
+				m.M[0][1] = -yaxis.X;
+				m.M[0][2] = -yaxis.Y;
+				m.M[1][0] = xaxis.Z;
+				m.M[1][1] = xaxis.X;
+				m.M[1][2] = xaxis.Y;
+				m.M[2][0] = zaxis.Z;
+				m.M[2][1] = zaxis.X;
+				m.M[2][2] = zaxis.Y;
+				quat = m.ToQuat();
+			}
 			Rotations[i] = quat.Rotator();
 		}
 		delete[] p;

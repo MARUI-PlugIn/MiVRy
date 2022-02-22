@@ -1,22 +1,8 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- *
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -68,6 +54,20 @@ public:
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Recognition")
 	bool UnityCombatibilityMode = false;
+
+	/**
+	* License ID (name) of your MiVRy license.
+	* Leave emtpy for free version.
+	*/
+	UPROPERTY(EditAnywhere, Category = "Gesture Recognition")
+	FString LicenseName;
+
+	/**
+	* License Key of your MiVRy license.
+	* Leave emtpy for free version.
+	*/
+	UPROPERTY(EditAnywhere, Category = "Gesture Recognition")
+	FString LicenseKey;
 
 	/**
 	* Start new gesture motion.
@@ -187,7 +187,7 @@ public:
 
 	/**
 	* Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
-	* \return   True if a gesture motion (stroke) was started and is ongoing, false if not.
+	* @return   True if a gesture motion (stroke) was started and is ongoing, false if not.
 	*/
 	bool isStrokeStarted();
 	
@@ -394,25 +394,78 @@ public:
 	/**
 	* Save the neural network and recorded training data to file.
 	* @param path Where to save the gesture database file.
-	* @return Zero on success, false on failure.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Save Gestures to GestureDatabase File"))
 	int saveToFile(const FFilePath& path);
 
 	/**
 	* Load the neural network and recorded training data from file.
-	* @param The gesture database file to load.
-	* @return Zero on success, false on failure.
+	* @param path Path to the gesture database file to load.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Load GestureDatabase File"))
 	int loadFromFile(const FFilePath& path);
 
 	/**
+	* Load the neural network and recorded training data from buffer.
+	* @param buffer The gesture database to load.
+	* @return Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Load GestureDatabase Buffer"))
+	int loadFromBuffer(const TArray<uint8>& buffer);
+
+	/**
 	* Import recorded gestures from file.
 	* @param path The file from which to import gestures.
+	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Import Gestures From File"))
 	int importFromFile(const FFilePath& path);
+
+	/**
+	* Import recorded gestures from buffer.
+	* @param buffer The gesture database from which to import gestures.
+	* @return Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Import Gestures From Buffer"))
+	int importFromBuffer(const TArray<uint8>& buffer);
+
+	/**
+	* Load the neural network and recorded training data from file, asynchronously.
+	* The function will return immediately, while the loading process will continue in the background.
+	* Use 'isLoading' to check if the loading process is still ongoing.
+	* You can use 'OnTrainingFinishDelegate' to receive a notification when loading finishes.
+	* @param path Path to the gesture database file to load.
+	* @return Zero on success, a negative error code on failure. Note that this only relates to *starting* the loading process.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Load GestureDatabase File Async"))
+	int loadFromFileAsync(const FFilePath& path);
+
+	/**
+	* Load the neural network and recorded training data buffer, asynchronously.
+	* The function will return immediately, while the loading process will continue in the background.
+	* Use 'isLoading' to check if the loading process is still ongoing.
+	* You can use 'OnTrainingFinishDelegate' to receive a notification when loading finishes.
+	* @param buffer The gesture database to load.
+	* @return Zero on success, a negative error code on failure. Note that this only relates to *starting* the loading process.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Load GestureDatabase Buffer Async"))
+	int loadFromBufferAsync(const TArray<uint8>& buffer);
+
+	/**
+	* Whether the Neural Network is currently loading from a file or buffer.
+	* @return   True if the AI is currently loading, false if not.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Is Loading"))
+	bool isLoading();
+
+	/**
+	* Cancel a currently running loading process.
+	* @return   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Cancel Loading"))
+	int cancelLoading();
 
 	/**
 	* Start train the Neural Network based on the the currently collected data.
@@ -497,16 +550,20 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Rotational Frame Of Reference for Yaw"))
 	void setRotationalFrameOfReferenceYaw(GestureRecognition_FrameOfReference FrameOfReference);
-	
-	// Training Callback Functionality
-	// UFUNCTION(BlueprintImplementableEvent, Category = "Gesture Recognition")
-	// 	void OnTrainingUpdate(float performance);
-	// 
-	// DECLARE_EVENT_TwoParams(AGestureRecognitionActor, FTrainingCallbackEvent, AGestureRecognitionActor*, float);
-	// FTrainingCallbackEvent& OnTrainingUpdateEvent() { return TrainingUpdateEvent; }
-	// FTrainingCallbackEvent TrainingUpdateEvent;
 
+	/**
+	* Delegate for training callbacks.
+	* @param Source The GestureCombinationsActor from which the callback originated.
+	* @param Performance The current gesture recognition performance (0~1).
+	*/
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FTrainingCallbackDelegate, AGestureRecognitionActor*, Source, float, Performance);
+
+	/**
+	* Delegate for loading callbacks.
+	* @param Source The GestureCombinationsActor from which the callback originated.
+	* @param Status During loading: the percentage of loading progress; on finish: the result of the loading process (zero on success, a negative error code on failure).
+	*/
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FLoadingCallbackDelegate, AGestureRecognitionActor*, Source, int, Status);
 
 	/**
 	* Delegate to be called during training when the recognition performance was increased.
@@ -520,12 +577,31 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GestureRecognition Training Events")
 		FTrainingCallbackDelegate OnTrainingFinishDelegate;
 
+	/**
+	* Delegate to be called (repeatedly) during loading.
+	*/
+	UPROPERTY(BlueprintAssignable, Category = "GestureCombinations Loading Events")
+		FLoadingCallbackDelegate OnLoadingUpdateDelegate;
+
+	/**
+	* Delegate to be called when loading was finished (or canceled).
+	*/
+	UPROPERTY(BlueprintAssignable, Category = "GestureRecognition Loading Events")
+		FLoadingCallbackDelegate OnLoadingFinishDelegate;
+
 	struct TrainingCallbackMetadata {
 		AGestureRecognitionActor* actor;
 		FTrainingCallbackDelegate* delegate;
 	};
+	struct LoadingCallbackMetadata {
+		AGestureRecognitionActor* actor;
+		FLoadingCallbackDelegate* delegate;
+	};
 protected:
 	TrainingCallbackMetadata TrainingUpdateMetadata;
 	TrainingCallbackMetadata TrainingFinishMetadata;
+	LoadingCallbackMetadata  LoadingUpdateMetadata;
+	LoadingCallbackMetadata  LoadingFinishMetadata;
 	static void TrainingCallbackFunction(double performance, TrainingCallbackMetadata* metadata);
+	static void LoadingCallbackFunction(int result, LoadingCallbackMetadata* metadata);
 };

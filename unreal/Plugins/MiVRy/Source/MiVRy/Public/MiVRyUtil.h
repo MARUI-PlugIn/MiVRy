@@ -1,22 +1,8 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- *
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -36,25 +22,6 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "MiVRyUtil.generated.h"
 
-/**
- * Utility function class for the MiVRy Gesture Recognition plug-in.
- */
-UCLASS()
-class MIVRY_API UMiVRyUtil : public UBlueprintFunctionLibrary
-{
-	GENERATED_BODY()
-	
-public:
-
-    /**
-    * Turn error code into human-readable error message.
-    * @param errorCode The error code.
-    * @return The error message associated with the integer error code.
-    */
-    UFUNCTION(BlueprintPure, Category = "MiVRy Util", Meta = (DisplayName = "Error Code to String"))
-        static FString errorCodeToString(int errorCode);
-
-};
 
 /**
 * Possible results for calling MiVRy functions.
@@ -93,4 +60,67 @@ enum class GestureRecognition_FrameOfReference : uint8
 {
     Headset = 0 UMETA(DisplayName = "Head"),
     World = 1 UMETA(DisplayName = "World"),
+};
+
+
+/**
+ * Utility function class for the MiVRy Gesture Recognition plug-in.
+ */
+UCLASS()
+class MIVRY_API UMiVRyUtil : public UBlueprintFunctionLibrary
+{
+	GENERATED_BODY()
+	
+public:
+
+    /**
+    * Turn error code into human-readable error message.
+    * @param errorCode The error code.
+    * @return The error message associated with the integer error code.
+    */
+    UFUNCTION(BlueprintPure, Category = "MiVRy Util", Meta = (DisplayName = "Error Code to String"))
+        static FString errorCodeToString(int errorCode);
+
+    /**
+    * Find gesture database file in the various UE directories.
+    * This is just a helper function to simplify cross-platform use of relative file paths
+    * in the ProjectDir, ProjectContentDir, and other UE directories.
+    * The path can be used with the "loadFromFile" and "importFromFile" functions
+    * of the GestureRecognitionActor and GestureCombinationsActor.
+    * @param Path The file name or relative path of the gesture database file.
+    * @param Result Result of the search process.
+    * @param FoundPath The absolute filesystem path to the gesture database file.
+    */
+    UFUNCTION(BlueprintCallable, Category = "MiVRy Util", Meta = (DisplayName = "Find Gesture Database File", ExpandEnumAsExecs = "Result"))
+        static void findFile(const FString& Path, GestureRecognition_Result& Result, FString& FoundPath);
+
+    /**
+    * Load gesture database file into an array buffer.
+    * The buffer can be used with the "loadFromBuffer" and "importFromBuffer" functions
+    * of the GestureRecognitionActor and GestureCombinationsActor.
+    * @param Path The file path from where to load the gesture database.
+    * @param Result Result of the loading process.
+    * @param Data The contents of the gesture database file.
+    */
+    UFUNCTION(BlueprintCallable, Category = "MiVRy Util", Meta = (DisplayName = "Read Gesture Database File to Buffer", ExpandEnumAsExecs = "Result"))
+        static void readFileToBuffer(const FString& Path, GestureRecognition_Result& Result, TArray<uint8>& Data);
+
+    /**
+    * Helper function to convert UnrealEngine coordinates to Unity coordinates.
+    * @param location           The position in world space.
+    * @param quaternion         The rotation in world space.
+    * @param is_controller      Whether the device is a controller (not a headset).
+    * @param m                  [OUT] The transformation matrix in Unity coordinates.
+    */
+    static void toUnityCoords(const FVector& location, const FQuat& quaternion, bool is_controller, double m[4][4]);
+
+    /**
+    * Helper function to convert Unity coordinates to UnrealEngine coordinates.
+    * @param p                  Unit coordinate system location.
+    * @param q                  Unit coordinate system orientation.
+    * @param is_controller      Whether the device is a controller (not a headset).
+    * @param location           [OUT] UnrealEngine coordinate location.
+    * @param quaternion         [OUT] UnrealEngine coordinate orientation.
+    */
+    static void fromUnityCoords(const double p[3], const double q[4], bool is_controller, FVector& location, FQuat& quaternion);
 };

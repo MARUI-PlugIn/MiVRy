@@ -1,22 +1,8 @@
 /*
- * GestureCombinations - VR gesture recognition library for multi-part gesture combinations.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- * 
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software 
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
@@ -145,7 +131,7 @@ extern "C" {
 #endif
     GESTURERECOGNITION_LIBEXPORT void* GestureCombinations_create(int number_of_parts); //!< Create new instance.
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_delete(void* gco); //!< Delete instance.
-
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_activateLicense(void* gco, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_numberOfParts(void* gco); //!< Get the number of subgestures / parts / hands used by this multi-gesture object.
 
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStroke(void* gco, int part, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
@@ -155,11 +141,14 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeE(void* gco, int part, const double p[3], const double r[3]); //!< Continue stroke data input - rotation as Euler angles (rad).
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeM(void* gco, int part, const double m[4][4]); //!< Continue stroke data input - position and rotation as transformation matrix.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_endStroke(void* gco, int part, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and identify the gesture.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getPartProbabilitiesAndSimilarities(void* gco, int part, double p[], double s[], int* n); //!< Get all the probabilities and similarities (for each registered gesture) of the last gesture performance.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_isStrokeStarted(void* gco, int part); //!< Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_cancelStroke(void* gco, int part); //!< Cancel a started stroke.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_identifyGestureCombination(void* gco, double* similarity); //!< Return the most likely gesture candidate for the previous multi-gesture.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_identifyGestureCombination(void* gco, double* probability, double* similarity, double parts_probabilities[], double parts_similarities[]); //!< Return the most likely gesture candidate for the previous multi-gesture.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyM(void* gco, const double hmd[4][4], double* similarity=0); //!< Continuous gesture identification.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecord(void* gco, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordM(void* gco, const double hmd[4][4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationPeriod(void* gco, int part); //!< Get time frame for continuous gesture identification in milliseconds.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setContdIdentificationPeriod(void* gco, int part, int ms); //!< Set time frame for continuous gesture identification in milliseconds.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationSmoothing(void* gco, int part); //!< Get smoothing for continuous gesture identification in number of samples.
@@ -198,6 +187,14 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveGestureToFile(void* gco, int part, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromFile(void* gco, int part, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromBuffer(void* gco, int part, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromFileAsync(void* gco, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file, asynchronously.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromBufferAsync(void* gco, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer, asynchronously.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setLoadingUpdateCallbackFunction(void* gro, LoadingCallbackFunction* cbf); //!< Set the callback function to be called (repeatedly) during loading. Set to null for no callback.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setLoadingUpdateCallbackMetadata(void* gro, void* metadata); //!< Set the metadata object to be sent to the callback function to during loading.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setLoadingFinishCallbackFunction(void* gro, LoadingCallbackFunction* cbf); //!< Set the callback function to call when loading finishes. Set to null for no callback.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setLoadingFinishCallbackMetadata(void* gro, void* metadata); //!< Set the metadata object to be sent to the callback function to call when loading finishes.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_isLoading(void* gco); //!< Whether the neural network is currently loading from a file or buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_cancelLoading(void* gco); //!< Cancel a currently running loading process.
 
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_numberOfGestureCombinations(void* gco); //!< Get the number of gestures currently recorded in the i's system.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_deleteGestureCombination(void* gco, int index); //!< Delete the recorded gesture with the specified index.
@@ -213,7 +210,7 @@ extern "C" {
 
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_startTraining(void* gco); //!< Start train the Neural Network based on the the currently collected data.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_isTraining(void* gco); //!< Whether the Neural Network is currently training.
-    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_stopTraining(void* gco); //!< Stop the training process (last best result will be used).
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_stopTraining(void* gco); //!< Stop the training process (last best result will be used).
     
     GESTURERECOGNITION_LIBEXPORT double GestureCombinations_recognitionScore(void* gco); //!< Get the gesture recognition score of the current neural networks (0~1).
 
@@ -255,6 +252,14 @@ public:
     * Destructor.
     */
     virtual ~IGestureCombinations();
+
+    /**
+    * Provide a license to enable additional functionality.
+    * \param license_name   The license name text.
+    * \param license_key    The license key text.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int activateLicense(const char* license_name, const char* license_key)=0;
 
     /**
     * Get the number of subgestures / parts / hands used by this multi-gesture object.
@@ -328,6 +333,17 @@ public:
     virtual int endStroke(int part, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
 
     /**
+    * Get all the probabilities and similarities (for each registered gesture) of the last gesture performance.
+    * \param    part            The sub-gesture index (or side) of the gesture motion.
+    * \param    p               [OUT][OPTIONAL] Array to receive the propability values (0~1) for each registered gesture.
+    * \param    s               [OUT][OPTIONAL] Array to receive the similarity values (0~1) for each registered gesture.
+    * \param    n               [IN][OUT] Length of the arrays p and n. Will be set to the number of values written to the arrays
+    *                           (Should be the number of registered gestures on the part/subgestures).
+    * \return                   Zero on success, or a negative error code on failure.
+    */
+    virtual int getPartProbabilitiesAndSimilarities(int part, double p[], double s[], int* n)=0;
+
+    /**
     * Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
     * \return   True if a gesture motion (stroke) was started and is ongoing, false if not.
     */
@@ -342,10 +358,13 @@ public:
 
     /**
     * Return the most likely gesture candidate for the previous multi-gesture.
-    * \param    similarity      [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \param    probability     [OUT] The probability (0~1) expressing how likely the performed gesture motion was actually the identified gesture.
+    * \param    similarity      [OUT] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \param    parts_probabilities [OUT] The probability (0~1) of the gesture performance for each part (array must be numberOfParts() in length).
+    * \param    parts_similarities  [OUT] The similarity (0~1) of the gesture performance for each part (array must be numberOfParts() in length).
     * \return                   The ID of the identified gesture combination, or a negative error code on failure.
     */
-    virtual int identifyGestureCombination(double* similarity=0)=0;
+    virtual int identifyGestureCombination(double* probability=nullptr, double* similarity=nullptr, double parts_probabilities[]=nullptr, double parts_similarities[]=nullptr)=0;
 
     /**
     * Continuous gesture identification.
@@ -357,12 +376,27 @@ public:
     virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0)=0;
 
     /**
+    * Continuous gesture identification.
+    * \param    hmd             Transformation matrix of the current headset position.
+    * \param    similarity      [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \return                   The ID of the identified gesture combination, or a negative error code on failure.
+    */
+    virtual int contdIdentifyM(const double hmd[4][4], double* similarity=0)=0;
+
+    /**
     * Continuous gesture recording.
     * \param    hmd_p           Vector (x,y,z) of the current headset position.
     * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
     * \return                   The ID of the recorded gesture on success, an negative error code on failure.
     */
     virtual int contdRecord(const double hmd_p[3], const double hmd_q[4])=0;
+
+    /**
+    * Continuous gesture recording.
+    * \param    hmd             Transformation matrix of the current headset position.
+    * \return                   The ID of the recorded gesture on success, an negative error code on failure.
+    */
+    virtual int contdRecordM(const double hmd[4][4])=0;
 
     /**
     * Get time frame for continuous gesture identification in milliseconds.
@@ -662,6 +696,65 @@ public:
     virtual int loadGestureFromBuffer(int part, const char* buffer, int buffer_size, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0;
 
     /**
+    * Load the neural network and recorded training data from file, asynchronously.
+    * The function will return immediately, while the loading process will continue in the background.
+    * Use isLoading() to check if the loading process is still ongoing.
+    * You can use setLoadingCallback() to receive a function call when loading finishes.
+    * \param    path            The file path from which to load the AI and recorded data.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \return                   Zero on success, a negative error code on failure. Note that this only relates to *starting* the loading process.
+    */
+    virtual int loadFromFileAsync(const char* path, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0;
+
+    /**
+    * Load the neural network and recorded training data buffer, asynchronously.
+    * The function will return immediately, while the loading process will continue in the background.
+    * Use isLoading() to check if the loading process is still ongoing.
+    * You can use setLoadingCallback() to receive a function call when loading finishes.
+    * \param    buffer          Memory buffer from which to load the AI and recorded data.
+    * \param    buffer_size     Size of the memory buffer in byte.
+    * \param    createMetadata  [OPTIONAL] The function which can parse the metadata which was stored with the gestures.
+    * \return                   Zero on success, a negative error code on failure. Note that this only relates to *starting* the loading process.
+    */
+    virtual int loadFromBufferAsync(const char* buffer, int buffer_size, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0;
+
+    /**
+    * Set the callback function to be called (repeatedly) during loading. Set to null for no callback.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setLoadingUpdateCallbackFunction(LoadingCallbackFunction* callback_function)=0;
+
+    /**
+    * Set the metadata object to be sent to the callback function to be called during loading.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setLoadingUpdateCallbackMetadata(void* callback_metadata)=0;
+
+    /**
+    * Set the callback function to be called when loading finishes. Set to null for no callback.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setLoadingFinishCallbackFunction(LoadingCallbackFunction* callback_function)=0;
+
+    /**
+    * Set the metadata object to be sent to the callback function to call when loading finishes.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setLoadingFinishCallbackMetadata(void* callback_metadata)=0;
+
+    /**
+    * Whether the Neural Network is currently loading from a file or buffer.
+    * \return                   True if the GestureCombinations AI is currently loading, false if not.
+    */
+    virtual bool isLoading()=0;
+
+    /**
+    * Cancel a currently running loading process.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int cancelLoading()=0;
+
+    /**
     * Get the number of currently recorded gesture combinations.
     * \return                   The number of currently recorded gesture combinations.
     */
@@ -749,8 +842,9 @@ public:
 
     /**
     * Stop the training process (last best result will be used).
+    * \return                   Zero on success, a negative error code on failure.
     */
-    virtual void stopTraining()=0;
+    virtual int stopTraining()=0;
 
     /**
     * Get the gesture recognition score of the current neural network (0~1).

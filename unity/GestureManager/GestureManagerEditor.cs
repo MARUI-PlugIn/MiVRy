@@ -1,4 +1,22 @@
-﻿#if UNITY_EDITOR
+﻿/*
+ * MiVRy - 3D gesture recognition library plug-in for Unity.
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR 
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, 
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, 
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY 
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#if UNITY_EDITOR
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -49,6 +67,12 @@ public class GestureManagerEditor : UnityEditor.Editor
         // Gesture file management
         if (gm.gr == null && gm.gc == null)
         {
+            EditorGUILayout.BeginVertical(GUI.skin.box);
+            EditorGUILayout.LabelField("LICENSE:", "(Leave empty for free version)");
+            gm.license_id = EditorGUILayout.TextField("Licence ID", gm.license_id);
+            gm.license_key = EditorGUILayout.TextField("Licence Key", gm.license_key);
+            EditorGUILayout.EndVertical();
+
             serializedObject.ApplyModifiedProperties();
             return;
         }
@@ -428,15 +452,23 @@ public class GestureManagerEditor : UnityEditor.Editor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
             {
-                int ret = gm.gr.startTraining();
-                if (ret == 0)
+                if (gm.gr.isTraining())
                 {
-                    gm.training_started = true;
-                    Debug.Log("Training started");
+                    Debug.Log("Already training...");
                 } else
                 {
-                    gm.training_started = false;
-                    Debug.Log("[ERROR] Failed to start training: " + GestureRecognition.getErrorMessage(ret));
+                    gm.training_finished = false;
+                    int ret = gm.gr.startTraining();
+                    if (ret == 0)
+                    {
+                        gm.training_started = true;
+                        Debug.Log("Training started");
+                    }
+                    else
+                    {
+                        gm.training_started = false;
+                        Debug.Log("[ERROR] Failed to start training: " + GestureRecognition.getErrorMessage(ret));
+                    }
                 }
             }
             if (GUILayout.Button("Stop training"))
@@ -451,16 +483,22 @@ public class GestureManagerEditor : UnityEditor.Editor
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
             {
-                int ret = gm.gc.startTraining();
-                if (ret == 0)
+                if (gm.gc.isTraining())
                 {
-                    gm.training_started = true;
-                    Debug.Log("Training started");
-                }
-                else
-                {
-                    gm.training_started = false;
-                    Debug.Log("[ERROR] Failed to start training: " + GestureRecognition.getErrorMessage(ret));
+                    Debug.Log("Already training...");
+                } else {
+                    gm.training_finished = true;
+                    int ret = gm.gc.startTraining();
+                    if (ret == 0)
+                    {
+                        gm.training_started = true;
+                        Debug.Log("Training started");
+                    }
+                    else
+                    {
+                        gm.training_started = false;
+                        Debug.Log("[ERROR] Failed to start training: " + GestureRecognition.getErrorMessage(ret));
+                    }
                 }
             }
             if (GUILayout.Button("Stop training"))
@@ -469,8 +507,14 @@ public class GestureManagerEditor : UnityEditor.Editor
             }
             GUILayout.EndHorizontal();
         }
-
         EditorGUILayout.EndVertical();
+
+        EditorGUILayout.BeginVertical(GUI.skin.box);
+        EditorGUILayout.LabelField("LICENSE:", "(Leave empty for free version)");
+        gm.license_id = EditorGUILayout.TextField("Licence ID", gm.license_id);
+        gm.license_key = EditorGUILayout.TextField("Licence Key", gm.license_key);
+        EditorGUILayout.EndVertical();
+
         serializedObject.ApplyModifiedProperties();
     }
 }

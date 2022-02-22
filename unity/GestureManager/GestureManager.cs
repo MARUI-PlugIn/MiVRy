@@ -1,18 +1,8 @@
 ﻿/*
- * Advaced Gesture Recognition - Unity Plug-In
+ * MiVRy - 3D gesture recognition library plug-in for Unity.
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
- * Copyright (c) 2019 MARUI-PlugIn (inc.)
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software 
- * and projectes completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
@@ -61,10 +51,16 @@ public class GestureManager : MonoBehaviour
                 if (gr == null)
                 {
                     gr = new GestureRecognition();
+                    if (this.license_id != null && this.license_key != null && this.license_id != "")
+                    {
+                        gr.activateLicense(license_id, license_key);
+                    }
                     gr.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
                     gr.setTrainingUpdateCallbackMetadata((IntPtr)me);
                     gr.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
                     gr.setTrainingFinishCallbackMetadata((IntPtr)me);
+                    gr.setLoadingFinishCallbackFunction(GestureManager.loadingFinishCallback);
+                    gr.setLoadingFinishCallbackMetadata((IntPtr)me);
                     if (ConsoleText != null)
                         ConsoleText.text = "Created Gesture Recognition Object\n(for one-handed gestures)";
                 }
@@ -73,10 +69,16 @@ public class GestureManager : MonoBehaviour
                 gr = null;
                 if (gc == null || gc.numberOfParts() != value) {
                     gc = new GestureCombinations(value);
+                    if (this.license_id != null && this.license_key != null && this.license_id != "")
+                    {
+                        gc.activateLicense(license_id, license_key);
+                    }
                     gc.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
                     gc.setTrainingUpdateCallbackMetadata((IntPtr)me);
                     gc.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
                     gc.setTrainingFinishCallbackMetadata((IntPtr)me);
+                    gc.setLoadingFinishCallbackFunction(GestureManager.loadingFinishCallback);
+                    gc.setLoadingFinishCallbackMetadata((IntPtr)me);
                     if (ConsoleText != null)
                         ConsoleText.text = $"Created Gesture Combination Object\n(for {value} parts)";
                 }
@@ -84,6 +86,10 @@ public class GestureManager : MonoBehaviour
             GestureManagerVR.refresh();
         }
     }
+
+    public string license_id = "";
+    public string license_key = "";
+
     public string file_load_combinations = "Samples/Sample_TwoHanded_Gestures.dat";
     public string file_import_combinations = "Samples/Sample_Military_Gestures.dat";
     public string file_load_subgestures = "Samples/Sample_OneHanded_Gestures.dat";
@@ -128,9 +134,21 @@ public class GestureManager : MonoBehaviour
     // Whether the training process is was recently started.
     public bool training_started = false;
 
+    // Whether the training process is was recently completed.
+    public bool training_finished = false;
+
     // Last reported recognition performance (during training).
     // 0 = 0% correctly recognized, 1 = 100% correctly recognized.
-    public double last_performance_report = 0; 
+    public double last_performance_report = 0;
+
+    // Whether the loading process is was recently started.
+    public bool loading_started = false;
+
+    // Whether the loading process is was recently completed.
+    public bool loading_finished = false;
+
+    // Result of the loading result. Zero on success, a negative error code on failure.
+    public int loading_result = 0;
 
     // Temporary storage for objects to display the gesture stroke.
     List<string> stroke = new List<string>(); 
@@ -288,6 +306,27 @@ public class GestureManager : MonoBehaviour
             return;
         }
 
+        if (loading_started)
+        {
+            if ((this.gr != null && this.gr.isLoading()) || (this.gc != null && this.gc.isLoading()))
+            {
+                consoleText = "Currently loading...\n";
+                return;
+            } else
+            {
+                loading_started = false;
+                consoleText = "Loading Finished!\n"
+                                 + "Result: " + GestureRecognition.getErrorMessage(this.loading_result) + "\n";
+                GestureManagerVR.refresh();
+            }
+        } else if ((this.gr != null && this.gr.isLoading()) || (this.gc != null && this.gc.isLoading()))
+        {
+            loading_started = true;
+            consoleText = "Currently loading...\n";
+            GestureManagerVR.refresh();
+            return;
+        }
+
         float trigger_left = Input.GetAxis("LeftControllerTrigger");
         float trigger_right = Input.GetAxis("RightControllerTrigger");
 
@@ -369,7 +408,7 @@ public class GestureManager : MonoBehaviour
             if (gesture_id < 0)
             {
                 // Error trying to identify any gesture
-                consoleText = "Failed to identify gesture.";
+                consoleText = "Failed to identify gesture: " + GestureRecognition.getErrorMessage(gesture_id);
             }
             else
             {
@@ -497,7 +536,7 @@ public class GestureManager : MonoBehaviour
             if (recognized_combination_id < 0)
             {
                 // Error trying to identify any gesture
-                consoleText = "Failed to identify gesture.";
+                consoleText = "Failed to identify gesture: " + GestureRecognition.getErrorMessage(recognized_combination_id);
             }
             else
             {
@@ -535,6 +574,22 @@ public class GestureManager : MonoBehaviour
         GestureManager me = (obj.Target as GestureManager);
         // Update the performance indicator with the latest estimate.
         me.last_performance_report = performance;
+        me.training_finished = true;
+    }
+
+    // Callback function to be called by the gesture recognition plug-in when the loading process was finished.
+    [MonoPInvokeCallback(typeof(GestureRecognition.TrainingCallbackFunction))]
+    public static void loadingFinishCallback(int result, IntPtr ptr)
+    {
+        if (ptr.ToInt32() == 0)
+        {
+            return;
+        }
+        // Get the script/scene object back from metadata.
+        GCHandle obj = (GCHandle)ptr;
+        GestureManager me = (obj.Target as GestureManager);
+        me.loading_result = result;
+        me.loading_finished = true;
     }
 
     // Helper function to add a new star to the stroke trail.
@@ -618,7 +673,7 @@ public class GestureManager : MonoBehaviour
         if (this.gr != null)
         {
             string path = getLoadPath(this.file_load_gestures);
-            int ret = this.gr.loadFromFile(path);
+            int ret = this.gr.loadFromFileAsync(path);
             if (ret != 0)
             {
                 byte[] file_contents = File.ReadAllBytes(path);
@@ -634,13 +689,13 @@ public class GestureManager : MonoBehaviour
                     return false;
                 }
             }
-            this.consoleText = "Gesture file loaded successfully";
+            this.consoleText = "Gesture file loading started...";
             return true;
         }
         else if (this.gc != null)
         {
             string path = getLoadPath(this.file_load_combinations);
-            int ret = this.gc.loadFromFile(path);
+            int ret = this.gc.loadFromFileAsync(path);
             if (ret != 0)
             {
                 byte[] file_contents = File.ReadAllBytes(path);
@@ -656,7 +711,7 @@ public class GestureManager : MonoBehaviour
                     return false;
                 }
             }
-            this.consoleText = "Gesture combinations file loaded successfully";
+            this.consoleText = "Gesture combinations file loading started...";
             return true;
         }
         this.consoleText = "[ERROR] No Gesture Recognition object\nto load gestures into.";

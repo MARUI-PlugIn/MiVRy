@@ -1,22 +1,8 @@
 ﻿/*
- * MiVRy - VR gesture recognition library plug-in for Unity.
- * Version 1.20
- * Copyright (c) 2021 MARUI-PlugIn (inc.)
+ * MiVRy - 3D gesture recognition library plug-in for Unity.
+ * Version 2.0
+ * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
- * MiVRy is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
- * ( http://creativecommons.org/licenses/by-nc/4.0/ )
- * 
- * This software is free to use for non-commercial purposes.
- * You may use this software in part or in full for any project
- * that does not pursue financial gain, including free software 
- * and projects completed for evaluation or educational purposes only.
- * Any use for commercial purposes is prohibited.
- * You may not sell or rent any software that includes
- * this software in part or in full, either in it's original form
- * or in altered form.
- * If you wish to use this software in a commercial application,
- * please contact us at support@marui-plugin.com to obtain
- * a commercial license.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR 
@@ -167,6 +153,20 @@ public class Mivry : MonoBehaviour
     };
 
     /// <summary>
+    /// The name (ID) of the MiVRy license to use.
+    /// If left empty, MiVRy will not activate any license and will run as "free" version.
+    /// </summary>
+    [Tooltip("License Name (ID) of your MiVRy license. Leave empty for free version.")]
+    public string LicenseName = "";
+
+    /// <summary>
+    /// The license key of the MiVRy license to use.
+    /// If left empty, MiVRy will not activate any license and will run as "free" version.
+    /// </summary>
+    [Tooltip("License Key of your MiVRy license. Leave empty for free version.")]
+    public string LicenseKey = "";
+
+    /// <summary>
     /// The path to the gesture recognition database file to load.
     /// In the editor, this will be relative to the Assets/ folder.
     /// In stand-alone (build), this will be relative to the StreamingAssets/ folder.
@@ -245,6 +245,7 @@ public class Mivry : MonoBehaviour
     /// </summary>
     void Start()
     {
+        int ret;
 #if UNITY_EDITOR
         // When running the scene inside the Unity editor,
         // we can just load the file from the Assets/ folder:
@@ -284,7 +285,16 @@ public class Mivry : MonoBehaviour
         GesturesFilePath = GesturesFilePath + "/" + GestureDatabaseFile;
         // try to figure out if this is a gesture recognition or gesture combinations file
         gr = new GestureRecognition();
-        int ret = gr.loadFromFile(GesturesFilePath);
+        
+        if (this.LicenseKey != null && this.LicenseName != null && this.LicenseName.Length > 0) {
+            ret = this.gr.activateLicense(this.LicenseName, this.LicenseKey);
+            if (ret != 0)
+            {
+                Debug.LogError("[MiVRy] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+            }
+        }
+        
+        ret = gr.loadFromFile(GesturesFilePath);
         if (ret == 0) // file loaded successfully
         {
             return;
@@ -306,6 +316,16 @@ public class Mivry : MonoBehaviour
             Debug.LogError("[MiVRy] Failed to load gesture recognition database file: " + GestureRecognition.getErrorMessage(ret));
         }
         gc = new GestureCombinations(0);
+
+        if (this.LicenseKey != null && this.LicenseName != null && this.LicenseName.Length > 0)
+        {
+            ret = this.gc.activateLicense(this.LicenseName, this.LicenseKey);
+            if (ret != 0)
+            {
+                Debug.LogError("[MiVRy] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+            }
+        }
+
         ret = gc.loadFromFile(GesturesFilePath);
         if (ret == 0) // file loaded successfully
         {
