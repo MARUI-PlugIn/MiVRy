@@ -52,13 +52,23 @@
  * - "OnGestureCompletion":
  *   Event callback functions to be called when a gesture was performed.
  * 
+ * (4) To use MiVRy in Bolt state graphs, uncomment the following line "#define MIVRY_USE_BOLT"
+ * by removing the "//" at the beginning of the line, then use the Bolt "Unit Options Wizard"
+ * to add the "MiVRy" script and "Gesture Completion Data" to the Bolt "Type Options".
+ * Then you can use Custom Events with the name of the gesture in Bolt state graphs to trigger
+ * transitions.
  */
+//#define MIVRY_USE_BOLT
 
 using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Networking;
+
+#if MIVRY_USE_BOLT
+using Ludiq;
+using Bolt;
+#endif
 
 /// <summary>
 /// Data regarding the identified gesture.
@@ -439,6 +449,9 @@ public class Mivry : MonoBehaviour
         part.secondaryDirection = part.orientation * Vector3.up;
         data.gestureName = gr.getGestureName(data.gestureID);
         OnGestureCompletion.Invoke(data);
+        #if MIVRY_USE_BOLT
+        CustomEvent.Trigger(this.gameObject, data.gestureName, data);
+        #endif
         LeftHandActive = false;
         RightHandActive = false;
     }
@@ -501,6 +514,9 @@ public class Mivry : MonoBehaviour
                     data.gestureID = gc.identifyGestureCombination(ref data.similarity);
                     data.gestureName = gc.getGestureCombinationName(data.gestureID);
                     OnGestureCompletion.Invoke(data);
+                    #if MIVRY_USE_BOLT
+                    CustomEvent.Trigger(this.gameObject, data.gestureName, data);
+                    #endif
                     data.parts = new GestureCompletionData.Part[0]; // reset
                 }
             }
@@ -541,6 +557,9 @@ public class Mivry : MonoBehaviour
                     data.gestureID = gc.identifyGestureCombination(ref data.similarity);
                     data.gestureName = gc.getGestureCombinationName(data.gestureID);
                     OnGestureCompletion.Invoke(data);
+                    #if MIVRY_USE_BOLT
+                    CustomEvent.Trigger(this.gameObject, data.gestureName, data);
+                    #endif
                     data.parts = new GestureCompletionData.Part[0]; // reset
                 }
             }
