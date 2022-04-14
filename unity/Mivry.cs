@@ -64,6 +64,13 @@ using System;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Events;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+#endif
+#if UNITY_ANDROID
+using UnityEngine.Networking;
+#endif
 
 #if MIVRY_USE_BOLT
 using Ludiq;
@@ -153,10 +160,36 @@ public class GestureCompletionEvent : UnityEvent<GestureCompletionData>
 public class Mivry : MonoBehaviour
 {
     /// <summary>
+    /// Which Unity XR plug-in is used (see Unity Package Manager and Project Settings -> XR Plugin Management).
+    /// </summary>
+    [System.Serializable]
+    public enum UnityXrPlugin
+    {
+        OpenXR,
+        OculusVR,
+        SteamVR
+    };
+
+    /// <summary>
+    /// Which coordinate system Mivry uses internally (in the Gesture Database file).
+    /// </summary>
+    [System.Serializable]
+    public enum MivryCoordinateSystem
+    {
+        OpenXR,
+        OculusVR,
+        SteamVR,
+        UnrealEngine
+    };
+
+    /// <summary>
     /// Type of input to use to trigger the start/end of a gesture.
     /// </summary>
     [System.Serializable]
     public enum InputType {
+#if ENABLE_INPUT_SYSTEM
+        InputSystemControl,
+#endif
         Axis,
         Button,
         Key
@@ -185,6 +218,21 @@ public class Mivry : MonoBehaviour
     public string GestureDatabaseFile = "";
 
     /// <summary>
+    /// Which Unity XR plugin is being used by this project.
+    /// This is only important when the GestureDatabase file was created (or will be used) with a different PlugIn
+    /// or on a different platform (such as Unreal Engine), because they are using different coordinate systems.
+    /// See the Unity Package Manager and Project Settings -> XR Plugin Manager to see which plugin is being used.
+    /// </summary>
+    [Tooltip("The Unity XR plugin used in this project (see: Project Settings -> XR Plugin Manager).")]
+    public UnityXrPlugin unityXrPlugin = UnityXrPlugin.OpenXR;
+
+    /// <summary>
+    /// The coordinate system MiVRy should use internally (or that the GestureDatabase file was created with).
+    /// </summary>
+    [Tooltip("The coordinate system MiVRy should use internally (or that the GestureDatabase file was created with).")]
+    public MivryCoordinateSystem mivryCoordinateSystem = MivryCoordinateSystem.OpenXR;
+
+    /// <summary>
     /// A game object that will be used as the position of the left hand.
     /// </summary>
     [Tooltip("GameObject to use as the position of the left hand.")]
@@ -194,13 +242,14 @@ public class Mivry : MonoBehaviour
     /// The name of the input in the Input Manager (in Project settings)
     /// which will be used to start/end the gesture.
     /// </summary>
-    [Tooltip("The name of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture.")]
+    [Tooltip("The name of the input (in Project Settings -> Input Manager) or Input System Control ('<XRController>{LeftHand}/trigger') that triggers the start/end of a gesture.")]
     public string LeftTriggerInput = "";
 
     /// <summary>
     /// The type of the input (Axis, Button, or Key) which triggers the gesture.
+    /// "Input System Control" when using the new Input System.
     /// </summary>
-    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture.")]
+    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture. 'Input System Control' when using the new Input System.")]
     public InputType LeftTriggerInputType = InputType.Axis;
 
     /// <summary>
@@ -220,13 +269,14 @@ public class Mivry : MonoBehaviour
     /// The name of the input in the Input Manager (in Project settings)
     /// which will be used to start/end the gesture.
     /// </summary>
-    [Tooltip("The name of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture.")]
+    [Tooltip("The name of the input (in Project Settings -> Input Manager) or Input System Control ('<XRController>{LeftHand}/trigger') that triggers the start/end of a gesture.")]
     public string RightTriggerInput = "";
 
     /// <summary>
     /// The type of the input (Axis, Button, or Key) which triggers the gesture.
+    /// "Input System Control" when using the new Input System.
     /// </summary>
-    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture.")]
+    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture. 'Input System Control' when using the new Input System.")]
     public InputType RightTriggerInputType = InputType.Axis;
 
     /// <summary>
@@ -280,7 +330,7 @@ public class Mivry : MonoBehaviour
         try {
             Directory.CreateDirectory(path);
             Directory.Delete(path);
-        } catch (Exception e) { }
+        } catch (Exception) { }
         try {
             File.WriteAllBytes(path, request.downloadHandler.data);
         } catch (Exception e) {
@@ -350,6 +400,48 @@ public class Mivry : MonoBehaviour
         Debug.LogError("[MiVRy] Failed to load gesture recognition database file: " + GestureRecognition.getErrorMessage(ret));
     }
 
+#if ENABLE_INPUT_SYSTEM
+    public float getInputControlValue(string controlName)
+    {
+
+        InputControl control = InputSystem.FindControl(controlName); // eg: "<XRController>{RightHand}/trigger"
+        switch (control)
+        {
+            case AxisControl axisControl:
+                return axisControl.ReadValue();
+            case DoubleControl doubleControl:
+                return (float)doubleControl.ReadValue();
+            case IntegerControl integerControl:
+                return integerControl.ReadValue();
+            case QuaternionControl quaternionControl:
+                Debug.LogError($"Mivry.getInputControlValue : QuaternionControl '${controlName}' not supported.");
+                return 0.0f;
+            case TouchControl touchControl:
+                return touchControl.ReadValue().pressure;
+            case TouchPhaseControl phaseControl:
+                var phase = phaseControl.ReadValue();
+                switch (phase)
+                {
+                    case UnityEngine.InputSystem.TouchPhase.Began:
+                    case UnityEngine.InputSystem.TouchPhase.Stationary:
+                    case UnityEngine.InputSystem.TouchPhase.Moved:
+                        return 1.0f;
+                    case UnityEngine.InputSystem.TouchPhase.None:
+                    case UnityEngine.InputSystem.TouchPhase.Ended:
+                    case UnityEngine.InputSystem.TouchPhase.Canceled:
+                    default:
+                        return 0.0f;
+                }
+            case Vector2Control vector2Control:
+                return vector2Control.ReadValue().magnitude;
+            case Vector3Control vector3Control:
+                return vector3Control.ReadValue().magnitude;
+
+        }
+        return 0.0f;
+    }
+#endif
+
     /// <summary>
     /// Unity update function.
     /// </summary>
@@ -359,6 +451,11 @@ public class Mivry : MonoBehaviour
         if (LeftTriggerInput != null && LeftTriggerInput.Length > 0) {
             switch (LeftTriggerInputType)
             {
+#if ENABLE_INPUT_SYSTEM
+                case InputType.InputSystemControl:
+                    leftTrigger = getInputControlValue(LeftTriggerInput);
+                    break;
+#endif
                 case InputType.Axis:
                     leftTrigger = Input.GetAxis(LeftTriggerInput);
                     break;
@@ -375,6 +472,11 @@ public class Mivry : MonoBehaviour
         if (RightTriggerInput != null && RightTriggerInput.Length > 0) {
             switch (RightTriggerInputType)
             {
+#if ENABLE_INPUT_SYSTEM
+                case InputType.InputSystemControl:
+                    rightTrigger = getInputControlValue(RightTriggerInput);
+                    break;
+#endif
                 case InputType.Axis:
                     rightTrigger = Input.GetAxis(RightTriggerInput);
                     break;
@@ -416,7 +518,10 @@ public class Mivry : MonoBehaviour
                 return; // neither button pressed: nothing to do
             }
             Transform hmd = Camera.main.gameObject.transform;
-            gr.startStroke(hmd.position, hmd.rotation);
+            Vector3 p = hmd.position;
+            Quaternion q = hmd.rotation;
+            convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
+            gr.startStroke(p, q);
         }
 
         GameObject activeGameObject = LeftHand;
@@ -433,7 +538,10 @@ public class Mivry : MonoBehaviour
         if (activeTrigger > activeTriggerPressure * 0.9f)
         {
             // still gesturing
-            gr.contdStrokeQ(activeGameObject.transform.position, activeGameObject.transform.rotation);
+            Vector3 p = activeGameObject.transform.position;
+            Quaternion q = activeGameObject.transform.rotation;
+            convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+            gr.contdStrokeQ(p, q);
             return;
         }
         // else: user released the trigger, ending the gesture
@@ -445,6 +553,7 @@ public class Mivry : MonoBehaviour
             ref part.position,
             ref part.scale,
             ref part.orientation);
+        convertOutput(this.mivryCoordinateSystem, ref part.position, ref part.orientation);
         part.primaryDirection = part.orientation * Vector3.right;
         part.secondaryDirection = part.orientation * Vector3.up;
         data.gestureName = gr.getGestureName(data.gestureID);
@@ -463,19 +572,25 @@ public class Mivry : MonoBehaviour
     {
         if (LeftHandActive == false)
         {
-            if (leftTrigger > LeftTriggerPressure)
+            if (leftTrigger >= LeftTriggerPressure)
             {
                 Transform hmd = Camera.main.gameObject.transform;
-                gc.startStroke((int)GestureCompletionData.Part.Side.Left, hmd.position, hmd.rotation);
+                Vector3 p = hmd.position;
+                Quaternion q = hmd.rotation;
+                convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
+                gc.startStroke((int)GestureCompletionData.Part.Side.Left, p, q);
                 LeftHandActive = true;
             }
         }
         if (RightHandActive == false)
         {
-            if (rightTrigger > RightTriggerPressure)
+            if (rightTrigger >= RightTriggerPressure)
             {
                 Transform hmd = Camera.main.gameObject.transform;
-                gc.startStroke((int)GestureCompletionData.Part.Side.Right, hmd.position, hmd.rotation);
+                Vector3 p = hmd.position;
+                Quaternion q = hmd.rotation;
+                convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
+                gc.startStroke((int)GestureCompletionData.Part.Side.Right, p, q);
                 RightHandActive = true;
             }
         }
@@ -483,10 +598,10 @@ public class Mivry : MonoBehaviour
         {
             if (leftTrigger > LeftTriggerPressure * 0.9f)
             {
-                gc.contdStrokeQ(
-                    (int)GestureCompletionData.Part.Side.Left,
-                    LeftHand.transform.position,
-                    LeftHand.transform.rotation);
+                Vector3 p = LeftHand.transform.position;
+                Quaternion q = LeftHand.transform.rotation;
+                convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Left, p, q);
             } else
             {
                 GestureCompletionData.Part part = null;
@@ -505,6 +620,7 @@ public class Mivry : MonoBehaviour
                     part.side = GestureCompletionData.Part.Side.Left;
                 }
                 gc.endStroke((int)GestureCompletionData.Part.Side.Left, ref part.position, ref part.scale, ref part.orientation);
+                convertOutput(this.mivryCoordinateSystem, ref part.position, ref part.orientation);
                 part.primaryDirection = part.orientation * Vector3.right;
                 part.secondaryDirection = part.orientation * Vector3.up;
                 LeftHandActive = false;
@@ -525,10 +641,10 @@ public class Mivry : MonoBehaviour
         {
             if (rightTrigger > RightTriggerPressure*0.9f)
             {
-                gc.contdStrokeQ(
-                    (int)GestureCompletionData.Part.Side.Right,
-                    RightHand.transform.position,
-                    RightHand.transform.rotation);
+                Vector3 p = RightHand.transform.position;
+                Quaternion q = RightHand.transform.rotation;
+                convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Right, p, q);
             }
             else
             {
@@ -548,8 +664,9 @@ public class Mivry : MonoBehaviour
                     part.side = GestureCompletionData.Part.Side.Right;
                 }
                 gc.endStroke((int)GestureCompletionData.Part.Side.Right, ref part.position, ref part.scale, ref part.orientation);
+                convertOutput(this.mivryCoordinateSystem, ref part.position, ref part.orientation);
                 part.primaryDirection = part.orientation * Vector3.right;
-                part.secondaryDirection = part.orientation * Vector3.forward;
+                part.secondaryDirection = part.orientation * Vector3.up;
                 RightHandActive = false;
                 if (LeftHandActive == false)
                 {
@@ -563,6 +680,80 @@ public class Mivry : MonoBehaviour
                     data.parts = new GestureCompletionData.Part[0]; // reset
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Convert position and orientation of a VR controller based on the Unity XR plugin used
+    /// to MiVRy's internal coordinate system, if it should differ from the one being used by the XR plugin.
+    /// </summary>
+    /// <param name="unityXrPlugin">Which Unity XR plug-in is used by your project (see: Project Settings -> XR Plugin Manager).</param>
+    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
+    /// <param name="p">The VR controller position.</param>
+    /// <param name="q">The VR controller orientation.</param>
+    public static void convertHandInput(UnityXrPlugin unityXrPlugin, MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
+    {
+        switch (unityXrPlugin)
+        {
+            case UnityXrPlugin.OpenXR:
+            case UnityXrPlugin.SteamVR:
+                switch (mivryCoordinateSystem)
+                {
+                    case MivryCoordinateSystem.OculusVR:
+                        q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
+                        break;
+                    case MivryCoordinateSystem.UnrealEngine:
+                        q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(0, 0, -0.7071068f, 0.7071068f);
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                }
+                break;
+            case UnityXrPlugin.OculusVR:
+                switch (mivryCoordinateSystem)
+                {
+                    case MivryCoordinateSystem.OpenXR:
+                    case MivryCoordinateSystem.SteamVR:
+                        q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
+                        break;
+                    case MivryCoordinateSystem.UnrealEngine:
+                        q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                }
+                break;
+        }
+    }
+
+
+    /// <summary>
+    /// Convert position and orientation of a VR headset to MiVRy's internal coordinate system,
+    /// if it should differ from the one being used by the Unity XR plugin.
+    /// </summary>
+    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
+    /// <param name="p">The VR headset position.</param>
+    /// <param name="q">The VR headset orientation.</param>
+    public static void convertHeadInput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
+    {
+        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
+        {
+            p = new Vector3(p.z, p.x, p.y) * 100.0f;
+            q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
+        }
+    }
+
+    /// <summary>
+    /// Convert position and orientation of MiVRy gesture output from MiVRy's internal coordinate system,
+    /// if it should differ from the one being used by the Unity XR plugin.
+    /// </summary>
+    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
+    /// <param name="p">The gesture position.</param>
+    /// <param name="q">The gesture orientation.</param>
+    public static void convertOutput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
+    {        
+        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
+        {
+            p = new Vector3(p.y, p.z, p.x) * 0.01f;
+            q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q;
         }
     }
 }
