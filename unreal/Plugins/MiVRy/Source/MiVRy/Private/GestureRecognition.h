@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.0
+ * Version 2.1
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -140,6 +140,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_activateLicense(void* gro, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStroke(void* gro, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStrokeM(void* gro, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_updateHeadPositionM(void* gro, const double hmd[4][4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_updateHeadPositionQ(void* gro, const double hmd_p[3], const double hmd_q[4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStroke(void* gro, const double p[3]); //!< Continue stroke data input (translational data only).
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStrokeQ(void* gro, const double p[3], const double q[4]); //!< Continue stroke data input with rotational data in the form of a quaternion.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdStrokeE(void* gro, const double p[3], const double r[3]); //!< Continue stroke data input with rotational data in the form of a Euler rotation.
@@ -234,10 +236,14 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceZ(void* gro, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
 
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugOutputFile(void* gro, const char* path); //!< Set where to write debug information.
+
+    GESTURERECOGNITION_LIBEXPORT const char* GestureRecognition_getVersionString(); //!< Get the version of this library as human-readable string.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getVersionStringLength(); //!< Get the length of the version string.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_copyVersionString(char* buf, int buflen); //!< Copy the version string into a buffer.
 #ifdef __cplusplus
 }
 
-class IGestureRecognition
+class GESTURERECOGNITION_LIBEXPORT IGestureRecognition
 {
 public:
     enum Result {
@@ -328,7 +334,7 @@ public:
     * \param  record_as_sample  Which gesture this stroke will be a sample for, or -1 to identify the gesture.
     * \return                   Zero on success, a negative error code on failure.
     */
-    virtual int startStroke(const double hmd[4][4], int record_as_sample=-1)=0; 
+    virtual int startStroke(const double hmd[4][4], int record_as_sample=-1)=0;
 
     /**
     * Start new stroke (gesture motion).
@@ -338,6 +344,21 @@ public:
     * \return                   Zero on success, a negative error code on failure.
     */
     virtual int startStroke(const double hmd_p[3], const double hmd_q[4], int record_as_sample=-1)=0;
+
+    /**
+     * Update the current position of the HMD/headset during a gesture performance (stroke).
+    * \param  hmd               Transformation matrix (4x4) of the current headset position and rotation.
+    * \return                   Zero on success, a negative error code on failure.
+     */
+    virtual int updateHeadPositionM(const double hmd[4][4])=0;
+
+    /**
+     * Update the current position of the HMD/headset during a gesture performance (stroke).
+    * \param  hmd_p             Vector (x,y,z) of the current headset position.
+    * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
+    * \return                   Zero on success, a negative error code on failure.
+     */
+    virtual int updateHeadPositionQ(const double hmd_p[3], const double hmd_q[4])=0;
 
     /**
     * Continue stroke (gesture motion) data input (translational data only).
@@ -864,6 +885,26 @@ public:
     * Set where to write debug information.
     */
     virtual void setDebugOutputFile(const char* path)=0;
+
+    /**
+    * Get the version of this library as human-readable string.
+    * \return   A null-terminated string describing the version of MiVRy.
+    */
+    static const char* getVersionString();
+
+    /**
+    * Get the length of the version string.
+    * \return   The number of characters that make up the version string.
+    */
+    static int getVersionStringLength();
+
+    /**
+    * Copy the version string into a buffer.
+    * \param    buf             [OUT] The string buffer to which to write the gesture name.
+    * \param    buflen          The length of the buf string buffer.
+    * \return                   The number of characters written to the buffer, zero on failure.
+    */
+    static int copyVersionString(char* buf, int buflen);
 };
 
 #endif // #ifdef __cplusplus

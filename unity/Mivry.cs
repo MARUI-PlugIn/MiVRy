@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.0
+ * Version 2.1
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -287,6 +287,12 @@ public class Mivry : MonoBehaviour
     public float RightTriggerPressure = 0.9f;
 
     /// <summary>
+    /// Whether or not to compensate head motions during gesturing
+    /// by continuously updating the current head position/rotation.
+    /// </summary>
+    public bool compensateHeadMotion = false;
+
+    /// <summary>
     /// Event callback functions to be called when a gesture was performed.
     /// </summary>
     [Tooltip("Event to trigger when a gesture was performed.")]
@@ -538,6 +544,14 @@ public class Mivry : MonoBehaviour
         if (activeTrigger > activeTriggerPressure * 0.9f)
         {
             // still gesturing
+            if (compensateHeadMotion)
+            {
+                Transform hmd = Camera.main.gameObject.transform;
+                Vector3 hmd_p = hmd.position;
+                Quaternion hmd_q = hmd.rotation;
+                convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
+                gr.updateHeadPosition(hmd_p, hmd_q);
+            }
             Vector3 p = activeGameObject.transform.position;
             Quaternion q = activeGameObject.transform.rotation;
             convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
@@ -598,6 +612,14 @@ public class Mivry : MonoBehaviour
         {
             if (leftTrigger > LeftTriggerPressure * 0.9f)
             {
+                if (compensateHeadMotion)
+                {
+                    Transform hmd = Camera.main.gameObject.transform;
+                    Vector3 hmd_p = hmd.position;
+                    Quaternion hmd_q = hmd.rotation;
+                    convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
+                    gc.updateHeadPosition(hmd_p, hmd_q);
+                }
                 Vector3 p = LeftHand.transform.position;
                 Quaternion q = LeftHand.transform.rotation;
                 convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
@@ -641,6 +663,14 @@ public class Mivry : MonoBehaviour
         {
             if (rightTrigger > RightTriggerPressure*0.9f)
             {
+                if (compensateHeadMotion)
+                {
+                    Transform hmd = Camera.main.gameObject.transform;
+                    Vector3 hmd_p = hmd.position;
+                    Quaternion hmd_q = hmd.rotation;
+                    convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
+                    gc.updateHeadPosition(hmd_p, hmd_q);
+                }
                 Vector3 p = RightHand.transform.position;
                 Quaternion q = RightHand.transform.rotation;
                 convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);

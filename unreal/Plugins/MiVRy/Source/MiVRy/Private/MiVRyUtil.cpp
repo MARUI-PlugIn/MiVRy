@@ -17,8 +17,14 @@
  */
 
 #include "MiVRyUtil.h"
+#include "GestureRecognition.h"
 #include "Core.h"
 #include <fstream>
+
+FString UMiVRyUtil::versionString()
+{
+	return FString(IGestureRecognition::getVersionString());
+}
 
 FString UMiVRyUtil::errorCodeToString(int errorCode)
 {
@@ -48,6 +54,18 @@ FString UMiVRyUtil::errorCodeToString(int errorCode)
             return "The neural network is inconsistent - re-training might solve the issue.";
         case -11:
             return "File or object exists and can't be overwritten.";
+		case -12:
+			return "Gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).";
+		case -13:
+			return "Gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).";
+		case -14:
+			return "The gesture recognition/combinations object is internally corrupted or inconsistent.";
+		case -15:
+			return "The operation could not be performed because the AI is loading a gesture database file.";
+		case -16:
+			return "The provided license key is not valid or the operation is not permitted under the current license.";
+		case -99:
+			return "Gesture Recognition object was not created.";
     }
     return "Unknown error.";
 }
@@ -214,79 +232,80 @@ void UMiVRyUtil::readFileToBuffer(const FString& path, GestureRecognition_Result
 	result = GestureRecognition_Result::Error;
 }
 
-void UMiVRyUtil::toUnityCoords(const FVector& location, const FQuat& quaternion, bool is_controller, double m[4][4])
+void UMiVRyUtil::convertInput(const FVector& location, const FQuat& rotation, GestureRecognition_DeviceType device_type, GestureRecognition_CoordinateSystem coord_sys, double p[3], double q[4])
 {
-    const FVector xaxis = quaternion.GetAxisX();
-	const FVector yaxis = quaternion.GetAxisY();
-	const FVector zaxis = quaternion.GetAxisZ();
-	if (!is_controller) {
-		m[0][0] = yaxis.Y;
-		m[0][1] = yaxis.Z;
-		m[0][2] = yaxis.X;
-		m[0][3] = 0.0;
-		m[1][0] = zaxis.Y;
-		m[1][1] = zaxis.Z;
-		m[1][2] = zaxis.X;
-		m[1][3] = 0.0;
-		m[2][0] = xaxis.Y;
-		m[2][1] = xaxis.Z;
-		m[2][2] = xaxis.X;
-		m[2][3] = 0.0;
-	} else {
-		m[0][0] = yaxis.Y;
-		m[0][1] = yaxis.Z;
-		m[0][2] = yaxis.X;
-		m[0][3] = 0.0;
-		m[1][0] = -xaxis.Y;
-		m[1][1] = -xaxis.Z;
-		m[1][2] = -xaxis.X;
-		m[1][3] = 0.0;
-		m[2][0] = zaxis.Y;
-		m[2][1] = zaxis.Z;
-		m[2][2] = zaxis.X;
-		m[2][3] = 0.0;
+	if (coord_sys == GestureRecognition_CoordinateSystem::Unreal) {
+		p[0] = location.X;
+		p[1] = location.Y;
+		p[2] = location.Z;
+		q[0] = rotation.X;
+		q[1] = rotation.Y;
+		q[2] = rotation.Z;
+		q[3] = rotation.W;
+		return;
 	}
-	m[3][0] = location.Y * 0.01; // Unity.X = right = Unreal.Y
-	m[3][1] = location.Z * 0.01; // Unity.Y = up    = Unreal.Z
-	m[3][2] = location.X * 0.01; // Unity.Z = front = Unreal.X
-	m[3][3] = 1.0;
+	FQuat quaternion = FQuat(-0.5f, -0.5f, -0.5f, 0.5f) * rotation;
+	switch (device_type) {
+	case GestureRecognition_DeviceType::Headset:
+		quaternion = quaternion * FQuat(0.5f, 0.5f, 0.5f, 0.5f);
+		break;
+	case GestureRecognition_DeviceType::Controller:
+		switch (coord_sys) {
+		case GestureRecognition_CoordinateSystem::UnityOpenXR:
+		case GestureRecognition_CoordinateSystem::UnitySteamVR:
+			quaternion = quaternion * FQuat(0, 0, 0.7071068f, 0.7071068f);
+			break;
+		case GestureRecognition_CoordinateSystem::UnityOculusVR:
+			quaternion = quaternion * FQuat(0.5f, 0.5f, 0.5f, 0.5f);
+			break;
+		}
+		break;
+	}
+	p[0] = location.Y * 0.01; // Unity.X = right = Unreal.Y
+	p[1] = location.Z * 0.01; // Unity.Y = up    = Unreal.Z
+	p[2] = location.X * 0.01; // Unity.Z = front = Unreal.X
+	q[0] = quaternion.X;
+	q[1] = quaternion.Y;
+	q[2] = quaternion.Z;
+	q[3] = quaternion.W;
 }
 
 
-void UMiVRyUtil::fromUnityCoords(const double p[3], const double q[4], bool is_controller, FVector& location, FQuat& quaternion)
+void UMiVRyUtil::convertOutput(GestureRecognition_CoordinateSystem coord_sys, const double p[3], const double q[4], GestureRecognition_DeviceType device_type, FVector& location, FQuat& rotation)
 {
+	if (coord_sys == GestureRecognition_CoordinateSystem::Unreal) {
+		location.X = (float)p[0];
+		location.Y = (float)p[1];
+		location.Z = (float)p[2];
+		rotation.X = (float)q[0];
+		rotation.Y = (float)q[1];
+		rotation.Z = (float)q[2];
+		rotation.W = (float)q[3];
+		return;
+	}
 	location.X = 100.0f * (float)p[2]; // Unreal.X = front = Unity.Z
 	location.Y = 100.0f * (float)p[0]; // Unreal.Y = right = Unity.X
 	location.Z = 100.0f * (float)p[1]; // Unreal.Z = up    = Unity.Y
-	quaternion.X = (float)q[0]; // in Unity coordinates
-	quaternion.Y = (float)q[1];
-	quaternion.Z = (float)q[2];
-	quaternion.W = (float)q[3];
-	quaternion.Normalize();
-	const FVector xaxis = quaternion.GetAxisX();
-	const FVector yaxis = quaternion.GetAxisY();
-	const FVector zaxis = quaternion.GetAxisZ();
-	FMatrix m = FMatrix::Identity;
-	if (is_controller) {
-		m.M[0][0] = -yaxis.Z;
-		m.M[0][1] = -yaxis.X;
-		m.M[0][2] = -yaxis.Y;
-		m.M[1][0] = xaxis.Z;
-		m.M[1][1] = xaxis.X;
-		m.M[1][2] = xaxis.Y;
-		m.M[2][0] = zaxis.Z;
-		m.M[2][1] = zaxis.X;
-		m.M[2][2] = zaxis.Y;
-	} else {
-		m.M[0][0] = zaxis.Z;
-		m.M[0][1] = zaxis.X;
-		m.M[0][2] = zaxis.Y;
-		m.M[1][0] = xaxis.Z;
-		m.M[1][1] = xaxis.X;
-		m.M[1][2] = xaxis.Y;
-		m.M[2][0] = yaxis.Z;
-		m.M[2][1] = yaxis.X;
-		m.M[2][2] = yaxis.Y;
+	rotation.X = (float)q[0]; // in Unity coordinates
+	rotation.Y = (float)q[1];
+	rotation.Z = (float)q[2];
+	rotation.W = (float)q[3];
+	rotation.Normalize();
+	rotation = FQuat(0.5f, 0.5f, 0.5f, 0.5f) * rotation;
+	switch (device_type) {
+	case GestureRecognition_DeviceType::Headset:
+		rotation = rotation * FQuat(-0.5f, -0.5f, -0.5f, 0.5f);
+		break;
+	case GestureRecognition_DeviceType::Controller:
+		switch (coord_sys) {
+		case GestureRecognition_CoordinateSystem::UnityOpenXR:
+		case GestureRecognition_CoordinateSystem::UnitySteamVR:
+			rotation = rotation * FQuat(0, 0, -0.7071068f, 0.7071068f);
+			break;
+		case GestureRecognition_CoordinateSystem::UnityOculusVR:
+			rotation = rotation * FQuat(-0.5f, -0.5f, -0.5f, 0.5f);
+			break;
+		}
+		break;
 	}
-	quaternion = m.ToQuat();
 }

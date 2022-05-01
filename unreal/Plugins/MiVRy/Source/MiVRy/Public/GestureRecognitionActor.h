@@ -47,13 +47,13 @@ public:
 	/**
 	* Whether GestureDatabase files to be loaded/saved by this actor are using the Unity coordinate system.
 	* Set to true if you want to load GestureDatabase files created with Unity apps (for example
-	* the Unity-based GestureManager) or save GestureDatabase files for later use in Unity.
+	* the Unity-OpenXR-based GestureManager) or save GestureDatabase files for later use in Unity.
 	* This internally switches the coordinate system (z-up -> y-up) and scales
 	* the world (centimeters -> meters).
 	* Regarding the Unreal VR world scale, see: World Settings -> World To Meters.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Recognition")
-	bool UnityCombatibilityMode = false;
+	GestureRecognition_CoordinateSystem CoordinateSystem = GestureRecognition_CoordinateSystem::Unreal;
 
 	/**
 	* License ID (name) of your MiVRy license.
@@ -88,6 +88,24 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Start Stroke (Quaternion Rotation)"))
 	int startStrokeQ(const FVector& HMD_Position, const FQuat& HMD_Rotation, int RecordAsSample=-1);
+
+	/**
+	* Update the current position of the HMD/headset during a gesture performance (stroke).
+	* \param  HMD_Position		Current position of the headset.
+	* \param  HMD_Rotation      Current orientation/rotation of the headset.
+	* \return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Update Head Position"))
+	int updateHeadPosition(const FVector& HMD_Position, const FRotator& HMD_Rotation);
+
+	/**
+	* Update the current position of the HMD/headset during a gesture performance (stroke).
+	* \param  HMD_Position		Current position of the headset.
+	* \param  HMD_Rotation      Current orientation/rotation of the headset.
+	* \return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Update Head Position (Quaternion Rotation)"))
+	int updateHeadPositionQ(const FVector& HMD_Position, const FQuat& HMD_Rotation);
 
 	/**
 	* Continue to perform a gesture (motion update).

@@ -98,13 +98,13 @@ public:
 
 	/**
 	* Whether the GestureDatabase file has been created with Unity,
-	* for example with the Unity-based "GestureManager" app.
+	* for example with the Unity-OpenXR-based "GestureManager" app.
 	* This internally switches the coordinate system (z-up -> y-up) and scales
 	* the world (centimeters -> meters).
 	* Regarding the Unreal VR world scale, see: World Settings -> World To Meters.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		bool UnityGestureDatabaseFile = false;
+		GestureRecognition_CoordinateSystem CoordinateSystem = GestureRecognition_CoordinateSystem::Unreal;
 
 	/**
 	* Motion controller to use as left hand. (Optinal).
@@ -161,6 +161,13 @@ public:
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
 		FName RightTriggerInput;
+
+	/**
+	* Whether or not to compensate head motions during gesturing
+	* by continuously updating the current head position/rotation.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		bool CompensateHeadMotion;
 
 	/**
 	* License ID (name) of your MiVRy license.

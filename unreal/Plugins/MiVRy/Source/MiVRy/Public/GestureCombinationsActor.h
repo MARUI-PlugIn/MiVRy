@@ -52,13 +52,13 @@ public:
 	/**
 	* Whether GestureDatabase files to be loaded/saved by this actor are using the Unity coordinate system.
 	* Set to true if you want to load GestureDatabase files created with Unity apps (for example
-	* the Unity-based GestureManager) or save GestureDatabase files for later use in Unity.
+	* the Unity-OpenXR-based GestureManager) or save GestureDatabase files for later use in Unity.
 	* This internally switches the coordinate system (z-up -> y-up) and scales
 	* the world (centimeters -> meters).
 	* Regarding the Unreal VR world scale, see: World Settings -> World To Meters.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Combinations")
-		bool UnityCombatibilityMode = false;
+		GestureRecognition_CoordinateSystem CoordinateSystem = GestureRecognition_CoordinateSystem::Unreal;
 
 	/**
 	* License ID (name) of your MiVRy license.
@@ -95,6 +95,24 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Start Stroke (Quaternion Rotation)"))
 	int startStrokeQ(int part, const FVector& HMD_Position, const FQuat& HMD_Rotation, int record_as_sample=-1);
+
+	/**
+	* Update the current position of the HMD/headset during a gesture performance (stroke).
+	* \param  HMD_Position		Current position of the headset.
+	* \param  HMD_Rotation      Current orientation/rotation of the headset.
+	* \return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Update Head Position"))
+	int updateHeadPosition(const FVector& HMD_Position, const FRotator& HMD_Rotation);
+
+	/**
+	* Update the current position of the HMD/headset during a gesture performance (stroke).
+	* \param  HMD_Position		Current position of the headset.
+	* \param  HMD_Rotation      Current orientation/rotation of the headset.
+	* \return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Update Head Position (Quaternion Rotation)"))
+	int updateHeadPositionQ(const FVector& HMD_Position, const FQuat& HMD_Rotation);
 
 	/**
 	* Continue gesture motion, providing new hand data.
@@ -184,20 +202,24 @@ public:
 	* @param HMD_Location The current position of the headset.
 	* @param HMD_Rotation The current rotation of the headset.
 	* @param Similarity How similar the performed gesture motion is compared to recorded gesture samples (0~1).
+	* @param PartsProbabilities The probability values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
+    * @param PartsSimilarities The similarity values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
 	* @return The gesture combination ID identified, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Continuous Identify"))
-	int contdIdentify(const FVector& HMD_Location, const FRotator& HMD_Rotation, float& Similarity);
+	int contdIdentify(const FVector& HMD_Location, const FRotator& HMD_Rotation, float& Similarity, TArray<float>& PartsProbabilities, TArray<float>& PartsSimilarities);
 
 	/**
 	* Continuous gesture identification.
 	* @param HMD_Location The current position of the headset.
 	* @param HMD_Rotation The current rotation of the headset.
 	* @param Similarity How similar the performed gesture motion is compared to recorded gesture samples (0~1).
+	* @param PartsProbabilities The probability values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
+    * @param PartsSimilarities The similarity values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
 	* @return The gesture combination ID identified, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Continuous Identify (Quaternion Rotation)"))
-	int contdIdentifyQ(const FVector& HMD_Location, const FQuat& HMD_Rotation, float& Similarity);
+	int contdIdentifyQ(const FVector& HMD_Location, const FQuat& HMD_Rotation, float& Similarity, TArray<float>& PartsProbabilities, TArray<float>& PartsSimilarities);
 
 	/**
 	* Continuous gesture recording.

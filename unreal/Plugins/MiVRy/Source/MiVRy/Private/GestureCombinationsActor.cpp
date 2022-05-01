@@ -82,19 +82,24 @@ int AGestureCombinationsActor::startStrokeQ(int part, const FVector& HMD_Positio
 		return -99;
 	double p[3];
 	double q[4];
-	if (this->UnityCombatibilityMode) {
-		double m[4][4];
-		UMiVRyUtil::toUnityCoords(HMD_Position, HMD_Rotation, false, m);
-		return this->gco->startStroke(part, m, record_as_sample);
-	}
-	p[0] = HMD_Position.X;
-	p[1] = HMD_Position.Y;
-	p[2] = HMD_Position.Z;
-	q[0] = HMD_Rotation.X;
-	q[1] = HMD_Rotation.Y;
-	q[2] = HMD_Rotation.Z;
-	q[3] = HMD_Rotation.W;
+	UMiVRyUtil::convertInput(HMD_Position, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, p, q);
 	return this->gco->startStroke(part, p, q, record_as_sample);
+}
+
+int AGestureCombinationsActor::updateHeadPosition(const FVector& HMD_Position, const FRotator& HMD_Rotation)
+{
+	return this->updateHeadPositionQ(HMD_Position, HMD_Rotation.Quaternion());
+}
+
+int AGestureCombinationsActor::updateHeadPositionQ(const FVector& HMD_Position, const FQuat& HMD_Rotation)
+{
+	if (this->gco == nullptr) {
+		return -99;
+	}
+	double p[3];
+	double q[4];
+	UMiVRyUtil::convertInput(HMD_Position, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, p, q);
+	return this->gco->updateHeadPositionQ(p, q);
 }
 
 int AGestureCombinationsActor::contdStroke(int part, const FVector& HandPosition, const FRotator& HandRotation)
@@ -109,18 +114,7 @@ int AGestureCombinationsActor::contdStrokeQ(int part, const FVector& HandPositio
 		return -99;
 	double p[3];
 	double q[4];
-	if (this->UnityCombatibilityMode) {
-		double m[4][4];
-		UMiVRyUtil::toUnityCoords(HandPosition, HandRotation, true, m);
-		return this->gco->contdStrokeM(part, m);
-	}
-	p[0] = HandPosition.X;
-	p[1] = HandPosition.Y;
-	p[2] = HandPosition.Z;
-	q[0] = HandRotation.X;
-	q[1] = HandRotation.Y;
-	q[2] = HandRotation.Z;
-	q[3] = HandRotation.W;
+	UMiVRyUtil::convertInput(HandPosition, HandRotation, GestureRecognition_DeviceType::Controller, this->CoordinateSystem, p, q);
 	return this->gco->contdStrokeQ(part, p, q);
 }
 
@@ -142,7 +136,7 @@ int AGestureCombinationsActor::endStrokeQ(int part, FVector& GesturePosition, FQ
 	double dir1[3] = {0,1,0};
 	double dir2[3] = {0,0,1};
 	int ret = this->gco->endStroke(part, pos, &scale, dir0, dir1, dir2);
-	if (this->UnityCombatibilityMode) {
+	if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
 		GesturePosition.X = float(pos[2]) * 100.0f; // Unreal.X = front = Unity.Z
 		GesturePosition.Y = float(pos[0]) * 100.0f; // Unreal.Y = right = Unity.X
 		GesturePosition.Z = float(pos[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
@@ -251,40 +245,35 @@ int AGestureCombinationsActor::identifyGestureCombination(float& probability, fl
 }
 
 
-int AGestureCombinationsActor::contdIdentify(const FVector& HMD_Location, const FRotator& HMD_Rotation, float& Similarity)
+int AGestureCombinationsActor::contdIdentify(const FVector& HMD_Location, const FRotator& HMD_Rotation, float& Similarity, TArray<float>& PartsProbabilities, TArray<float>& PartsSimilarities)
 {
 	if (!this->gco)
 		return -99;
 	FQuat quaternion = HMD_Rotation.Quaternion();
-	return this->contdIdentifyQ(HMD_Location, quaternion, Similarity);
+	return this->contdIdentifyQ(HMD_Location, quaternion, Similarity, PartsProbabilities, PartsSimilarities);
 }
 
-int AGestureCombinationsActor::contdIdentifyQ(const FVector& HMD_Location, const FQuat& HMD_Rotation, float& Similarity)
+int AGestureCombinationsActor::contdIdentifyQ(const FVector& HMD_Location, const FQuat& HMD_Rotation, float& Similarity, TArray<float>& PartsProbabilities, TArray<float>& PartsSimilarities)
 {
 	if (!this->gco)
 		return -99;
 	double hmd_p[3];
 	double hmd_q[4];
-	if (this->UnityCombatibilityMode) {
-		hmd_p[0] = HMD_Location.Y * 0.01f; // Unity.X = right = Unreal.Y
-		hmd_p[1] = HMD_Location.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		hmd_p[2] = HMD_Location.X * 0.01f; // Unity.Z = front = Unreal.X
-		hmd_q[0] = HMD_Rotation.Y;
-		hmd_q[1] = HMD_Rotation.Z;
-		hmd_q[2] = HMD_Rotation.X;
-		hmd_q[3] = HMD_Rotation.W;
-	} else {
-		hmd_p[0] = HMD_Location.X;
-		hmd_p[1] = HMD_Location.Y;
-		hmd_p[2] = HMD_Location.Z;
-		hmd_q[0] = HMD_Rotation.X;
-		hmd_q[1] = HMD_Rotation.Y;
-		hmd_q[2] = HMD_Rotation.Z;
-		hmd_q[3] = HMD_Rotation.W;
-	}
+	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, hmd_p, hmd_q);
 	double similarity = -1;
-	int ret = this->gco->contdIdentify(hmd_p, hmd_q, &similarity);
+	const int num_parts = this->gco->numberOfParts();
+	double* parts_probabilities = new double[num_parts];
+	double* parts_similarities = new double[num_parts];
+	int ret = this->gco->contdIdentify(hmd_p, hmd_q, &similarity, parts_probabilities, parts_similarities);
 	Similarity = (float)similarity;
+	PartsProbabilities.SetNum(num_parts);
+	PartsSimilarities.SetNum(num_parts);
+	for (int part = num_parts-1; part >= 0; part--) {
+		PartsProbabilities[part] = (float)parts_probabilities[part];
+		PartsSimilarities[part] = (float)parts_similarities[part];
+	}
+	delete[] parts_probabilities;
+	delete[] parts_similarities;
 	return ret;
 }
 
@@ -302,23 +291,7 @@ int AGestureCombinationsActor::contdRecordQ(const FVector& HMD_Location, const F
 		return -99;
 	double hmd_p[3];
 	double hmd_q[4];
-	if (this->UnityCombatibilityMode) {
-		hmd_p[0] = HMD_Location.Y * 0.01f; // Unity.X = right = Unreal.Y
-		hmd_p[1] = HMD_Location.Z * 0.01f; // Unity.Y = up    = Unreal.Z
-		hmd_p[2] = HMD_Location.X * 0.01f; // Unity.Z = front = Unreal.X
-		hmd_q[0] = HMD_Rotation.Y;
-		hmd_q[1] = HMD_Rotation.Z;
-		hmd_q[2] = HMD_Rotation.X;
-		hmd_q[3] = HMD_Rotation.W;
-	} else {
-		hmd_p[0] = HMD_Location.X;
-		hmd_p[1] = HMD_Location.Y;
-		hmd_p[2] = HMD_Location.Z;
-		hmd_q[0] = HMD_Rotation.X;
-		hmd_q[1] = HMD_Rotation.Y;
-		hmd_q[2] = HMD_Rotation.Z;
-		hmd_q[3] = HMD_Rotation.W;
-	}
+	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, hmd_p, hmd_q);
 	return this->gco->contdRecord(hmd_p, hmd_q);
 }
 
@@ -442,19 +415,8 @@ int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_inde
 	Locations.SetNum(len);
 	Rotations.SetNum(len);
 	FQuat quat;
-	if (this->UnityCombatibilityMode) {
-		UMiVRyUtil::fromUnityCoords(hmd_p, hmd_q, false, HMD_Location, quat);
-		HMD_Rotation = quat.Rotator();
-	} else {
-		HMD_Location.X = (float)hmd_p[0];
-		HMD_Location.Y = (float)hmd_p[1];
-		HMD_Location.Z = (float)hmd_p[2];
-		quat.X = (float)hmd_q[0];
-		quat.Y = (float)hmd_q[1];
-		quat.Z = (float)hmd_q[2];
-		quat.W = (float)hmd_q[3];
-		HMD_Rotation = quat.Rotator();
-	}
+	UMiVRyUtil::convertOutput(this->CoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, HMD_Location, quat);
+	HMD_Rotation = quat.Rotator();
 	for (int i = 0; i < len; i++) {
 		Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
 		Locations[i].Y = (float)p[3 * i + 1]; // y = secondary axis
@@ -463,7 +425,7 @@ int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_inde
 		quat.Y = (float)q[4 * i + 1];
 		quat.Z = (float)q[4 * i + 2];
 		quat.W = (float)q[4 * i + 3];
-		if (this->UnityCombatibilityMode) {
+		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
 			const FVector xaxis = quat.GetAxisX();
 			const FVector yaxis = quat.GetAxisY();
 			const FVector zaxis = quat.GetAxisZ();
@@ -518,21 +480,11 @@ int AGestureCombinationsActor::getGestureMeanStroke(int part, int gesture_index,
 	Locations.SetNum(len);
 	Rotations.SetNum(len);
 	FQuat quat;
-	if (this->UnityCombatibilityMode) {
-		UMiVRyUtil::fromUnityCoords(hmd_p, hmd_q, false, GestureLocation, quat);
-		GestureRotation = quat.Rotator();
-		GestureScale = (float)scale * 100.0f;
-	} else {
-		GestureLocation.X = (float)hmd_p[0];
-		GestureLocation.Y = (float)hmd_p[1];
-		GestureLocation.Z = (float)hmd_p[2];
-		quat.X = (float)hmd_q[0];
-		quat.Y = (float)hmd_q[1];
-		quat.Z = (float)hmd_q[2];
-		quat.W = (float)hmd_q[3];
-		quat.Normalize();
-		GestureRotation = quat.Rotator();
-		GestureScale = (float)scale;
+	UMiVRyUtil::convertOutput(this->CoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, GestureLocation, quat);
+	GestureRotation = quat.Rotator();
+	GestureScale = (float)scale;
+	if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+		GestureScale *= 100.0f;
 	}
 	for (int i = 0; i < len; i++) {
 		Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
@@ -543,7 +495,7 @@ int AGestureCombinationsActor::getGestureMeanStroke(int part, int gesture_index,
 		quat.Z = (float)q[4 * i + 2];
 		quat.W = (float)q[4 * i + 3];
 		quat.Normalize();
-		if (this->UnityCombatibilityMode) {
+		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
 			const FVector xaxis = quat.GetAxisX();
 			const FVector yaxis = quat.GetAxisY();
 			const FVector zaxis = quat.GetAxisZ();

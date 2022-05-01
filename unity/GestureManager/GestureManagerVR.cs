@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.0
+ * Version 2.1
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -22,7 +22,9 @@ using UnityEngine;
 public class GestureManagerVR : MonoBehaviour
 {
     public static GestureManagerVR me; // singleton
-    
+
+    public bool followUser = true;
+
     public GestureManager gestureManager;
 
     public EditableTextField inputFocus = null;
@@ -31,13 +33,15 @@ public class GestureManagerVR : MonoBehaviour
     public GameObject keyboard;
     public GameObject splashscreen;
 
-    private GameObject submenuNumberOfParts = null;
-    private GameObject submenuFiles = null;
-    private GameObject submenuFileSuggestions = null;
-    private GameObject submenuGesture = null;
-    private GameObject submenuCombination = null;
-    private GameObject submenuRecord = null;
-    private GameObject submenuTraining = null;
+    public GameObject submenuNumberOfParts = null;
+    public GameObject submenuFiles = null;
+    public GameObject submenuFileSuggestions = null;
+    public GameObject submenuGesture = null;
+    public GameObject submenuCombination = null;
+    public GameObject submenuRecord = null;
+    public GameObject submenuCoordinateSystem = null;
+    public GameObject submenuFrameOfReference = null;
+    public GameObject submenuTraining = null;
 
     public static GestureManagerButton activeButton = null;
 
@@ -56,6 +60,9 @@ public class GestureManagerVR : MonoBehaviour
                 case "SubmenuNumberOfParts":
                     submenuNumberOfParts = child;
                     break;
+                case "SubmenuCoordinateSystem":
+                    submenuCoordinateSystem = child;
+                    break;
                 case "SubmenuFiles":
                     submenuFiles = child;
                     break;
@@ -70,6 +77,9 @@ public class GestureManagerVR : MonoBehaviour
                     break;
                 case "SubmenuRecord":
                     submenuRecord = child;
+                    break;
+                case "SubmenuFrameOfReference":
+                    submenuFrameOfReference = child;
                     break;
                 case "SubmenuTraining":
                     submenuTraining = child;
@@ -160,6 +170,9 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuGesture.SetActive(false);
             me.submenuCombination.SetActive(false);
             me.submenuRecord.SetActive(false);
+            me.submenuCoordinateSystem.SetActive(false);
+            me.submenuCoordinateSystem.GetComponent<SubmenuCoordinateSystem>().refresh();
+            me.submenuFrameOfReference.SetActive(false);
             me.submenuTraining.SetActive(false);
         } else if (me.gestureManager.numberOfParts == 1)
         {
@@ -173,9 +186,15 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuCombination.SetActive(false);
             me.submenuRecord.SetActive(true);
             me.submenuRecord.GetComponent<SubmenuRecord>().refresh();
+            me.submenuCoordinateSystem.SetActive(true);
+            me.submenuCoordinateSystem.GetComponent<SubmenuCoordinateSystem>().refresh();
+            me.submenuFrameOfReference.SetActive(true);
+            me.submenuFrameOfReference.GetComponent<SubmenuFrameOfReference>().refresh();
             me.submenuTraining.SetActive(true);
             me.submenuTraining.GetComponent<SubmenuTraining>().refresh();
             me.submenuRecord.transform.localPosition = Vector3.forward * 0.135f;
+            me.submenuCoordinateSystem.transform.localPosition = Vector3.forward * 0.135f;
+            me.submenuFrameOfReference.transform.localPosition = Vector3.forward * 0.135f;
             me.submenuTraining.transform.localPosition = Vector3.forward * 0.135f;
         } else
         {
@@ -190,9 +209,15 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuCombination.GetComponent<SubmenuCombination>().refresh();
             me.submenuRecord.SetActive(true);
             me.submenuRecord.GetComponent<SubmenuRecord>().refresh();
+            me.submenuCoordinateSystem.SetActive(true);
+            me.submenuCoordinateSystem.GetComponent<SubmenuCoordinateSystem>().refresh();
+            me.submenuFrameOfReference.SetActive(true);
+            me.submenuFrameOfReference.GetComponent<SubmenuFrameOfReference>().refresh();
             me.submenuTraining.SetActive(true);
             me.submenuTraining.GetComponent<SubmenuTraining>().refresh();
             me.submenuRecord.transform.localPosition = Vector3.zero;
+            me.submenuCoordinateSystem.transform.localPosition = Vector3.zero;
+            me.submenuFrameOfReference.transform.localPosition = Vector3.zero;
             me.submenuTraining.transform.localPosition = Vector3.zero;
         }
     }
@@ -216,12 +241,15 @@ public class GestureManagerVR : MonoBehaviour
         } else
         {
             if (splashscreen != null && splashscreen.activeSelf) splashscreen.SetActive(false);
-            Vector3 v = Camera.main.transform.worldToLocalMatrix.MultiplyPoint3x4(this.transform.position);
-            if (v.magnitude > 0.6f || v.z < 0)
+            if (followUser)
             {
-                v = new Vector3(0, 0, 0.5f);
-                v = Camera.main.transform.localToWorldMatrix.MultiplyPoint3x4(v);
-                this.transform.position = 0.9f * this.transform.position + 0.1f * v;
+                Vector3 v = Camera.main.transform.worldToLocalMatrix.MultiplyPoint3x4(this.transform.position);
+                if (v.magnitude > 0.6f || v.z < 0)
+                {
+                    v = new Vector3(0, 0, 0.5f);
+                    v = Camera.main.transform.localToWorldMatrix.MultiplyPoint3x4(v);
+                    this.transform.position = 0.9f * this.transform.position + 0.1f * v;
+                }
             }
         }
     }

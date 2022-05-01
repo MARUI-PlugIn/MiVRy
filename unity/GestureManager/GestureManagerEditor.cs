@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.0
+ * Version 2.1
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -63,8 +63,9 @@ public class GestureManagerEditor : UnityEditor.Editor
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
-        
-        // Gesture file management
+        string[] unityXrPlugins = { "OpenXR", "OculusVR", "SteamVR" };
+        string[] mivryCoordinateSystems = { "OpenXR", "OculusVR", "SteamVR", "UnrealEngine" };
+
         if (gm.gr == null && gm.gc == null)
         {
             EditorGUILayout.BeginVertical(GUI.skin.box);
@@ -77,6 +78,7 @@ public class GestureManagerEditor : UnityEditor.Editor
             return;
         }
 
+        // Gesture file management
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical(GUI.skin.box);
         EditorGUILayout.LabelField("GESTURE FILES:");
@@ -122,23 +124,6 @@ public class GestureManagerEditor : UnityEditor.Editor
                 int ret = gm.gc.loadGestureFromFile(gm.file_load_subgestures_i, gm.file_load_subgestures);
                 Debug.Log((ret == 0 ? "Gesture file imported successfully" : $"[ERROR] Failed to import gesture file ({ret})."));
             }
-        }
-        EditorGUILayout.EndVertical();
-
-        EditorGUILayout.Space();
-        EditorGUILayout.BeginVertical(GUI.skin.box);
-        EditorGUILayout.LabelField("ROTATIONAL FRAME OF REFERENCE:");
-        string[] framesOfReference = {"Head", "World"};
-        if (gm.gr != null)
-        {
-            gm.gr.frameOfReferenceYaw = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Yaw (left/right)", (int)gm.gr.frameOfReferenceYaw, framesOfReference);
-            gm.gr.frameOfReferenceUpDownPitch = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Pitch (up/down)", (int)gm.gr.frameOfReferenceUpDownPitch, framesOfReference);
-            gm.gr.frameOfReferenceRollTilt = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Tilt (roll)", (int)gm.gr.frameOfReferenceRollTilt, framesOfReference);
-        } else if (gm.gc != null)
-        {
-            gm.gc.frameOfReferenceYaw = (GestureCombinations.FrameOfReference)EditorGUILayout.Popup("Yaw (left/right)", (int)gm.gc.frameOfReferenceYaw, framesOfReference);
-            gm.gc.frameOfReferenceUpDownPitch = (GestureCombinations.FrameOfReference)EditorGUILayout.Popup("Pitch (up/down)", (int)gm.gc.frameOfReferenceUpDownPitch, framesOfReference);
-            gm.gc.frameOfReferenceRollTilt = (GestureCombinations.FrameOfReference)EditorGUILayout.Popup("Tilt (roll)", (int)gm.gc.frameOfReferenceRollTilt, framesOfReference);
         }
         EditorGUILayout.EndVertical();
 
@@ -414,7 +399,15 @@ public class GestureManagerEditor : UnityEditor.Editor
             //EditorGUILayout.EndVertical();
         }
         EditorGUILayout.EndVertical();
-
+        
+        EditorGUILayout.Space();
+        EditorGUILayout.BeginVertical(GUI.skin.box);
+        EditorGUILayout.LabelField("ROTATIONAL FRAME OF REFERENCE:");
+        string[] framesOfReference = {"Head", "World"};
+        gm.frameOfReferenceYaw = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Yaw (left/right)", (int)gm.frameOfReferenceYaw, framesOfReference);
+        gm.frameOfReferenceUpDownPitch = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Pitch (up/down)", (int)gm.frameOfReferenceUpDownPitch, framesOfReference);
+        gm.frameOfReferenceRollTilt = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Tilt (roll)", (int)gm.frameOfReferenceRollTilt, framesOfReference);
+        EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical(GUI.skin.box);
@@ -440,6 +433,10 @@ public class GestureManagerEditor : UnityEditor.Editor
             }
             gm.record_combination_id = EditorGUILayout.Popup(gm.record_combination_id + 1, combination_names) - 1;
         }
+        gm.compensate_head_motion = EditorGUILayout.Toggle("Compensate head motion during gesture", gm.compensate_head_motion);
+        EditorGUILayout.LabelField("COORDINATE SYSTEM CONVERSION:", "");
+        gm.unityXrPlugin = (Mivry.UnityXrPlugin)EditorGUILayout.Popup("Unity XR Plug-in", (int)gm.unityXrPlugin, unityXrPlugins);
+        gm.mivryCoordinateSystem = (Mivry.MivryCoordinateSystem)EditorGUILayout.Popup("MiVRy Coordinate System", (int)gm.mivryCoordinateSystem, mivryCoordinateSystems);
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space();

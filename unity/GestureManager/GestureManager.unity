@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 2138677392}
-  m_IndirectSpecularColor: {r: 0.69165987, g: 0.84405017, b: 0.8812784, a: 1}
+  m_IndirectSpecularColor: {r: 0.43041003, g: 0.67091674, b: 0.73975414, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1809,6 +1809,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ead00d81e07c86d4a84ac72a78fa472a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  license_id: 
+  license_key: 
+  unityXrPlugin: 0
+  mivryCoordinateSystem: 0
   file_load_combinations: Samples/Sample_TwoHanded_Gestures.dat
   file_import_combinations: Samples/Sample_Military_Gestures.dat
   file_load_subgestures: Samples/Sample_OneHanded_Gestures.dat
@@ -1831,7 +1835,11 @@ MonoBehaviour:
   copy_gesture_mirror: 1
   copy_gesture_rotate: 1
   training_started: 0
+  training_finished: 0
   last_performance_report: 0
+  loading_started: 0
+  loading_finished: 0
+  loading_result: 0
   stroke_index: 0
   gesture_started: 0
   file_suggestion: 0

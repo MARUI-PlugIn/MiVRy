@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.0
+ * Version 2.1
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -136,6 +136,8 @@ extern "C" {
 
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStroke(void* gco, int part, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStrokeM(void* gco, int part, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_updateHeadPositionM(void* gco, const double hmd[4][4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_updateHeadPositionQ(void* gco, const double hmd_p[3], const double hmd_q[4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStroke(void* gco, int part, const double p[3]); //!< Continue stroke data input - positional data only.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeQ(void* gco, int part, const double p[3], const double q[4]); //!< Continue stroke data input - rotation as quaternion.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeE(void* gco, int part, const double p[3], const double r[3]); //!< Continue stroke data input - rotation as Euler angles (rad).
@@ -145,8 +147,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_isStrokeStarted(void* gco, int part); //!< Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_cancelStroke(void* gco, int part); //!< Cancel a started stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_identifyGestureCombination(void* gco, double* probability, double* similarity, double parts_probabilities[], double parts_similarities[]); //!< Return the most likely gesture candidate for the previous multi-gesture.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0); //!< Continuous gesture identification.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyM(void* gco, const double hmd[4][4], double* similarity=0); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[] = 0, double parts_similarities[] = 0); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyM(void* gco, const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0); //!< Continuous gesture identification.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecord(void* gco, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordM(void* gco, const double hmd[4][4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationPeriod(void* gco, int part); //!< Get time frame for continuous gesture identification in milliseconds.
@@ -237,10 +239,14 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceZ(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
     GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceZ(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
 
+    GESTURERECOGNITION_LIBEXPORT const char* GestureCombinations_getVersionString(); //!< Get the version of this library as human-readable string.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getVersionStringLength(); //!< Get the length of the version string.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_copyVersionString(char* buf, int buflen); //!< Copy the version string into a buffer.
+
 #ifdef __cplusplus
 }
 
-class IGestureCombinations
+class GESTURERECOGNITION_LIBEXPORT IGestureCombinations
 {
 public:
     /**
@@ -285,6 +291,21 @@ public:
     * \return                   Zero on success, a negative error code on failure.
     */
     virtual int startStroke(int part, const double hmd_p[3], const double hmd_q[4], int record_as_sample=-1)=0;
+
+    /**
+     * Update the current position of the HMD/headset during a gesture performance (stroke).
+    * \param  hmd               Transformation matrix (4x4) of the current headset position and rotation.
+    * \return                   Zero on success, a negative error code on failure.
+     */
+    virtual int updateHeadPositionM(const double hmd[4][4])=0;
+
+    /**
+     * Update the current position of the HMD/headset during a gesture performance (stroke).
+    * \param  hmd_p             Vector (x,y,z) of the current headset position.
+    * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
+    * \return                   Zero on success, a negative error code on failure.
+     */
+    virtual int updateHeadPositionQ(const double hmd_p[3], const double hmd_q[4])=0;
 
     /**
     * Continue stroke (gesture motion) data input (translational data only).
@@ -371,17 +392,21 @@ public:
     * \param    hmd_p           Vector (x,y,z) of the current headset position.
     * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
     * \param    similarity      [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \param    parts_probabilities [OUT][OPTIONAL] The probability values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
+    * \param    parts_similarities  [OUT][OPTIONAL] The similarity values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
     * \return                   The ID of the identified gesture combination, or a negative error code on failure.
     */
-    virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0)=0;
+    virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0)=0;
 
     /**
     * Continuous gesture identification.
     * \param    hmd             Transformation matrix of the current headset position.
     * \param    similarity      [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \param    parts_probabilities [OUT][OPTIONAL] The probability values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
+    * \param    parts_similarities  [OUT][OPTIONAL] The similarity values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
     * \return                   The ID of the identified gesture combination, or a negative error code on failure.
     */
-    virtual int contdIdentifyM(const double hmd[4][4], double* similarity=0)=0;
+    virtual int contdIdentifyM(const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0)=0;
 
     /**
     * Continuous gesture recording.
@@ -907,6 +932,26 @@ public:
     * Run internal tests to check for code correctness and data consistency.
     */
     virtual int runTests() = 0;
+
+    /**
+    * Get the version of this library as human-readable string.
+    * \return   A null-terminated string describing the version of MiVRy.
+    */
+    static const char* getVersionString();
+
+    /**
+    * Get the length of the version string.
+    * \return   The number of characters that make up the version string.
+    */
+    static int getVersionStringLength();
+
+    /**
+    * Copy the version string into a buffer.
+    * \param    buf             [OUT] The string buffer to which to write the gesture name.
+    * \param    buflen          The length of the buf string buffer.
+    * \return                   The number of characters written to the buffer, zero on failure.
+    */
+    static int copyVersionString(char* buf, int buflen);
 };
 
 typedef IGestureCombinations IGestureCombinations;

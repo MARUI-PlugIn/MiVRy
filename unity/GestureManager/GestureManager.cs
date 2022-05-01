@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.0
+ * Version 2.1
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -26,6 +26,10 @@ using AOT;
 using UnityEngine.UI;
 using UnityEngine.XR;
 using UnityEngine.Networking;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+#endif
 
 public class GestureManager : MonoBehaviour
 {
@@ -89,6 +93,175 @@ public class GestureManager : MonoBehaviour
 
     public string license_id = "";
     public string license_key = "";
+    public Mivry.UnityXrPlugin unityXrPlugin = Mivry.UnityXrPlugin.OpenXR;
+    public Mivry.MivryCoordinateSystem mivryCoordinateSystem = Mivry.MivryCoordinateSystem.OpenXR;
+
+    
+    public GestureRecognition.FrameOfReference frameOfReferenceYaw {
+        get
+        {
+            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
+            {
+                if (gr != null)
+                {
+                    return gr.frameOfReferenceZ;
+                }
+                if (gc != null)
+                {
+                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceZ;
+                }
+            } else
+            {
+                if (gr != null)
+                {
+                    return gr.frameOfReferenceY;
+                }
+                if (gc != null)
+                {
+                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceY;
+                }
+            }
+            return GestureRecognition.FrameOfReference.Head;
+        }
+        set
+        {
+            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
+            {
+                if (gr != null)
+                {
+                    gr.frameOfReferenceZ = value;
+                }
+                if (gc != null)
+                {
+                    gc.frameOfReferenceZ = (GestureCombinations.FrameOfReference)value;
+                }
+            }
+            else
+            {
+                if (gr != null)
+                {
+                    gr.frameOfReferenceY = value;
+                }
+                if (gc != null)
+                {
+                    gc.frameOfReferenceY = (GestureCombinations.FrameOfReference)value;
+                }
+            }
+            GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
+        }
+    }
+
+    public GestureRecognition.FrameOfReference frameOfReferenceUpDownPitch
+    {
+        get
+        {
+            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
+            {
+                if (gr != null)
+                {
+                    return gr.frameOfReferenceY;
+                }
+                if (gc != null)
+                {
+                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceY;
+                }
+            }
+            else
+            {
+                if (gr != null)
+                {
+                    return gr.frameOfReferenceX;
+                }
+                if (gc != null)
+                {
+                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceX;
+                }
+            }
+            return GestureRecognition.FrameOfReference.Head;
+        }
+        set
+        {
+            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
+            {
+                if (gr != null)
+                {
+                    gr.frameOfReferenceY = value;
+                }
+                if (gc != null)
+                {
+                    gc.frameOfReferenceY = (GestureCombinations.FrameOfReference)value;
+                }
+            }
+            else
+            {
+                if (gr != null)
+                {
+                    gr.frameOfReferenceX = value;
+                }
+                if (gc != null)
+                {
+                    gc.frameOfReferenceX = (GestureCombinations.FrameOfReference)value;
+                }
+            }
+            GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
+        }
+    }
+
+    public GestureRecognition.FrameOfReference frameOfReferenceRollTilt
+    {
+        get
+        {
+            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
+            {
+                if (gr != null)
+                {
+                    return gr.frameOfReferenceX;
+                }
+                if (gc != null)
+                {
+                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceX;
+                }
+            }
+            else
+            {
+                if (gr != null)
+                {
+                    return gr.frameOfReferenceZ;
+                }
+                if (gc != null)
+                {
+                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceZ;
+                }
+            }
+            return GestureRecognition.FrameOfReference.Head;
+        }
+        set
+        {
+            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
+            {
+                if (gr != null)
+                {
+                    gr.frameOfReferenceX = value;
+                }
+                if (gc != null)
+                {
+                    gc.frameOfReferenceX = (GestureCombinations.FrameOfReference)value;
+                }
+            }
+            else
+            {
+                if (gr != null)
+                {
+                    gr.frameOfReferenceZ = value;
+                }
+                if (gc != null)
+                {
+                    gc.frameOfReferenceZ = (GestureCombinations.FrameOfReference)value;
+                }
+            }
+            GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
+        }
+    }
 
     public string file_load_combinations = "Samples/Sample_TwoHanded_Gestures.dat";
     public string file_import_combinations = "Samples/Sample_Military_Gestures.dat";
@@ -166,6 +339,9 @@ public class GestureManager : MonoBehaviour
     // Wether a gesture was already started
     public bool gesture_started = false;
 
+    // Whether or not to update (and thus compensate for) the head position during gesturing.
+    public bool compensate_head_motion = false;
+
     // File/folder suggestions for the load files button
     public int file_suggestion = 0;
     public List<string> file_suggestions = new List<string>();
@@ -214,7 +390,7 @@ public class GestureManager : MonoBehaviour
     }
 
     // Helper function to handle new VR controllers being detected.
-    void DeviceConnected(InputDevice device)
+    void DeviceConnected(UnityEngine.XR.InputDevice device)
     {
         if ((device.characteristics & InputDeviceCharacteristics.Left) != 0)
         {
@@ -231,9 +407,10 @@ public class GestureManager : MonoBehaviour
     {
         // Set the welcome message.
         ConsoleText = GameObject.Find("ConsoleText").GetComponent<Text>();
-        consoleText = "Welcome to MiVRy Gesture Recognition!\n"
-                      + "This manager allows you to create and record gestures,\n"
-                      + "and organize gesture files.";
+        consoleText = "Welcome to MiVRy Gesture Manager!\n"
+                    + "(" + GestureRecognition.getVersionString() + ")\n"
+                    + "This manager allows you to\ncreate and record gestures,\n"
+                    + "and organize gesture files.";
 
         me = GCHandle.Alloc(this);
 
@@ -260,7 +437,7 @@ public class GestureManager : MonoBehaviour
         controller_gameobjs["controller_dummy_right"].SetActive(false);
 
         InputDevices.deviceConnected += DeviceConnected;
-        List<InputDevice> devices = new List<InputDevice>();
+        List<UnityEngine.XR.InputDevice> devices = new List<UnityEngine.XR.InputDevice>();
         InputDevices.GetDevices(devices);
         foreach (var device in devices)
             DeviceConnected(device);
@@ -270,15 +447,23 @@ public class GestureManager : MonoBehaviour
     // Update:
     void Update()
     {
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            Application.Quit();
+        }
+#else
         float escape = Input.GetAxis("escape");
         if (escape > 0.0f)
         {
             Application.Quit();
         }
+#endif
         if (this.gr == null && this.gc == null)
         {
-            consoleText = "Welcome to MiVRy Gesture Recognition!\n"
-                             + "This manager allows you to create and record gestures,\n"
+            consoleText = "Welcome to MiVRy Gesture Manager!\n"
+                             + "(" + GestureRecognition.getVersionString() + ")\n"
+                             + "This manager allows you to\ncreate and record gestures,\n"
                              + "and organize gesture files.";
             return;
         }
@@ -327,8 +512,18 @@ public class GestureManager : MonoBehaviour
             return;
         }
 
+#if ENABLE_INPUT_SYSTEM
+        float trigger_left = getInputControlValue("<XRController>{LeftHand}/trigger");
+        float trigger_right = getInputControlValue("<XRController>{RightHand}/trigger");
+#else
         float trigger_left = Input.GetAxis("LeftControllerTrigger");
         float trigger_right = Input.GetAxis("RightControllerTrigger");
+#endif
+
+        GameObject hmd = Camera.main.gameObject; // alternative: GameObject.Find("Main Camera");
+        Vector3 hmd_p = hmd.transform.position;
+        Quaternion hmd_q = hmd.transform.rotation;
+        Mivry.convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
 
         // Single Gesture recognition / 1-handed operation
         if (this.gr != null)
@@ -356,9 +551,6 @@ public class GestureManager : MonoBehaviour
                     return;
                 }
                 // If we arrive here: either trigger was pressed, so we start the gesture.
-                GameObject hmd = GameObject.Find("Main Camera"); // alternative: Camera.main.gameObject
-                Vector3 hmd_p = hmd.transform.position;
-                Quaternion hmd_q = hmd.transform.rotation;
                 gr.startStroke(hmd_p, hmd_q, record_gesture_id);
                 gesture_started = true;
                 return;
@@ -369,8 +561,13 @@ public class GestureManager : MonoBehaviour
             if (trigger_left > 0.85 || trigger_right > 0.85)
             {
                 // The user is still dragging with the controller: continue the gesture.
+                if (this.compensate_head_motion)
+                {
+                    gr.updateHeadPosition(hmd_p, hmd_q);
+                }
                 Vector3 p = active_controller.transform.position;
                 Quaternion q = active_controller.transform.rotation;
+                Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                 gr.contdStrokeQ(p, q);
                 addToStrokeTrail(active_controller_pointer.transform.position);
                 return;
@@ -418,7 +615,6 @@ public class GestureManager : MonoBehaviour
             return;
         }
 
-
         // GestureCombination recognition / 2-handed operation
         if (this.gc != null)
         {
@@ -427,9 +623,6 @@ public class GestureManager : MonoBehaviour
             {
                 // Controller trigger pressed.
                 trigger_pressed_left = true;
-                GameObject hmd = GameObject.Find("Main Camera"); // alternative: Camera.main.gameObject
-                Vector3 hmd_p = hmd.transform.position;
-                Quaternion hmd_q = hmd.transform.rotation;
                 int gesture_id = -1;
                 if (record_combination_id >= 0)
                 {
@@ -442,9 +635,6 @@ public class GestureManager : MonoBehaviour
             {
                 // Controller trigger pressed.
                 trigger_pressed_right = true;
-                GameObject hmd = GameObject.Find("Main Camera"); // alternative: Camera.main.gameObject
-                Vector3 hmd_p = hmd.transform.position;
-                Quaternion hmd_q = hmd.transform.rotation;
                 int gesture_id = -1;
                 if (record_combination_id >= 0)
                 {
@@ -460,6 +650,10 @@ public class GestureManager : MonoBehaviour
             }
 
             // If we arrive here, the user is currently dragging with one of the controllers.
+            if (this.compensate_head_motion)
+            {
+                gc.updateHeadPosition(hmd_p, hmd_q);
+            }
             if (trigger_pressed_left == true)
             {
                 if (trigger_left < 0.85)
@@ -472,7 +666,10 @@ public class GestureManager : MonoBehaviour
                 {
                     // User still dragging or still moving after trigger pressed
                     GameObject left_hand = GameObject.Find("Left Hand");
-                    gc.contdStrokeQ(lefthand_combination_part, left_hand.transform.position, left_hand.transform.rotation);
+                    Vector3 p = left_hand.transform.position;
+                    Quaternion q = left_hand.transform.rotation;
+                    Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                    gc.contdStrokeQ(lefthand_combination_part, p, q);
                     // Show the stroke by instatiating new objects
                     GameObject left_hand_pointer = GameObject.FindGameObjectWithTag("Left Pointer");
                     addToStrokeTrail(left_hand_pointer.transform.position);
@@ -491,7 +688,10 @@ public class GestureManager : MonoBehaviour
                 {
                     // User still dragging or still moving after trigger pressed
                     GameObject right_hand = GameObject.Find("Right Hand");
-                    gc.contdStrokeQ(righthand_combination_part, right_hand.transform.position, right_hand.transform.rotation);
+                    Vector3 p = right_hand.transform.position;
+                    Quaternion q = right_hand.transform.rotation;
+                    Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                    gc.contdStrokeQ(righthand_combination_part, p, q);
                     // Show the stroke by instatiating new objects
                     GameObject right_hand_pointer = GameObject.FindGameObjectWithTag("Right Pointer");
                     addToStrokeTrail(right_hand_pointer.transform.position);
@@ -605,6 +805,10 @@ public class GestureManager : MonoBehaviour
         //star.transform.rotation.Normalize();
         float star_scale = (float)random.NextDouble() + 0.3f;
         star.transform.localScale = new Vector3(star_scale, star_scale, star_scale);
+        if (this.compensate_head_motion)
+        {
+            star.transform.SetParent(Camera.main.gameObject.transform);
+        }
         stroke.Add(star.name);
     }
     
@@ -673,6 +877,7 @@ public class GestureManager : MonoBehaviour
         if (this.gr != null)
         {
             string path = getLoadPath(this.file_load_gestures);
+            this.consoleText = "Loading Gesture file...";
             int ret = this.gr.loadFromFileAsync(path);
             if (ret != 0)
             {
@@ -689,12 +894,12 @@ public class GestureManager : MonoBehaviour
                     return false;
                 }
             }
-            this.consoleText = "Gesture file loading started...";
             return true;
         }
         else if (this.gc != null)
         {
             string path = getLoadPath(this.file_load_combinations);
+            this.consoleText = "Loading Gesture Combinations file...";
             int ret = this.gc.loadFromFileAsync(path);
             if (ret != 0)
             {
@@ -711,7 +916,6 @@ public class GestureManager : MonoBehaviour
                     return false;
                 }
             }
-            this.consoleText = "Gesture combinations file loading started...";
             return true;
         }
         this.consoleText = "[ERROR] No Gesture Recognition object\nto load gestures into.";
@@ -801,4 +1005,47 @@ public class GestureManager : MonoBehaviour
                 Debug.Log(value);
         }
     }
+
+
+#if ENABLE_INPUT_SYSTEM
+    public float getInputControlValue(string controlName)
+    {
+
+        InputControl control = InputSystem.FindControl(controlName); // eg: "<XRController>{RightHand}/trigger"
+        switch (control)
+        {
+            case AxisControl axisControl:
+                return axisControl.ReadValue();
+            case DoubleControl doubleControl:
+                return (float)doubleControl.ReadValue();
+            case IntegerControl integerControl:
+                return integerControl.ReadValue();
+            case QuaternionControl quaternionControl:
+                Debug.LogError($"Mivry.getInputControlValue : QuaternionControl '${controlName}' not supported.");
+                return 0.0f;
+            case TouchControl touchControl:
+                return touchControl.ReadValue().pressure;
+            case TouchPhaseControl phaseControl:
+                var phase = phaseControl.ReadValue();
+                switch (phase)
+                {
+                    case UnityEngine.InputSystem.TouchPhase.Began:
+                    case UnityEngine.InputSystem.TouchPhase.Stationary:
+                    case UnityEngine.InputSystem.TouchPhase.Moved:
+                        return 1.0f;
+                    case UnityEngine.InputSystem.TouchPhase.None:
+                    case UnityEngine.InputSystem.TouchPhase.Ended:
+                    case UnityEngine.InputSystem.TouchPhase.Canceled:
+                    default:
+                        return 0.0f;
+                }
+            case Vector2Control vector2Control:
+                return vector2Control.ReadValue().magnitude;
+            case Vector3Control vector3Control:
+                return vector3Control.ReadValue().magnitude;
+
+        }
+        return 0.0f;
+    }
+#endif
 }

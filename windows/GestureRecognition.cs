@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.0
+ * Version 2.1
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -183,8 +183,79 @@ public class GestureRecognition
         World = 1
     }
     //                                                          ________________________________
+    //_________________________________________________________/    frameOfReferenceY
+    /// <summary>
+    /// Whether or not to use the heads y-axis-rotation when calculating the relative
+    /// controller position (as seen from the user's point of view). In Unity, this means
+    /// which frame of reference is used to interpret where "front" and "back" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "front" will be the
+    /// direction in which you look, no matter which direction you look.
+    /// If the frame of reference is "World", then "front" will be towards your PC
+    /// (or another room-fixed direction, based on your tracking system).
+    /// Switch this setting to "World" if your gestures are specific to north/south/east/west
+    /// of your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceY
+    {
+        get
+        {
+            return (FrameOfReference)GestureRecognition_getRotationalFrameOfReferenceY(m_gro);
+        }
+        set
+        {
+            GestureRecognition_setRotationalFrameOfReferenceY(m_gro, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  frameOfReferenceX
+    /// <summary>
+    /// Whether or not to use the heads x-axis-rotation when calculating the relative
+    /// controller position (as seen from the user's point of view). In Unity, this means
+    /// which frame of reference is used to interpret where "up" and "down" are for the
+    /// gesture. If the frame of reference is "Head" (default), then "up" will be the
+    /// the visual "up" no matter if you look up or down. If the frame of reference is "World",
+    /// then "up" will be towards the sky in the world (direction of the y-axis).
+    /// Switch this setting to "World" if your gestures are specific to up/down
+    /// in your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceX
+    {
+        get
+        {
+            return (FrameOfReference)GestureRecognition_getRotationalFrameOfReferenceX(m_gro);
+        }
+        set
+        {
+            GestureRecognition_setRotationalFrameOfReferenceX(m_gro, (int)value);
+        }
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/   frameOfReferenceZ
+    /// <summary>
+    /// Whether or not to use the heads z-axis-rotation when calculating the relative
+    /// controller position (as seen from the user's point of view). In Unity, this means
+    /// which frame of reference is used to interpret head tilting when performing a
+    /// gesture. If the frame of reference is "Head" (default), then "right" will be the
+    /// the visual "right", even if you tilt your head. If the frame of reference is "World",
+    /// then the horizon (world) will be used to determine left/right/up/down.
+    /// in your world.
+    /// </summary>
+    public FrameOfReference frameOfReferenceZ
+    {
+        get
+        {
+            return (FrameOfReference)GestureRecognition_getRotationalFrameOfReferenceZ(m_gro);
+        }
+        set
+        {
+            GestureRecognition_setRotationalFrameOfReferenceZ(m_gro, (int)value);
+        }
+    }
+
+    //                                                          ________________________________
     //_________________________________________________________/    frameOfReferenceYaw
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceY instead.
     /// Which frame of reference is used to interpret where "front" and "back" are for the
     /// gesture. If the frame of reference is "Head" (default), then "front" will be the
     /// direction in which you look, no matter which direction you look.
@@ -207,6 +278,7 @@ public class GestureRecognition
     //                                                          ________________________________
     //_________________________________________________________/  frameOfReferenceUpDownPitch
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceX instead.
     /// Which frame of reference is used to interpret where "up" and "down" are for the
     /// gesture. If the frame of reference is "Head" (default), then "up" will be the
     /// the visual "up" no matter if you look up or down. If the frame of reference is "World",
@@ -228,6 +300,7 @@ public class GestureRecognition
     //                                                          ________________________________
     //_________________________________________________________/   frameOfReferenceRollTilt
     /// <summary>
+    /// DEPRECATED! Please use frameOfReferenceZ instead.
     /// Which frame of reference is used to interpret head tilting when performing a
     /// gesture. If the frame of reference is "Head" (default), then "right" will be the
     /// the visual "right", even if you tilt your head. If the frame of reference is "World",
@@ -411,6 +484,43 @@ public class GestureRecognition
     public int startStroke(double[] hmd_p, double[] hmd_q, int record_as_sample = -1)
     {
         return GestureRecognition_startStroke(m_gro, hmd_p, hmd_q, record_as_sample);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     updateHeadPosition()
+    /// <summary>
+    /// Update the current position of the HMD / headset during a gesture performance (stroke).
+    /// </summary>
+    /// <param name="hmd">The current position/orientation of the headset as a 4x4 matrix.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int updateHeadPosition(double[,] hmd)
+    {
+        return GestureRecognition_updateHeadPositionM(m_gro, hmd);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     updateHeadPosition()
+    /// <summary>
+    /// Update the current position of the HMD / headset during a gesture performance (stroke).
+    /// </summary>
+    /// <param name="hmd_p">The current position of the headset.</param>
+    /// <param name="hmd_q">The current orientation (quaternion) of the headset.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int updateHeadPosition(Vector3 hmd_p, Quaternion hmd_q)
+    {
+        double[] p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
+        double[] q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
+        return GestureRecognition_updateHeadPositionQ(m_gro, p, q);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     updateHeadPosition()
+    /// <summary>
+    /// Update the current position of the HMD / headset during a gesture performance (stroke).
+    /// </summary>
+    /// <param name="hmd_p">The current position of the headset.</param>
+    /// <param name="hmd_q">The current orientation (quaternion) of the headset.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int updateHeadPosition(double[] hmd_p, double[] hmd_q)
+    {
+        return GestureRecognition_updateHeadPositionQ(m_gro, hmd_p, hmd_q);
     }
     //                                                          ________________________________
     //_________________________________________________________/         contdStroke()
@@ -1564,6 +1674,25 @@ public class GestureRecognition
     {
         GestureRecognition_setTrainingFinishCallbackMetadata(m_gro, metadata);
     }
+    //                                                          ________________________________
+    //_________________________________________________________/      getVersionString()
+    /// <summary>
+    /// Get the version of MiVRy as a human-readable string. 
+    /// </summary>
+    /// <returns>
+    /// A string describing the version. On failure, an empty string is returned.
+    /// </returns>
+    public static string getVersionString()
+    {
+        int strlen = GestureRecognition_getVersionStringLength();
+        if (strlen <= 0)
+        {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(strlen + 1);
+        GestureRecognition_copyVersionString(sb, sb.Capacity);
+        return sb.ToString();
+    }
 
 
     // ----------------------------------------------------------------------------------------------------------
@@ -1588,6 +1717,10 @@ public class GestureRecognition
     public static extern int GestureRecognition_startStroke(IntPtr gro, double[] hmd_p, double[] hmd_q, int record_as_sample);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startStrokeM", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_startStrokeM(IntPtr gro, double[,] hmd, int record_as_sample);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_updateHeadPositionM", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_updateHeadPositionM(IntPtr gro, double[,] hmd);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_updateHeadPositionQ", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_updateHeadPositionQ(IntPtr gro, double[] hmd_p, double[] hmd_q);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_contdStroke(IntPtr gro, double[] p);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdStrokeQ", CallingConvention = CallingConvention.Cdecl)]
@@ -1730,6 +1863,12 @@ public class GestureRecognition
     public static extern int GestureRecognition_getRotationalFrameOfReferenceZ(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_setRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureRecognition_setRotationalFrameOfReferenceZ(IntPtr gro, int i);
+    // [DllImport(libfile, EntryPoint = "GestureRecognition_getVersionString", CallingConvention = CallingConvention.Cdecl)]
+    // public static extern string GestureRecognition_getVersionString();
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getVersionStringLength", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getVersionStringLength();
+    [DllImport(libfile, EntryPoint = "GestureRecognition_copyVersionString", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_copyVersionString(StringBuilder buf, int buflen);
 
     private IntPtr m_gro;
 }

@@ -62,6 +62,29 @@ enum class GestureRecognition_FrameOfReference : uint8
     World = 1 UMETA(DisplayName = "World"),
 };
 
+/**
+* Type of target VR device.
+*/
+UENUM(BlueprintType)
+enum class GestureRecognition_DeviceType : uint8
+{
+    None = 0 UMETA(DisplayName = "None"),
+    Headset = 1 UMETA(DisplayName = "Headset"),
+    Controller = 2 UMETA(DisplayName = "Controller"),
+};
+
+/**
+* Type of target VR device.
+*/
+UENUM(BlueprintType)
+enum class GestureRecognition_CoordinateSystem : uint8
+{
+    Unreal = 0 UMETA(DisplayName = "Unreal"),
+    UnityOpenXR = 1 UMETA(DisplayName = "Unity OpenXR"),
+    UnityOculusVR = 2 UMETA(DisplayName = "Unity OculusVR"),
+    UnitySteamVR = 3 UMETA(DisplayName = "Unity SteamVR"),
+};
+
 
 /**
  * Utility function class for the MiVRy Gesture Recognition plug-in.
@@ -72,6 +95,13 @@ class MIVRY_API UMiVRyUtil : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 	
 public:
+
+    /**
+    * Turn error code into human-readable error message.
+    * @return A human-readable string describing this version of MiVRy.
+    */
+    UFUNCTION(BlueprintPure, Category = "MiVRy Util", Meta = (DisplayName = "Version String"))
+        static FString versionString();
 
     /**
     * Turn error code into human-readable error message.
@@ -106,21 +136,24 @@ public:
         static void readFileToBuffer(const FString& Path, GestureRecognition_Result& Result, TArray<uint8>& Data);
 
     /**
-    * Helper function to convert UnrealEngine coordinates to Unity coordinates.
-    * @param location           The position in world space.
-    * @param quaternion         The rotation in world space.
-    * @param is_controller      Whether the device is a controller (not a headset).
-    * @param m                  [OUT] The transformation matrix in Unity coordinates.
+    * Helper function to convert UnrealEngine coordinates to internal MiVRy coordinates (if they differ from Unreal coordinates).
+    * @param location           The position in Unreal coordinates.
+    * @param rotation           The rotation in Unreal coordinates.
+    * @param device_type        Whether the device is a VR handheld controller, a headset, or neither.
+    * @param coord_sys          The internal coordinate system used by MiVRy.
+    * @param p                  [OUT] The translation in MiVRy's internal coordinates.
+    * @param q                  [OUT] The rotation quaternion in MiVRy's internal coordinates.
     */
-    static void toUnityCoords(const FVector& location, const FQuat& quaternion, bool is_controller, double m[4][4]);
+    static void convertInput(const FVector& location, const FQuat& rotation, GestureRecognition_DeviceType device_type, GestureRecognition_CoordinateSystem coord_sys, double p[3], double q[4]);
 
     /**
-    * Helper function to convert Unity coordinates to UnrealEngine coordinates.
-    * @param p                  Unit coordinate system location.
-    * @param q                  Unit coordinate system orientation.
-    * @param is_controller      Whether the device is a controller (not a headset).
+    * Helper function to convert internal MiVRy coordinates to UnrealEngine coordinates (if they differ from Unreal coordinates).
+    * @param coord_sys          The internal coordinate system used by MiVRy.
+    * @param p                  The location in MiVRy's internal coordinate system.
+    * @param q                  The orientation in MiVRy's internal coordinate system.
+    * @param device_type        Whether the device is a VR handheld controller, a headset, or neither.
     * @param location           [OUT] UnrealEngine coordinate location.
-    * @param quaternion         [OUT] UnrealEngine coordinate orientation.
+    * @param rotation           [OUT] UnrealEngine coordinate orientation.
     */
-    static void fromUnityCoords(const double p[3], const double q[4], bool is_controller, FVector& location, FQuat& quaternion);
+    static void convertOutput(GestureRecognition_CoordinateSystem coord_sys, const double p[3], const double q[4], GestureRecognition_DeviceType device_type, FVector& location, FQuat& rotation);
 };
