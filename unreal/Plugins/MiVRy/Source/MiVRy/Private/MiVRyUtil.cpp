@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.0
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -64,6 +64,8 @@ FString UMiVRyUtil::errorCodeToString(int errorCode)
 			return "The operation could not be performed because the AI is loading a gesture database file.";
 		case -16:
 			return "The provided license key is not valid or the operation is not permitted under the current license.";
+		case -17:
+			return "The operation could not be performed because the AI is currently being saved to a database file.";
 		case -99:
 			return "Gesture Recognition object was not created.";
     }

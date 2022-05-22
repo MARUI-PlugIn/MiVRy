@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.1
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -168,6 +168,8 @@ public class GestureRecognition
                 return "The operation could not be performed because the AI is loading a gesture database file.";
             case -16:
                 return "The provided license key is not valid or the operation is not permitted under the current license.";
+            case -17:
+                return "The operation could not be performed because the AI currently being saved to a database file.";
         }
         return "Unknown error.";
     }
@@ -1453,6 +1455,98 @@ public class GestureRecognition
         return GestureRecognition_importGestures(m_gro, from_gro.m_gro);
     }
     //                                                          ________________________________
+    //_________________________________________________________/    saveToFileAsync()
+    /// <summary>
+    /// Save the gesture recognition artificial intelligence and recorded gestures to a file, asynchronously.
+    /// The function will return immediately, while the saving process will continue in the background.
+    /// Use isSaving() to check if the saving process is still ongoing.
+    /// </summary>
+    /// <param name="path">File system path and filename where to save.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int saveToFileAsync(string path)
+    {
+        return GestureRecognition_saveToFileAsync(m_gro, path);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setSavingUpdateCallbackFunction()
+    /// <summary>
+    /// Set the callback function to be called (repeatedly) during saving.
+    /// Set to null for no callback.
+    /// </summary>
+    /// <param name="callback_function">The function to be called during saving.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setSavingCallbackUpdateFunction(SavingCallbackFunction callback_function)
+    {
+        return GestureRecognition_setSavingUpdateCallbackFunction(m_gro, callback_function);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setSavingUpdateCallbackMetadata()
+    /// <summary>
+    /// Set the metadata object to be sent to the callback function during saving.
+    /// </summary>
+    /// <param name="callback_metadata">The metadata object to be sent to the function during saving.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setSavingUpdateCallbackMetadata(IntPtr callback_metadata)
+    {
+        return GestureRecognition_setSavingUpdateCallbackMetadata(m_gro, callback_metadata);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setSavingFinishCallbackFunction()
+    /// <summary>
+    /// Set the callback function to call when saving finishes. Set to null for no callback.
+    /// </summary>
+    /// <param name="callback_function">The function to call when saving is finished.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setSavingFinishCallbackFunction(SavingCallbackFunction callback_function)
+    {
+        return GestureRecognition_setSavingFinishCallbackFunction(m_gro, callback_function);
+    }
+    //                                                      ____________________________________
+    //_____________________________________________________/ setSavingFinishCallbackMetadata()
+    /// <summary>
+    /// Set the metadata object to be sent to the callback function to call when saving finishes.
+    /// </summary>
+    /// <param name="callback_metadata">The metadata object to be sent to the function to call when saving is finished.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setSavingFinishCallbackMetadata(IntPtr callback_metadata)
+    {
+        return GestureRecognition_setSavingFinishCallbackMetadata(m_gro, callback_metadata);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    isSaving()
+    /// <summary>
+    /// hether the Neural Network is currently being saved to a file or buffer.
+    /// </summary>
+    /// <returns>
+    /// True if the AI is currently being saved (to file or buffer), false if not.
+    /// </returns>
+    public bool isSaving()
+    {
+        return GestureRecognition_isSaving(m_gro) == 1;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    cancelSaving()
+    /// <summary>
+    /// Cancel a currently running savinging process.
+    /// </summary>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int cancelSaving()
+    {
+        return GestureRecognition_cancelSaving(m_gro);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/    loadFromFileAsync()
     /// <summary>
     /// Load a previously saved gesture recognition artificial intelligence from a file, asynchronously.
@@ -1704,6 +1798,8 @@ public class GestureRecognition
     public delegate void TrainingCallbackFunction(double performace, IntPtr metadata);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void LoadingCallbackFunction(int status, IntPtr metadata);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void SavingCallbackFunction(int status, IntPtr metadata);
 
     public const string libfile = "gesturerecognition";
 
@@ -1805,6 +1901,20 @@ public class GestureRecognition
     public static extern int GestureRecognition_importGestureSamples(IntPtr gro, IntPtr from_gro, int from_gesture_index, int into_gesture_index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_importGestures", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_importGestures(IntPtr gro, IntPtr from_gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_saveToFileAsync", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_saveToFileAsync(IntPtr gro, string path);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setSavingUpdateCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setSavingUpdateCallbackFunction(IntPtr gro, SavingCallbackFunction cbf);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setSavingUpdateCallbackMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setSavingUpdateCallbackMetadata(IntPtr gro, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setSavingFinishCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setSavingFinishCallbackFunction(IntPtr gro, SavingCallbackFunction cbf);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setSavingFinishCallbackMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setSavingFinishCallbackMetadata(IntPtr gro, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_isSaving", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_isSaving(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_cancelSaving", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_cancelSaving(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromFileAsync", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_loadFromFileAsync(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromBufferAsync", CallingConvention = CallingConvention.Cdecl)]

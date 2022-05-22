@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.0
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -68,6 +68,15 @@ public:
 	*/
 	UPROPERTY(EditAnywhere, Category = "Gesture Recognition")
 	FString LicenseKey;
+
+	/**
+	* Provide a license to enable additional functionality.
+	* @param license_name   The license name text.
+	* @param license_key    The license key text.
+	* @return   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Activate License"))
+	int activateLicense(const FString& license_name, const FString& license_key);
 
 	/**
 	* Start new gesture motion.
@@ -450,6 +459,31 @@ public:
 	int importFromBuffer(const TArray<uint8>& buffer);
 
 	/**
+	* Save the neural network and recorded training data to file, asynchronously.
+	* The function will return immediately, while the saving process will continue in the background.
+	* Use 'isSaving' to check if the saving process is still ongoing.
+	* You can use 'OnTrainingFinishDelegate' to receive a notification when saving finishes.
+	* @param path Path where to save the gesture database file.
+	* @return Zero on success, a negative error code on failure. Note that this only relates to *starting* the saving process.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Save GestureDatabase File Async"))
+	int saveToFileAsync(const FFilePath& path);
+
+	/**
+	* Whether the Neural Network is currently saving to a file or buffer.
+	* @return   True if the AI is currently saving, false if not.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Is Saving"))
+	bool isSaving();
+
+	/**
+	* Cancel a currently running saving process.
+	* @return   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Cancel Saving"))
+	int cancelSaving();
+
+	/**
 	* Load the neural network and recorded training data from file, asynchronously.
 	* The function will return immediately, while the loading process will continue in the background.
 	* Use 'isLoading' to check if the loading process is still ongoing.
@@ -579,9 +613,16 @@ public:
 	/**
 	* Delegate for loading callbacks.
 	* @param Source The GestureCombinationsActor from which the callback originated.
-	* @param Status During loading: the percentage of loading progress; on finish: the result of the loading process (zero on success, a negative error code on failure).
+	* @param Status during loading: the percentage of loading progress; on finish: the result of the loading process (zero on success, a negative error code on failure).
 	*/
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FLoadingCallbackDelegate, AGestureRecognitionActor*, Source, int, Status);
+
+	/**
+	* Delegate for saving callbacks.
+	* @param Source The GestureCombinationsActor from which the callback originated.
+	* @param Status during saving: the percentage of saving progress; on finish: the result of the saving process (zero on success, a negative error code on failure).
+	*/
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSavingCallbackDelegate, AGestureRecognitionActor*, Source, int, Status);
 
 	/**
 	* Delegate to be called during training when the recognition performance was increased.
@@ -607,6 +648,18 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GestureRecognition Loading Events")
 		FLoadingCallbackDelegate OnLoadingFinishDelegate;
 
+	/**
+	* Delegate to be called (repeatedly) during saving.
+	*/
+	UPROPERTY(BlueprintAssignable, Category = "GestureCombinations Saving Events")
+		FSavingCallbackDelegate OnSavingUpdateDelegate;
+
+	/**
+	* Delegate to be called when saving was finished (or canceled).
+	*/
+	UPROPERTY(BlueprintAssignable, Category = "GestureRecognition Saving Events")
+		FSavingCallbackDelegate OnSavingFinishDelegate;
+
 	struct TrainingCallbackMetadata {
 		AGestureRecognitionActor* actor;
 		FTrainingCallbackDelegate* delegate;
@@ -615,11 +668,18 @@ public:
 		AGestureRecognitionActor* actor;
 		FLoadingCallbackDelegate* delegate;
 	};
+	struct SavingCallbackMetadata {
+		AGestureRecognitionActor* actor;
+		FSavingCallbackDelegate* delegate;
+	};
 protected:
 	TrainingCallbackMetadata TrainingUpdateMetadata;
 	TrainingCallbackMetadata TrainingFinishMetadata;
 	LoadingCallbackMetadata  LoadingUpdateMetadata;
 	LoadingCallbackMetadata  LoadingFinishMetadata;
+	SavingCallbackMetadata  SavingUpdateMetadata;
+	SavingCallbackMetadata  SavingFinishMetadata;
 	static void TrainingCallbackFunction(double performance, TrainingCallbackMetadata* metadata);
 	static void LoadingCallbackFunction(int result, LoadingCallbackMetadata* metadata);
+	static void SavingCallbackFunction(int result, SavingCallbackMetadata* metadata);
 };

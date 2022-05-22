@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.0
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -49,9 +49,9 @@ void AGestureRecognitionActor::BeginPlay()
 	if (this->gro == nullptr) {
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("GestureRecognition::create returned null"));
 	} else if (this->LicenseName.IsEmpty() == false) {
-		const char* license_name = TCHAR_TO_ANSI(*this->LicenseName);
-		const char* license_key = TCHAR_TO_ANSI(*this->LicenseKey);
-		int ret = this->gro->activateLicense(license_name, license_key);
+		auto license_name = StringCast<ANSICHAR>(*this->LicenseName);
+		auto license_key = StringCast<ANSICHAR>(*this->LicenseKey);
+		int ret = this->gro->activateLicense(license_name.Get(), license_key.Get());
 		if (ret != 0) {
 			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString("Failed to activate license: ") + UMiVRyUtil::errorCodeToString(ret)));
 		}
@@ -61,6 +61,16 @@ void AGestureRecognitionActor::BeginPlay()
 void AGestureRecognitionActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+int AGestureRecognitionActor::activateLicense(const FString& license_name, const FString& license_key)
+{
+	if (this->gro == nullptr) {
+		return -99;
+	}
+	auto license_name_str = StringCast<ANSICHAR>(*license_name);
+	auto license_key_str = StringCast<ANSICHAR>(*license_key);
+	return this->gro->activateLicense(license_name_str.Get(), license_key_str.Get());
 }
 
 int AGestureRecognitionActor::startStroke(const FVector& HMD_Position, const FRotator& HMD_Rotation, int RecordAsSample)
@@ -466,8 +476,7 @@ int AGestureRecognitionActor::createGesture(const FString& name)
 	if (!this->gro) {
 		return -99;
 	}
-	const char* name_str = TCHAR_TO_ANSI(*name);
-	return this->gro->createGesture(name_str, nullptr);
+	return this->gro->createGesture(TCHAR_TO_ANSI(*name), nullptr);
 }
 
 float AGestureRecognitionActor::recognitionScore()
@@ -491,8 +500,7 @@ int AGestureRecognitionActor::setGestureName(int index, const FString& name)
 	if (!this->gro) {
 		return -99;
 	}
-	const char* name_str = TCHAR_TO_ANSI(*name);
-	return this->gro->setGestureName(index, name_str);
+	return this->gro->setGestureName(index, TCHAR_TO_ANSI(*name));
 }
 
 int AGestureRecognitionActor::getGestureNumberOfSamples(int index)
@@ -724,6 +732,44 @@ int AGestureRecognitionActor::importFromBuffer(const TArray<uint8>& buffer)
 	return this->gro->importFromBuffer((const char*)buffer.GetData(), buffer.Num(), nullptr);
 }
 
+int AGestureRecognitionActor::saveToFileAsync(const FFilePath& path)
+{
+	if (!this->gro)
+		return -99;
+	int ret;
+	ret = this->gro->setSavingUpdateCallbackFunction((IGestureRecognition::SavingCallbackFunction*)&SavingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setSavingFinishCallbackFunction((IGestureRecognition::SavingCallbackFunction*)&SavingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setSavingUpdateCallbackMetadata(&this->SavingUpdateMetadata);
+	if (ret != 0)
+		return ret;
+	ret = this->gro->setSavingFinishCallbackMetadata(&this->SavingFinishMetadata);
+	if (ret != 0)
+		return ret;
+	FString path_str = path.FilePath;
+	if (FPaths::IsRelative(path_str)) {
+		path_str = FPaths::Combine(FPaths::ProjectDir(), path_str);
+	}
+	return this->gro->saveToFileAsync(TCHAR_TO_ANSI(*path_str));
+}
+
+bool AGestureRecognitionActor::isSaving()
+{
+	if (!this->gro)
+		return false;
+	return this->gro->isSaving();
+}
+
+int AGestureRecognitionActor::cancelSaving()
+{
+	if (!this->gro)
+		return -99;
+	return this->gro->cancelSaving();
+}
+
 int AGestureRecognitionActor::loadFromFileAsync(const FFilePath& path)
 {
 	if (!this->gro)
@@ -888,7 +934,7 @@ void AGestureRecognitionActor::TrainingCallbackFunction(double performance, Trai
 		return;
 	}
 	metadata->delegate->Broadcast(metadata->actor, performance);
-};
+}
 
 void AGestureRecognitionActor::LoadingCallbackFunction(int result, LoadingCallbackMetadata* metadata)
 {
@@ -896,4 +942,12 @@ void AGestureRecognitionActor::LoadingCallbackFunction(int result, LoadingCallba
 		return;
 	}
 	metadata->delegate->Broadcast(metadata->actor, result);
-};
+}
+
+void AGestureRecognitionActor::SavingCallbackFunction(int result, SavingCallbackMetadata* metadata)
+{
+	if (!metadata || !metadata->delegate || !metadata->actor) {
+		return;
+	}
+	metadata->delegate->Broadcast(metadata->actor, result);
+}

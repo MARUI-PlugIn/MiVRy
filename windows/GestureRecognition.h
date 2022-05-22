@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.1
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -115,6 +115,7 @@
 #define GESTURERECOGNITION_RESULT_ERROR_INTERNALLYCORRUPT -14  //!< Return code for: the gesture recognition/combinations object is internally corrupted or inconsistent.
 #define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYLOADING  -15  //!< Return code for: the operation could not be performed because the AI is loading a gesture database file.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDLICENSE    -16  //!< Return code for: the provided license key is not valid or the operation is not permitted under the current license.
+#define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYSAVING   -17  //!< Return code for: the operation could not be performed because the AI is currently being saved to database file.
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -133,8 +134,10 @@
 extern "C" {
 #endif
     typedef void* GESTURERECOGNITION_CALLCONV MetadataCreatorFunction(); //!< Function pointer type to a function that creates Metadata objects.
-    typedef void GESTURERECOGNITION_CALLCONV LoadingCallbackFunction(int status, void* metadata); //!< Function pointer to an optional callback function to be called when loading finishes.
+    typedef void GESTURERECOGNITION_CALLCONV LoadingCallbackFunction(int status, void* metadata); //!< Function pointer to an optional callback function to be called when loading gesture database files.
+    typedef void GESTURERECOGNITION_CALLCONV SavingCallbackFunction(int status, void* metadata); //!< Function pointer to an optional callback function to be called when saving gesture database files.
     typedef void GESTURERECOGNITION_CALLCONV TrainingCallbackFunction(double performance, void* metadata); //!< Function pointer to an optional callback function to be called during training.
+    typedef void GESTURERECOGNITION_CALLCONV DebugCallbackFunction(const char* message, void* metadata); //!< Function pointer to an optional callback function that will receive debugging information during runtime.
     GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_create(); //!< Create new instance.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_delete(void* gro); //!< Delete instance.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_activateLicense(void* gro, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
@@ -194,6 +197,13 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importFromFile(void* gro, const char* path, MetadataCreatorFunction* createMetadata); //!< Import recorded gestures from file.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importFromBuffer(void* gro, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Import recorded gestures from buffer.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importFromStream(void* gro, void* stream, MetadataCreatorFunction* createMetadata); //!< Import recorded gestures std::istream.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_saveToFileAsync(void* gro, const char* path); //!< Save the neural network and recorded training data to file, asynchronously.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setSavingUpdateCallbackFunction(void* gro, SavingCallbackFunction* cbf); //!< Set the callback function to call (repeatedly) while saving. Set to null for no callback.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setSavingUpdateCallbackMetadata(void* gro, void* metadata); //!< Set the metadata object to be sent to the callback function to call during saving.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setSavingFinishCallbackFunction(void* gro, SavingCallbackFunction* cbf); //!< Set the callback function to call when saving finishes. Set to null for no callback.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setSavingFinishCallbackMetadata(void* gro, void* metadata); //!< Set the metadata object to be sent to the callback function to call when saving finishes.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_isSaving(void* gro); //!< Whether the Neural Network is currently saving from a file or buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_cancelSaving(void* gro); //!< Cancel a currently running saving process.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromFileAsync(void* gro, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file, asynchronously.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_loadFromBufferAsync(void* gro, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from buffer, asynchronously.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setLoadingUpdateCallbackFunction(void* gro, LoadingCallbackFunction* cbf); //!< Set the callback function to call (repeatedly) while loading. Set to null for no callback.
@@ -235,7 +245,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getRotationalFrameOfReferenceZ(void* gro); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
     GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceZ(void* gro, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
 
-    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugOutputFile(void* gro, const char* path); //!< Set where to write debug information.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugCallbackFunction(DebugCallbackFunction* dbf); //!< Set callback function to receive debugging information.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugCallbackMetadata(void* metadata); //!< Set metadata to receive with debugging output callback function.
 
     GESTURERECOGNITION_LIBEXPORT const char* GestureRecognition_getVersionString(); //!< Get the version of this library as human-readable string.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getVersionStringLength(); //!< Get the length of the version string.
@@ -280,6 +291,8 @@ public:
         Error_CurrentlyLoading = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYLOADING //!< Return code for: the operation could not be performed because the AI is loading a gesture database file.
         ,
         Error_InvalidLicense = GESTURERECOGNITION_RESULT_ERROR_INVALIDLICENSE //!< Return code for: the provided license key is not valid or the operation is not permitted under the current license.
+        ,
+        Error_CurrentlySaving = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYSAVING //!< Return code for: the operation could not be performed because the AI is current being saved to a database file.
     };
 
     /**
@@ -316,17 +329,30 @@ public:
     typedef Metadata* MetadataCreatorFunction();
 
     /**
-    * Function pointer to an optional callback function to be called when loading finishes.
+    * Function pointer to an optional callback function to be called when loading.
     * \param status             During loading: progess in percent; when finished: the return code of the loading process.
     */
     typedef void GESTURERECOGNITION_CALLCONV LoadingCallbackFunction(int status, void* metadata);
+
+    /**
+    * Function pointer to an optional callback function to be called when saving.
+    * \param status             During loading: progess in percent; when finished: the return code of the loading process.
+    */
+    typedef void GESTURERECOGNITION_CALLCONV SavingCallbackFunction(int status, void* metadata);
 
     /**
     * Function pointer to an optional callback function to be called during training.
     * \param performance        The current percentage of correctly recognized gestures (0~1).
     * \param metadata           The meta data pointer set on trainingUpdateCallbackMetadata or trainingFinishCallbackMetadata.
     */
-    typedef void GESTURERECOGNITION_CALLCONV TrainingCallbackFunction(double performance, void* metadata); 
+    typedef void GESTURERECOGNITION_CALLCONV TrainingCallbackFunction(double performance, void* metadata);
+
+    /**
+    * Function pointer to an optional callback function that will receive debugging information during runtime.
+    * \param message            The debug message (null-terminated).
+    * \param metadata           The meta data pointer set on debugCallbackMetadata.
+    */
+    typedef void GESTURERECOGNITION_CALLCONV DebugCallbackFunction(const char* message, void* metadata);
 
     /**
     * Start new stroke (gesture motion).
@@ -740,6 +766,52 @@ public:
     virtual int importFromStream(void* stream, MetadataCreatorFunction* createMetadata=0, std::vector<int>* mapping=0)=0;
 
     /**
+    * Save the neural network and recorded training data to file, asynchronously.
+    * The function will return immediately, while the saving process will continue in the background.
+    * Use isSaving() to check if the loading process is still ongoing.
+    * You can use setSavingCallback() to receive a function call when saving finishes.
+    * \param    path            The file path where to save the AI and recorded data.
+    * \return                   Zero on success, a negative error code on failure. Note that this only relates to *starting* the saving process.
+    */
+    virtual int saveToFileAsync(const char* path)=0;
+
+    /**
+    * Set the callback function to be called (repeatedly) during saving. Set to null for no callback.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingUpdateCallbackFunction(SavingCallbackFunction* callback_function)=0;
+
+    /**
+    * Set the metadata object to be sent to the callback function to call during saving.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingUpdateCallbackMetadata(void* callback_metadata)=0;
+
+    /**
+    * Set the callback function to be called when saving finishes. Set to null for no callback.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingFinishCallbackFunction(SavingCallbackFunction* callback_function)=0;
+
+    /**
+    * Set the metadata object to be sent to the callback function to call when saving finishes.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingFinishCallbackMetadata(void* callback_metadata)=0;
+
+    /**
+    * Whether the Neural Network is currently being saved to file or buffer.
+    * \return   True if the AI is currently being saved, false if not.
+    */
+    virtual bool isSaving()=0;
+
+    /**
+    * Cancel a currently running saving process.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int cancelSaving()=0;
+
+    /**
     * Load the neural network and recorded training data from file, asynchronously.
     * The function will return immediately, while the loading process will continue in the background.
     * Use isLoading() to check if the loading process is still ongoing.
@@ -882,9 +954,14 @@ public:
     virtual int runTests()=0;
 
     /**
-    * Set where to write debug information.
+    * Set callback function to receive debugging information.
     */
-    virtual void setDebugOutputFile(const char* path)=0;
+    static void setDebugCallbackFunction(DebugCallbackFunction* dbf);
+
+    /**
+    * Set metadata to receive with debugging output callback function.
+    */
+    static void setDebugCallbackMetadata(void* metadata);
 
     /**
     * Get the version of this library as human-readable string.

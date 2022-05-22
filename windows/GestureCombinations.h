@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.1
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -189,6 +189,13 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveGestureToFile(void* gco, int part, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromFile(void* gco, int part, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadGestureFromBuffer(void* gco, int part, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveToFileAsync(void* gco, const char* path); //!< Save the neural network and recorded training data to file, asynchronously.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setSavingUpdateCallbackFunction(void* gro, SavingCallbackFunction* cbf); //!< Set the callback function to be called (repeatedly) during saving. Set to null for no callback.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setSavingUpdateCallbackMetadata(void* gro, void* metadata); //!< Set the metadata object to be sent to the callback function to during saving.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setSavingFinishCallbackFunction(void* gro, SavingCallbackFunction* cbf); //!< Set the callback function to call when saving finishes. Set to null for no callback.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setSavingFinishCallbackMetadata(void* gro, void* metadata); //!< Set the metadata object to be sent to the callback function to call when saving finishes.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_isSaving(void* gco); //!< Whether the neural network is currently saving from a file or buffer.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_cancelSaving(void* gco); //!< Cancel a currently running saving process.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromFileAsync(void* gco, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file, asynchronously.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromBufferAsync(void* gco, const char* buffer, int buffer_size, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data buffer, asynchronously.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setLoadingUpdateCallbackFunction(void* gro, LoadingCallbackFunction* cbf); //!< Set the callback function to be called (repeatedly) during loading. Set to null for no callback.
@@ -719,6 +726,52 @@ public:
     * \return                   Zero on success, a negative error code on failure.
     */
     virtual int loadGestureFromBuffer(int part, const char* buffer, int buffer_size, IGestureRecognition::MetadataCreatorFunction* createMetadata=0)=0;
+
+    /**
+    * Save the neural network and recorded training data to file, asynchronously.
+    * The function will return immediately, while the saving process will continue in the background.
+    * Use isSaving() to check if the saving process is still ongoing.
+    * You can use setSavingCallback() to receive a function call when saving finishes.
+    * \param    path            The file path where to save the AI and recorded data.
+    * \return                   Zero on success, a negative error code on failure. Note that this only relates to *starting* the saving process.
+    */
+    virtual int saveToFileAsync(const char* path)=0;
+
+    /**
+    * Set the callback function to be called (repeatedly) during saving. Set to null for no callback.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingUpdateCallbackFunction(SavingCallbackFunction* callback_function)=0;
+
+    /**
+    * Set the metadata object to be sent to the callback function to be called during saving.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingUpdateCallbackMetadata(void* callback_metadata)=0;
+
+    /**
+    * Set the callback function to be called when saving finishes. Set to null for no callback.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingFinishCallbackFunction(SavingCallbackFunction* callback_function)=0;
+
+    /**
+    * Set the metadata object to be sent to the callback function to call when saving finishes.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int setSavingFinishCallbackMetadata(void* callback_metadata)=0;
+
+    /**
+    * Whether the Neural Network is currently saving from a file or buffer.
+    * \return                   True if the GestureCombinations AI is currently saving, false if not.
+    */
+    virtual bool isSaving()=0;
+
+    /**
+    * Cancel a currently running saving process.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int cancelSaving()=0;
 
     /**
     * Load the neural network and recorded training data from file, asynchronously.

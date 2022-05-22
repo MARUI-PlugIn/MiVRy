@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.1
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -65,6 +65,8 @@ public class GestureManager : MonoBehaviour
                     gr.setTrainingFinishCallbackMetadata((IntPtr)me);
                     gr.setLoadingFinishCallbackFunction(GestureManager.loadingFinishCallback);
                     gr.setLoadingFinishCallbackMetadata((IntPtr)me);
+                    gr.setSavingFinishCallbackFunction(GestureManager.savingFinishCallback);
+                    gr.setSavingFinishCallbackMetadata((IntPtr)me);
                     if (ConsoleText != null)
                         ConsoleText.text = "Created Gesture Recognition Object\n(for one-handed gestures)";
                 }
@@ -83,6 +85,8 @@ public class GestureManager : MonoBehaviour
                     gc.setTrainingFinishCallbackMetadata((IntPtr)me);
                     gc.setLoadingFinishCallbackFunction(GestureManager.loadingFinishCallback);
                     gc.setLoadingFinishCallbackMetadata((IntPtr)me);
+                    gc.setSavingFinishCallbackFunction(GestureManager.savingFinishCallback);
+                    gc.setSavingFinishCallbackMetadata((IntPtr)me);
                     if (ConsoleText != null)
                         ConsoleText.text = $"Created Gesture Combination Object\n(for {value} parts)";
                 }
@@ -323,6 +327,18 @@ public class GestureManager : MonoBehaviour
     // Result of the loading result. Zero on success, a negative error code on failure.
     public int loading_result = 0;
 
+    // Whether the saving process is was recently started.
+    public bool saving_started = false;
+
+    // Whether the saving process is was recently completed.
+    public bool saving_finished = false;
+
+    // Result of the saving result. Zero on success, a negative error code on failure.
+    public int saving_result = 0;
+
+    // The path where the file was saved.
+    public string saving_path = "";
+
     // Temporary storage for objects to display the gesture stroke.
     List<string> stroke = new List<string>(); 
 
@@ -508,6 +524,36 @@ public class GestureManager : MonoBehaviour
         {
             loading_started = true;
             consoleText = "Currently loading...\n";
+            GestureManagerVR.refresh();
+            return;
+        }
+
+        if (saving_started)
+        {
+            if ((this.gr != null && this.gr.isSaving()) || (this.gc != null && this.gc.isSaving()))
+            {
+                consoleText = "Currently saving...\n";
+                return;
+            }
+            else
+            {
+                saving_started = false;
+                if (this.saving_result == 0)
+                {
+                    consoleText = "Saving Finished!\n"
+                        + "File Location : " + this.saving_path;
+                } else
+                {
+                    consoleText = "Saving Failed!\n"
+                        + "Result: " + GestureRecognition.getErrorMessage(this.saving_result);
+                }
+                GestureManagerVR.refresh();
+            }
+        }
+        else if ((this.gr != null && this.gr.isSaving()) || (this.gc != null && this.gc.isSaving()))
+        {
+            saving_started = true;
+            consoleText = "Currently saving...\n";
             GestureManagerVR.refresh();
             return;
         }
@@ -778,7 +824,7 @@ public class GestureManager : MonoBehaviour
     }
 
     // Callback function to be called by the gesture recognition plug-in when the loading process was finished.
-    [MonoPInvokeCallback(typeof(GestureRecognition.TrainingCallbackFunction))]
+    [MonoPInvokeCallback(typeof(GestureRecognition.LoadingCallbackFunction))]
     public static void loadingFinishCallback(int result, IntPtr ptr)
     {
         if (ptr.ToInt32() == 0)
@@ -790,6 +836,21 @@ public class GestureManager : MonoBehaviour
         GestureManager me = (obj.Target as GestureManager);
         me.loading_result = result;
         me.loading_finished = true;
+    }
+
+    // Callback function to be called by the gesture recognition plug-in when the saving process was finished.
+    [MonoPInvokeCallback(typeof(GestureRecognition.SavingCallbackFunction))]
+    public static void savingFinishCallback(int result, IntPtr ptr)
+    {
+        if (ptr.ToInt32() == 0)
+        {
+            return;
+        }
+        // Get the script/scene object back from metadata.
+        GCHandle obj = (GCHandle)ptr;
+        GestureManager me = (obj.Target as GestureManager);
+        me.saving_result = result;
+        me.saving_finished = true;
     }
 
     // Helper function to add a new star to the stroke trail.
@@ -816,7 +877,11 @@ public class GestureManager : MonoBehaviour
     // Helper function to get the actual file path for a file to load
     public string getLoadPath(string file)
     {
-#if UNITY_ANDROID
+#if UNITY_EDITOR
+        return (!Path.IsPathRooted(file))
+            ? "Assets/GestureRecognition/" + file
+            : file;
+#elif UNITY_ANDROID
         // On android, the file is in the .apk,
         // so we need to first "download" it to the apps' cache folder.
         AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
@@ -844,10 +909,6 @@ public class GestureManager : MonoBehaviour
             this.consoleText = "Exception writing temporary file: " + e.ToString();
         }
         return path;
-#elif UNITY_EDITOR
-        return (!Path.IsPathRooted(file))
-            ? "Assets/GestureRecognition/" + file
-            : file;
 #else
         return (!Path.IsPathRooted(file))
             ? Application.streamingAssetsPath + "/" + file
@@ -858,12 +919,12 @@ public class GestureManager : MonoBehaviour
     // Helper function to get the actual file path for a file to save
     public string getSavePath(string file)
     {
-#if UNITY_ANDROID
-        return Application.persistentDataPath + "/" + file;
-#elif UNITY_EDITOR
+#if UNITY_EDITOR
         return (!Path.IsPathRooted(file))
             ? "Assets/GestureRecognition/" + file
             : file;
+#elif UNITY_ANDROID
+        return Application.persistentDataPath + "/" + file;
 #else
         return (!Path.IsPathRooted(file))
             ? Application.streamingAssetsPath + "/" + file
@@ -963,31 +1024,31 @@ public class GestureManager : MonoBehaviour
     {
         if (this.gr != null)
         {
-            string path = getSavePath(this.file_save_gestures);
-            int ret = this.gr.saveToFile(path);
+            this.saving_path = getSavePath(this.file_save_gestures);
+            int ret = this.gr.saveToFileAsync(this.saving_path);
             if (ret == 0)
             {
-                this.consoleText = "Gesture file saved successfully at\n" + path;
+                this.consoleText = "Started saving file at\n" + this.saving_path;
                 return true;
             }
             else
             {
-                this.consoleText = $"[ERROR] Failed to saved gesture file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                this.consoleText = $"[ERROR] Failed to saved gesture file\n{this.saving_path}\n{GestureRecognition.getErrorMessage(ret)}";
                 return false;
             }
         }
         else if (this.gc != null)
         {
             string path = getSavePath(this.file_save_combinations);
-            int ret = this.gc.saveToFile(path);
+            int ret = this.gc.saveToFileAsync(this.saving_path);
             if (ret == 0)
             {
-                this.consoleText = "Gesture combinations file saved successfully at\n" + path;
+                this.consoleText = "Started saving file at\n" + this.saving_path;
                 return true;
             }
             else
             {
-                this.consoleText = $"[ERROR] Failed to save gesture combinations file\n{path}\n{GestureRecognition.getErrorMessage(ret)}";
+                this.consoleText = $"[ERROR] Failed to save gesture combinations file\n{this.saving_path}\n{GestureRecognition.getErrorMessage(ret)}";
                 return false;
             }
         }

@@ -1,18 +1,17 @@
 {
 	"FileVersion": 3,
-	"Version": 4,
-	"VersionName": "2.1",
+	"Version": 2,
+	"VersionName": "2.2",
 	"FriendlyName": "MiVRy",
 	"Description": "MiVRy Gesture Recognition",
 	"Category": "Other",
-	"CreatedBy": "MARUI-PlugIn",
+	"CreatedBy": "MARUI-PlugIn (inc.)",
 	"CreatedByURL": "https://www.marui-plugin.com/mivry",
 	"DocsURL": "https://www.marui-plugin.com/documentation-mivry-unreal/",
 	"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/ab5c386a17f04bd387c3f719a8577613",
 	"SupportURL": "mailto:support@marui-plugin.com",
-	"EngineVersion": "4.27.0",
 	"CanContainContent": true,
-	"IsBetaVersion": true,
+	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
@@ -21,7 +20,7 @@
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"WhitelistPlatforms": [
-				"Win64", "Win32", "Android", "Hololens"
+				"Win64", "Android", "Hololens"
 			]
 		}
 	]

@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.0
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -53,9 +53,9 @@ void AGestureCombinationsActor::BeginPlay()
 	if (this->gco == nullptr) {
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("GestureCombinations::create returned null"));
 	} else if (this->LicenseName.IsEmpty() == false) {
-		const char* license_name = TCHAR_TO_ANSI(*this->LicenseName);
-		const char* license_key = TCHAR_TO_ANSI(*this->LicenseKey);
-		int ret = this->gco->activateLicense(license_name, license_key);
+		auto license_name = StringCast<ANSICHAR>(*this->LicenseName);
+		auto license_key = StringCast<ANSICHAR>(*this->LicenseKey);
+		int ret = this->gco->activateLicense(license_name.Get(), license_key.Get());
 		if (ret != 0) {
 			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString("Failed to activate license: ") + UMiVRyUtil::errorCodeToString(ret)));
 		}
@@ -68,6 +68,15 @@ void AGestureCombinationsActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+int AGestureCombinationsActor::activateLicense(const FString& license_name, const FString& license_key)
+{
+	if (this->gco == nullptr) {
+		return -99;
+	}
+	auto license_name_str = StringCast<ANSICHAR>(*license_name);
+	auto license_key_str = StringCast<ANSICHAR>(*license_key);
+	return this->gco->activateLicense(license_name_str.Get(), license_key_str.Get());
+}
 
 int AGestureCombinationsActor::startStroke(int part, const FVector& HMD_Position, const FRotator& HMD_Rotation, int record_as_sample)
 {
@@ -351,8 +360,7 @@ int AGestureCombinationsActor::createGesture(int part, const FString& name)
 {
 	if (!this->gco)
 		return -99;
-	const char* name_str = TCHAR_TO_ANSI(*name);
-	return this->gco->createGesture(part, name_str, nullptr);
+	return this->gco->createGesture(part, TCHAR_TO_ANSI(*name), nullptr);
 }
 
 
@@ -536,8 +544,7 @@ int AGestureCombinationsActor::setGestureName(int part, int index, const FString
 {
 	if (!this->gco)
 		return false;
-	const char* name_str = TCHAR_TO_ANSI(*name);
-	return this->gco->setGestureName(part, index, name_str);
+	return this->gco->setGestureName(part, index, TCHAR_TO_ANSI(*name));
 }
 
 int AGestureCombinationsActor::saveToFile(const FFilePath& path)
@@ -626,8 +633,7 @@ int AGestureCombinationsActor::createGestureCombination(const FString& name)
 {
 	if (!this->gco)
 		return -99;
-	const char* name_str = TCHAR_TO_ANSI(*name);
-	return this->gco->createGestureCombination(name_str);
+	return this->gco->createGestureCombination(TCHAR_TO_ANSI(*name));
 }
 
 int AGestureCombinationsActor::setCombinationPartGesture(int combination_index, int part, int gesture_index)
@@ -655,8 +661,45 @@ int AGestureCombinationsActor::setGestureCombinationName(int index, const FStrin
 {
 	if (!this->gco)
 		return -99;
-	const char* name_str = TCHAR_TO_ANSI(*name);
-	return this->gco->setGestureCombinationName(index, name_str);
+	return this->gco->setGestureCombinationName(index, TCHAR_TO_ANSI(*name));
+}
+
+int AGestureCombinationsActor::saveToFileAsync(const FFilePath& path)
+{
+	if (!this->gco)
+		return -99;
+	int ret;
+	ret = this->gco->setSavingUpdateCallbackFunction((IGestureRecognition::SavingCallbackFunction*)&SavingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gco->setSavingFinishCallbackFunction((IGestureRecognition::SavingCallbackFunction*)&SavingCallbackFunction);
+	if (ret != 0)
+		return ret;
+	ret = this->gco->setSavingUpdateCallbackMetadata(&this->SavingUpdateMetadata);
+	if (ret != 0)
+		return ret;
+	ret = this->gco->setSavingFinishCallbackMetadata(&this->SavingFinishMetadata);
+	if (ret != 0)
+		return ret;
+	FString path_str = path.FilePath;
+	if (FPaths::IsRelative(path_str)) {
+		path_str = FPaths::Combine(FPaths::ProjectDir(), path_str);
+	}
+	return this->gco->saveToFileAsync(TCHAR_TO_ANSI(*path_str));
+}
+
+bool AGestureCombinationsActor::isSaving()
+{
+	if (!this->gco)
+		return false;
+	return this->gco->isSaving();
+}
+
+int AGestureCombinationsActor::cancelSaving()
+{
+	if (!this->gco)
+		return -99;
+	return this->gco->cancelSaving();
 }
 
 int AGestureCombinationsActor::loadFromFileAsync(const FFilePath& path)
@@ -688,7 +731,6 @@ int AGestureCombinationsActor::loadFromFileAsync(const FFilePath& path)
 		return this->gco->loadFromBufferAsync((const char*)buffer.GetData(), buffer.Num(), nullptr);
 	}
 	return -3;
-	
 }
 
 int AGestureCombinationsActor::loadFromBufferAsync(const TArray<uint8>& buffer)
@@ -825,7 +867,7 @@ void AGestureCombinationsActor::TrainingCallbackFunction(double performance, Tra
 	if (!metadata || !metadata->delegate || !metadata->actor)
 		return;
 	metadata->delegate->Broadcast(metadata->actor, performance);
-};
+}
 
 void AGestureCombinationsActor::LoadingCallbackFunction(int result, LoadingCallbackMetadata* metadata)
 {
@@ -833,5 +875,12 @@ void AGestureCombinationsActor::LoadingCallbackFunction(int result, LoadingCallb
 		return;
 	}
 	metadata->delegate->Broadcast(metadata->actor, result);
-};
+}
 
+void AGestureCombinationsActor::SavingCallbackFunction(int result, SavingCallbackMetadata* metadata)
+{
+	if (!metadata || !metadata->delegate || !metadata->actor) {
+		return;
+	}
+	metadata->delegate->Broadcast(metadata->actor, result);
+}

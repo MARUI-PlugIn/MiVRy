@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.0
+ * Version 2.2
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -126,10 +126,12 @@ void AMiVRyActor::BeginPlay()
 	if (ret == 0) {
 		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully loaded gesture database file."));
 		if (this->LicenseName.IsEmpty() == false) {
-			const char* license_name = TCHAR_TO_ANSI(*this->LicenseName);
-			const char* license_key = TCHAR_TO_ANSI(*this->LicenseKey);
-			ret = this->gro->activateLicense(license_name, license_key);
-			if (ret != 0) {
+			auto license_name = StringCast<ANSICHAR>(*this->LicenseName);
+			auto license_key = StringCast<ANSICHAR>(*this->LicenseKey);
+			ret = this->gro->activateLicense(license_name.Get(), license_key.Get());
+			if (ret == 0) {
+				UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully activated license."));
+			} else {
 				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
 				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
 			}
@@ -149,10 +151,12 @@ void AMiVRyActor::BeginPlay()
 	if (ret == 0) {
 		UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully loaded gesture database file."));
 		if (this->LicenseName.IsEmpty() == false) {
-			const char* license_name = TCHAR_TO_ANSI(*this->LicenseName);
-			const char* license_key = TCHAR_TO_ANSI(*this->LicenseKey);
-			ret = this->gco->activateLicense(license_name, license_key);
-			if (ret != 0) {
+			auto license_name = StringCast<ANSICHAR>(*this->LicenseName);
+			auto license_key = StringCast<ANSICHAR>(*this->LicenseKey);
+			ret = this->gco->activateLicense(license_name.Get(), license_key.Get());
+			if (ret == 0) {
+				UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully activated license."));
+			} else {
 				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
 				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
 			}
