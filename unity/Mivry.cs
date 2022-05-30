@@ -46,7 +46,7 @@
  *   which will be used to start/end the gesture.
  * - "LeftTriggerInputType" / "RightTriggerInputType":
  *   The type of the input (Axis, Button, or Key) which triggers the gesture.
- * - "LeftTriggerPressure" / "RightTriggerPressure":
+ * - "LeftTriggerThreshold" / "RightTriggerThreshold":
  *   If the input type is axis, how strongly (on a scale from zero to one) does
  *   the axis have to be pressed to trigger the start of the gesture.
  * - "OnGestureCompletion":
@@ -192,7 +192,8 @@ public class Mivry : MonoBehaviour
 #endif
         Axis,
         Button,
-        Key
+        Key,
+        Value
     };
 
     /// <summary>
@@ -249,15 +250,22 @@ public class Mivry : MonoBehaviour
     /// The type of the input (Axis, Button, or Key) which triggers the gesture.
     /// "Input System Control" when using the new Input System.
     /// </summary>
-    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture. 'Input System Control' when using the new Input System.")]
+    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture. 'Input System Control' when using the new Input System. 'Value' to manually set LeftTriggerValue.")]
     public InputType LeftTriggerInputType = InputType.Axis;
+
+    /// <summary>
+    /// The current value of the trigger input will be stored here.
+    /// If the input type is 'value', this variable controls when a gesture starts/ends (>= threshold).
+    /// </summary>
+    [Tooltip("Current value of the trigger input (0~1). If the input type is 'value', this variable controls when a gesture starts/ends (>= threshold).")]
+    public float LeftTriggerValue = 0.0f;
 
     /// <summary>
     /// If the input type is axis, how strongly (on a scale from zero to one) does
     /// the axis have to be pressed to trigger the start of the gesture.
     /// </summary>
     [Tooltip("If the input is 'Axis', how strongly it has to be pressed (0~1) to start the gesture.")]
-    public float LeftTriggerPressure = 0.9f;
+    public float LeftTriggerThreshold = 0.9f;
 
     /// <summary>
     /// A game object that will be used as the position of the right hand.
@@ -276,15 +284,41 @@ public class Mivry : MonoBehaviour
     /// The type of the input (Axis, Button, or Key) which triggers the gesture.
     /// "Input System Control" when using the new Input System.
     /// </summary>
-    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture. 'Input System Control' when using the new Input System.")]
+    [Tooltip("Type of the input (in Project Settings -> Input Manager) that triggers the start/end of a gesture. 'Input System Control' when using the new Input System. 'Value' to manually set RightTriggerValue.")]
     public InputType RightTriggerInputType = InputType.Axis;
 
     /// <summary>
-    /// If the input type is axis, how strongly (on a scale from zero to one) does
+    /// The current value of the trigger input will be stored here.
+    /// If the input type is 'value', this variable controls when a gesture starts/ends (>= threshold).
+    /// </summary>
+    [Tooltip("Current value of the trigger input (0~1). If the input type is 'value', this variable controls when a gesture starts/ends (>= threshold).")]
+    public float RightTriggerValue = 0.0f;
+
+    /// <summary>
+    /// If the input type is 'axis', how strongly (on a scale from zero to one) does
     /// the axis have to be pressed to trigger the start of the gesture.
     /// </summary>
     [Tooltip("How strong the button has to be pressed (0~1) to start the gesture.")]
-    public float RightTriggerPressure = 0.9f;
+    public float RightTriggerThreshold = 0.9f;
+
+    /// <summary>
+    /// Whether gestures should be identified continuously during gesturing,
+    /// instead of after a gesture motion is finished.
+    /// </summary>
+    [Tooltip("Whether gestures should be identified continuously during gesturing (instead of only after a gesture motion).")]
+    public bool ContinuousGestureRecognition = false;
+
+    /// <summary>
+    /// Time frame (in milliseconds) that continuous gestures are expected to be.
+    /// </summary>
+    [Tooltip("Time frame (in milliseconds) that continuous gestures are expected to be.")]
+    public int ContinuousGesturePeriod = 1000;
+
+    /// <summary>
+    /// Time frame (in milliseconds) that continuous gestures are expected to be.
+    /// </summary>
+    [Tooltip("Time frame (in milliseconds) that continuous gestures are expected to be.")]
+    public int ContinuousGestureSmoothing = 3;
 
     /// <summary>
     /// Whether or not to compensate head motions during gesturing
@@ -351,6 +385,8 @@ public class Mivry : MonoBehaviour
         GesturesFilePath = GesturesFilePath + "/" + GestureDatabaseFile;
         // try to figure out if this is a gesture recognition or gesture combinations file
         gr = new GestureRecognition();
+        gr.contdIdentificationPeriod = this.ContinuousGesturePeriod;
+        gr.contdIdentificationSmoothing = this.ContinuousGestureSmoothing;
         
         if (this.LicenseKey != null && this.LicenseName != null && this.LicenseName.Length > 0) {
             ret = this.gr.activateLicense(this.LicenseName, this.LicenseKey);
@@ -381,6 +417,7 @@ public class Mivry : MonoBehaviour
         {
             Debug.LogError("[MiVRy] Failed to load gesture recognition database file: " + GestureRecognition.getErrorMessage(ret));
         }
+
         gc = new GestureCombinations(0);
 
         if (this.LicenseKey != null && this.LicenseName != null && this.LicenseName.Length > 0)
@@ -395,11 +432,21 @@ public class Mivry : MonoBehaviour
         ret = gc.loadFromFile(GesturesFilePath);
         if (ret == 0) // file loaded successfully
         {
+            for (int part = gc.numberOfParts()-1; part>=0; part--)
+            {
+                gc.setContdIdentificationPeriod(part, this.ContinuousGesturePeriod);
+                gc.setContdIdentificationSmoothing(part, this.ContinuousGestureSmoothing);
+            }
             return;
         }
         ret = gc.loadFromBuffer(file_contents);
         if (ret == 0) // file loaded successfully
         {
+            for (int part = gc.numberOfParts() - 1; part >= 0; part--)
+            {
+                gc.setContdIdentificationPeriod(part, this.ContinuousGesturePeriod);
+                gc.setContdIdentificationSmoothing(part, this.ContinuousGestureSmoothing);
+            }
             return;
         }
         gc = null;
@@ -453,54 +500,52 @@ public class Mivry : MonoBehaviour
     /// </summary>
     void Update()
     {
-        float leftTrigger = 0.0f;
         if (LeftTriggerInput != null && LeftTriggerInput.Length > 0) {
             switch (LeftTriggerInputType)
             {
 #if ENABLE_INPUT_SYSTEM
                 case InputType.InputSystemControl:
-                    leftTrigger = getInputControlValue(LeftTriggerInput);
+                    LeftTriggerValue = getInputControlValue(LeftTriggerInput);
                     break;
 #endif
                 case InputType.Axis:
-                    leftTrigger = Input.GetAxis(LeftTriggerInput);
+                    LeftTriggerValue = Input.GetAxis(LeftTriggerInput);
                     break;
                 case InputType.Button:
-                    leftTrigger = Input.GetButton(LeftTriggerInput) ? 1 : 0;
+                    LeftTriggerValue = Input.GetButton(LeftTriggerInput) ? 1 : 0;
                     break;
                 case InputType.Key:
-                    leftTrigger = Input.GetKey(LeftTriggerInput) ? 1 : 0;
+                    LeftTriggerValue = Input.GetKey(LeftTriggerInput) ? 1 : 0;
                     break;
             }
         }
             
-        float rightTrigger = 0.0f;
         if (RightTriggerInput != null && RightTriggerInput.Length > 0) {
             switch (RightTriggerInputType)
             {
 #if ENABLE_INPUT_SYSTEM
                 case InputType.InputSystemControl:
-                    rightTrigger = getInputControlValue(RightTriggerInput);
+                    RightTriggerValue = getInputControlValue(RightTriggerInput);
                     break;
 #endif
                 case InputType.Axis:
-                    rightTrigger = Input.GetAxis(RightTriggerInput);
+                    RightTriggerValue = Input.GetAxis(RightTriggerInput);
                     break;
                 case InputType.Button:
-                    rightTrigger = Input.GetButton(RightTriggerInput) ? 1 : 0;
+                    RightTriggerValue = Input.GetButton(RightTriggerInput) ? 1 : 0;
                     break;
                 case InputType.Key:
-                    rightTrigger = Input.GetKey(RightTriggerInput) ? 1 : 0;
+                    RightTriggerValue = Input.GetKey(RightTriggerInput) ? 1 : 0;
                     break;
             }
         }
 
         if (gr != null)
         {
-            this.UpdateGR(leftTrigger, rightTrigger);
+            this.UpdateGR();
         } else if (gc != null)
         {
-            this.UpdateGC(leftTrigger, rightTrigger);
+            this.UpdateGC();
         }
     }
 
@@ -508,15 +553,15 @@ public class Mivry : MonoBehaviour
     /// <summary>
     /// Update function for one-handed gesture recognition
     /// </summary>
-    void UpdateGR(float leftTrigger, float rightTrigger)
+    void UpdateGR()
     {   
         if (LeftHandActive == false && RightHandActive == false)
         {
-            if (leftTrigger > LeftTriggerPressure)
+            if (LeftTriggerValue > LeftTriggerThreshold)
             {
                 LeftHandActive = true;
             }
-            else if (rightTrigger > RightTriggerPressure)
+            else if (RightTriggerValue > RightTriggerThreshold)
             {
                 RightHandActive = true;
             } else
@@ -531,31 +576,43 @@ public class Mivry : MonoBehaviour
         }
 
         GameObject activeGameObject = LeftHand;
-        float activeTrigger = leftTrigger;
+        float activeTrigger = LeftTriggerValue;
         GestureCompletionData.Part.Side side = GestureCompletionData.Part.Side.Left;
-        float activeTriggerPressure = LeftTriggerPressure;
+        float activeTriggerThreshold = LeftTriggerThreshold;
         if (RightHandActive)
         {
             activeGameObject = RightHand;
-            activeTrigger = rightTrigger;
+            activeTrigger = RightTriggerValue;
             side = GestureCompletionData.Part.Side.Right;
-            activeTriggerPressure = RightTriggerPressure;
+            activeTriggerThreshold = RightTriggerThreshold;
         }
-        if (activeTrigger > activeTriggerPressure * 0.9f)
+        if (activeTrigger > activeTriggerThreshold * 0.9f)
         {
             // still gesturing
+            Transform hmd = Camera.main.gameObject.transform;
+            Vector3 hmd_p = hmd.position;
+            Quaternion hmd_q = hmd.rotation;
+            convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
             if (compensateHeadMotion)
             {
-                Transform hmd = Camera.main.gameObject.transform;
-                Vector3 hmd_p = hmd.position;
-                Quaternion hmd_q = hmd.rotation;
-                convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
                 gr.updateHeadPosition(hmd_p, hmd_q);
             }
             Vector3 p = activeGameObject.transform.position;
             Quaternion q = activeGameObject.transform.rotation;
             convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
             gr.contdStrokeQ(p, q);
+            if (this.ContinuousGestureRecognition)
+            {
+                double similarity = 0;
+                data.gestureID = gr.contdIdentify(hmd_p, hmd_q, ref similarity);
+                data.gestureName = (data.gestureID >= 0)
+                    ? gr.getGestureName(data.gestureID)
+                    : GestureRecognition.getErrorMessage(data.gestureID);
+                OnGestureCompletion.Invoke(data);
+                #if MIVRY_USE_BOLT
+                CustomEvent.Trigger(this.gameObject, data.gestureName, data);
+                #endif
+            }
             return;
         }
         // else: user released the trigger, ending the gesture
@@ -570,7 +627,9 @@ public class Mivry : MonoBehaviour
         convertOutput(this.mivryCoordinateSystem, ref part.position, ref part.orientation);
         part.primaryDirection = part.orientation * Vector3.right;
         part.secondaryDirection = part.orientation * Vector3.up;
-        data.gestureName = gr.getGestureName(data.gestureID);
+        data.gestureName = (data.gestureID >= 0)
+            ? gr.getGestureName(data.gestureID)
+            : GestureRecognition.getErrorMessage(data.gestureID);
         OnGestureCompletion.Invoke(data);
         #if MIVRY_USE_BOLT
         CustomEvent.Trigger(this.gameObject, data.gestureName, data);
@@ -582,11 +641,11 @@ public class Mivry : MonoBehaviour
     /// <summary>
     /// Update function for two-handed gesture combinations.
     /// </summary>
-    void UpdateGC(float leftTrigger, float rightTrigger)
+    void UpdateGC()
     {
         if (LeftHandActive == false)
         {
-            if (leftTrigger >= LeftTriggerPressure)
+            if (LeftTriggerValue >= LeftTriggerThreshold)
             {
                 Transform hmd = Camera.main.gameObject.transform;
                 Vector3 p = hmd.position;
@@ -598,7 +657,7 @@ public class Mivry : MonoBehaviour
         }
         if (RightHandActive == false)
         {
-            if (rightTrigger >= RightTriggerPressure)
+            if (RightTriggerValue >= RightTriggerThreshold)
             {
                 Transform hmd = Camera.main.gameObject.transform;
                 Vector3 p = hmd.position;
@@ -610,20 +669,32 @@ public class Mivry : MonoBehaviour
         }
         if (LeftHandActive == true)
         {
-            if (leftTrigger > LeftTriggerPressure * 0.9f)
+            if (LeftTriggerValue > LeftTriggerThreshold * 0.9f)
             {
+                Transform hmd = Camera.main.gameObject.transform;
+                Vector3 hmd_p = hmd.position;
+                Quaternion hmd_q = hmd.rotation;
+                convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
                 if (compensateHeadMotion)
                 {
-                    Transform hmd = Camera.main.gameObject.transform;
-                    Vector3 hmd_p = hmd.position;
-                    Quaternion hmd_q = hmd.rotation;
-                    convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
                     gc.updateHeadPosition(hmd_p, hmd_q);
                 }
                 Vector3 p = LeftHand.transform.position;
                 Quaternion q = LeftHand.transform.rotation;
                 convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                 gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Left, p, q);
+                if (this.ContinuousGestureRecognition)
+                {
+                    double similarity = 0;
+                    data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref similarity);
+                    data.gestureName = (data.gestureID >= 0)
+                        ? gc.getGestureCombinationName(data.gestureID)
+                        : GestureRecognition.getErrorMessage(data.gestureID);
+                    OnGestureCompletion.Invoke(data);
+                    #if MIVRY_USE_BOLT
+                    CustomEvent.Trigger(this.gameObject, data.gestureName, data);
+                    #endif
+                }
             } else
             {
                 GestureCompletionData.Part part = null;
@@ -650,7 +721,9 @@ public class Mivry : MonoBehaviour
                 {
                     // both finished or the other hand never started
                     data.gestureID = gc.identifyGestureCombination(ref data.similarity);
-                    data.gestureName = gc.getGestureCombinationName(data.gestureID);
+                    data.gestureName = (data.gestureID >= 0)
+                        ? gc.getGestureCombinationName(data.gestureID)
+                        : GestureRecognition.getErrorMessage(data.gestureID);
                     OnGestureCompletion.Invoke(data);
                     #if MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);
@@ -661,20 +734,32 @@ public class Mivry : MonoBehaviour
         }
         if (RightHandActive == true)
         {
-            if (rightTrigger > RightTriggerPressure*0.9f)
+            if (RightTriggerValue > RightTriggerThreshold*0.9f)
             {
+                Transform hmd = Camera.main.gameObject.transform;
+                Vector3 hmd_p = hmd.position;
+                Quaternion hmd_q = hmd.rotation;
+                convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
                 if (compensateHeadMotion)
                 {
-                    Transform hmd = Camera.main.gameObject.transform;
-                    Vector3 hmd_p = hmd.position;
-                    Quaternion hmd_q = hmd.rotation;
-                    convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
                     gc.updateHeadPosition(hmd_p, hmd_q);
                 }
                 Vector3 p = RightHand.transform.position;
                 Quaternion q = RightHand.transform.rotation;
                 convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                 gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Right, p, q);
+                if (this.ContinuousGestureRecognition)
+                {
+                    double similarity = 0;
+                    data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref similarity);
+                    data.gestureName = (data.gestureID >= 0)
+                        ? gc.getGestureCombinationName(data.gestureID)
+                        : GestureRecognition.getErrorMessage(data.gestureID);
+                    OnGestureCompletion.Invoke(data);
+                    #if MIVRY_USE_BOLT
+                    CustomEvent.Trigger(this.gameObject, data.gestureName, data);
+                    #endif
+                }
             }
             else
             {
@@ -702,7 +787,9 @@ public class Mivry : MonoBehaviour
                 {
                     // both finished or the other hand never started
                     data.gestureID = gc.identifyGestureCombination(ref data.similarity);
-                    data.gestureName = gc.getGestureCombinationName(data.gestureID);
+                    data.gestureName = (data.gestureID >= 0)
+                        ? gc.getGestureCombinationName(data.gestureID)
+                        : GestureRecognition.getErrorMessage(data.gestureID);
                     OnGestureCompletion.Invoke(data);
                     #if MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);

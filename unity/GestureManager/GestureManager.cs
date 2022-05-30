@@ -542,10 +542,13 @@ public class GestureManager : MonoBehaviour
                 {
                     consoleText = "Saving Finished!\n"
                         + "File Location : " + this.saving_path;
+                } else if (this.saving_result == -3)
+                {
+                    consoleText = $"Saving Failed!\nThe path {this.saving_path} is not writable.";
                 } else
                 {
                     consoleText = "Saving Failed!\n"
-                        + "Result: " + GestureRecognition.getErrorMessage(this.saving_result);
+                        + GestureRecognition.getErrorMessage(this.saving_result);
                 }
                 GestureManagerVR.refresh();
             }
@@ -1033,13 +1036,13 @@ public class GestureManager : MonoBehaviour
             }
             else
             {
-                this.consoleText = $"[ERROR] Failed to saved gesture file\n{this.saving_path}\n{GestureRecognition.getErrorMessage(ret)}";
+                this.consoleText = $"[ERROR] Failed to saved gesture file at\n'{this.saving_path}'\n{GestureRecognition.getErrorMessage(ret)}";
                 return false;
             }
         }
         else if (this.gc != null)
         {
-            string path = getSavePath(this.file_save_combinations);
+            this.saving_path = getSavePath(this.file_save_combinations);
             int ret = this.gc.saveToFileAsync(this.saving_path);
             if (ret == 0)
             {
@@ -1048,7 +1051,7 @@ public class GestureManager : MonoBehaviour
             }
             else
             {
-                this.consoleText = $"[ERROR] Failed to save gesture combinations file\n{this.saving_path}\n{GestureRecognition.getErrorMessage(ret)}";
+                this.consoleText = $"[ERROR] Failed to save gesture combinations file at \n'{this.saving_path}'\n{GestureRecognition.getErrorMessage(ret)}";
                 return false;
             }
         }
