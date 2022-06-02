@@ -603,8 +603,7 @@ public class Mivry : MonoBehaviour
             gr.contdStrokeQ(p, q);
             if (this.ContinuousGestureRecognition)
             {
-                double similarity = 0;
-                data.gestureID = gr.contdIdentify(hmd_p, hmd_q, ref similarity);
+                data.gestureID = gr.contdIdentify(hmd_p, hmd_q, ref data.similarity);
                 data.gestureName = (data.gestureID >= 0)
                     ? gr.getGestureName(data.gestureID)
                     : GestureRecognition.getErrorMessage(data.gestureID);
@@ -685,8 +684,7 @@ public class Mivry : MonoBehaviour
                 gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Left, p, q);
                 if (this.ContinuousGestureRecognition)
                 {
-                    double similarity = 0;
-                    data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref similarity);
+                    data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref data.similarity);
                     data.gestureName = (data.gestureID >= 0)
                         ? gc.getGestureCombinationName(data.gestureID)
                         : GestureRecognition.getErrorMessage(data.gestureID);
@@ -750,8 +748,7 @@ public class Mivry : MonoBehaviour
                 gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Right, p, q);
                 if (this.ContinuousGestureRecognition)
                 {
-                    double similarity = 0;
-                    data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref similarity);
+                    data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref data.similarity);
                     data.gestureName = (data.gestureID >= 0)
                         ? gc.getGestureCombinationName(data.gestureID)
                         : GestureRecognition.getErrorMessage(data.gestureID);
