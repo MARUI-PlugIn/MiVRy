@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -123,6 +123,13 @@
 #define GESTURERECOGNITION_FRAMEOFREFERENCE_HEAD    0   //!< Identifier for interpreting gestures as seen from the headset/HMD (user point of view). 
 #define GESTURERECOGNITION_FRAMEOFREFERENCE_WORLD   1   //!< Identifier for interpreting gestures as seen from world origin (global coordinates).
 
+#define GESTURERECOGNITION_ROTATIONORDER_XYZ 0 //!< Identifier for x->y->z order of (Euler) rotation angles.
+#define GESTURERECOGNITION_ROTATIONORDER_XZY 1 //!< Identifier for x->z->y order of (Euler) rotation angles.
+#define GESTURERECOGNITION_ROTATIONORDER_YXZ 2 //!< Identifier for y->x->z order of (Euler) rotation angles.
+#define GESTURERECOGNITION_ROTATIONORDER_YZX 3 //!< Identifier for y->z->x order of (Euler) rotation angles.
+#define GESTURERECOGNITION_ROTATIONORDER_ZXY 4 //!< Identifier for z->x->y order of (Euler) rotation angles.
+#define GESTURERECOGNITION_ROTATIONORDER_ZYX 5 //!< Identifier for z->y->x order of (Euler) rotation angles.
+
 #ifdef _WIN32
 #define GESTURERECOGNITION_LIBEXPORT __declspec(dllexport)
 #define GESTURERECOGNITION_CALLCONV __cdecl
@@ -244,6 +251,9 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceY(void* gro, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getRotationalFrameOfReferenceZ(void* gro); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
     GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceZ(void* gro, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getRotationalFrameOfReferenceRotationOrder(void* gro); //!< Get the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
+    GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceRotationOrder(void* gro, int rotOrd); //!< Set the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
+
 
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugCallbackFunction(DebugCallbackFunction* dbf); //!< Set callback function to receive debugging information.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugCallbackMetadata(void* metadata); //!< Set metadata to receive with debugging output callback function.
@@ -940,12 +950,30 @@ public:
     };
 
     /**
+    * Different orderings of rotation for (Euler) rotation angles.
+    */
+    enum RotationOrder {
+        XYZ = GESTURERECOGNITION_ROTATIONORDER_XYZ //!< Identifier for x->y->z order of (Euler) rotation angles.
+        ,
+        XZY = GESTURERECOGNITION_ROTATIONORDER_XZY //!< Identifier for x->y->z order of (Euler) rotation angles.
+        ,
+        YXZ = GESTURERECOGNITION_ROTATIONORDER_YXZ //!< Identifier for x->y->z order of (Euler) rotation angles.
+        ,
+        YZX = GESTURERECOGNITION_ROTATIONORDER_YZX //!< Identifier for x->y->z order of (Euler) rotation angles.
+        ,
+        ZXY = GESTURERECOGNITION_ROTATIONORDER_ZXY //!< Identifier for x->y->z order of (Euler) rotation angles.
+        ,
+        ZYX = GESTURERECOGNITION_ROTATIONORDER_ZYX //!< Identifier for x->y->z order of (Euler) rotation angles.
+    };
+
+    /**
     * Whether the rotation of the users head should be considered when recording and performing gestures.
     */
     struct RotationalFrameOfReference {
-        FrameOfReference x = Head; //!< Whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
-        FrameOfReference y = Head; //!< Whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+        FrameOfReference x = Head; //!< Whether the vertical rotation of the users head (commonly called "pitch", looking up or down) should be considered when recording and performing gestures.
+        FrameOfReference y = Head; //!< Whether the horizontal rotation of the users head (commonly called "pan" or "yaw", looking left or right) should be considered when recording and performing gestures.
         FrameOfReference z = Head; //!< Whether the tilting rotation of the users head (also called "roll" or "bank", tilting the head to the site without changing the view direction) should be considered when recording and performing gestures.
+        RotationOrder rotationOrder = RotationOrder::YXZ; //!< In which order the x, y, and z rotation are to be interpreted.
     } rotationalFrameOfReference; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
 
     /**

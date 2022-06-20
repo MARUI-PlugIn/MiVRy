@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -26,7 +26,8 @@ public class SubmenuFrameOfReference : MonoBehaviour
     private TextMesh SubmenuFrameOfReferenceYawValue;
     private TextMesh SubmenuFrameOfReferencePitchValue;
     private TextMesh SubmenuFrameOfReferenceRollValue;
-    
+    private TextMesh SubmenuFrameOfReferenceRotationOrderValue;
+
     void Start()
     {
         this.init();
@@ -48,6 +49,9 @@ public class SubmenuFrameOfReference : MonoBehaviour
                 case "SubmenuFrameOfReferenceRollValue":
                     this.SubmenuFrameOfReferenceRollValue = child.GetComponent<TextMesh>();
                     break;
+                case "SubmenuFrameOfReferenceRotationOrderValue":
+                    this.SubmenuFrameOfReferenceRotationOrderValue = child.GetComponent<TextMesh>();
+                    break;
             }
         }
         this.initialized = true;
@@ -65,5 +69,26 @@ public class SubmenuFrameOfReference : MonoBehaviour
         SubmenuFrameOfReferenceYawValue.text   = gm.frameOfReferenceYaw == GestureRecognition.FrameOfReference.Head         ? "Head" : "World";
         SubmenuFrameOfReferencePitchValue.text = gm.frameOfReferenceUpDownPitch == GestureRecognition.FrameOfReference.Head ? "Head" : "World";
         SubmenuFrameOfReferenceRollValue.text  = gm.frameOfReferenceRollTilt == GestureRecognition.FrameOfReference.Head    ? "Head" : "World";
+        switch (gm.frameOfReferenceRotationOrder)
+        {
+            case GestureRecognition.RotationOrder.XYZ:
+                SubmenuFrameOfReferenceRotationOrderValue.text = "XYZ";
+                break;
+            case GestureRecognition.RotationOrder.XZY:
+                SubmenuFrameOfReferenceRotationOrderValue.text = "XZY";
+                break;
+            case GestureRecognition.RotationOrder.YXZ:
+                SubmenuFrameOfReferenceRotationOrderValue.text = "YXZ(Unity)";
+                break;
+            case GestureRecognition.RotationOrder.YZX:
+                SubmenuFrameOfReferenceRotationOrderValue.text = "YZX";
+                break;
+            case GestureRecognition.RotationOrder.ZXY:
+                SubmenuFrameOfReferenceRotationOrderValue.text = "ZXY";
+                break;
+            case GestureRecognition.RotationOrder.ZYX:
+                SubmenuFrameOfReferenceRotationOrderValue.text = "ZYX(Unreal)";
+                break;
+        }
     }
 }

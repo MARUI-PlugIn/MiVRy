@@ -20,13 +20,13 @@ RenderSettings:
   m_FogDensity: 0.04
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.212, g: 0.227, b: 0.259, a: 1}
+  m_AmbientSkyColor: {r: 1, g: 1, b: 1, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 0
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.13296545, g: 0.19145328, b: 0.33962262, a: 1}
-  m_SkyboxMaterial: {fileID: 2100000, guid: 49306cd5cfb32ec4c848c9047fc9b799, type: 2}
+  m_SkyboxMaterial: {fileID: 2100000, guid: 023ed02e0b0465140987c14ccd815427, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 2138677392}
-  m_IndirectSpecularColor: {r: 0.43041003, g: 0.67091674, b: 0.73975414, a: 1}
+  m_IndirectSpecularColor: {r: 0.07342058, g: 0.07297925, b: 0.07342058, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1809,8 +1809,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ead00d81e07c86d4a84ac72a78fa472a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  license_id: 
-  license_key: 
+  license_id: Test
+  license_key: 1af2e36cab785d5374a0c78b9590e8c22baf9dcfbd7624659692dc9f00ad139a
   unityXrPlugin: 0
   mivryCoordinateSystem: 0
   file_load_combinations: Samples/Sample_TwoHanded_Gestures.dat
@@ -1840,8 +1840,13 @@ MonoBehaviour:
   loading_started: 0
   loading_finished: 0
   loading_result: 0
+  saving_started: 0
+  saving_finished: 0
+  saving_result: 0
+  saving_path: 
   stroke_index: 0
   gesture_started: 0
+  compensate_head_motion: 0
   file_suggestion: 0
   file_suggestions: []
 --- !u!4 &1431119463
@@ -2332,6 +2337,7 @@ GameObject:
   - component: {fileID: 1687258584}
   - component: {fileID: 1687258582}
   - component: {fileID: 1687258583}
+  - component: {fileID: 1687258586}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2423,6 +2429,15 @@ Transform:
   m_Father: {fileID: 351611166}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!45 &1687258586
+Skybox:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1687258581}
+  m_Enabled: 1
+  m_CustomSkybox: {fileID: 2100000, guid: 023ed02e0b0465140987c14ccd815427, type: 2}
 --- !u!1 &1929696062
 GameObject:
   m_ObjectHideFlags: 0

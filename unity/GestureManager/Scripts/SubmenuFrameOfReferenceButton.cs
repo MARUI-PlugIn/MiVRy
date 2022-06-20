@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -30,7 +30,7 @@ public class SubmenuFrameOfReferenceButton : MonoBehaviour, GestureManagerButton
     
     enum FrameOfReference
     {
-        Yaw, Pitch, Roll
+        Yaw, Pitch, Roll, RotationOrder
     };
     [SerializeField] private FrameOfReference frameOfReference;
 
@@ -80,6 +80,25 @@ public class SubmenuFrameOfReferenceButton : MonoBehaviour, GestureManagerButton
                 {
                     gm.frameOfReferenceRollTilt = GestureRecognition.FrameOfReference.Head;
                     frameOfReferenceDisplay.text = "Head";
+                }
+                break;
+            case FrameOfReference.RotationOrder:
+                if (forward)
+                {
+                    if (gm.frameOfReferenceRotationOrder == GestureRecognition.RotationOrder.ZYX) {
+                        gm.frameOfReferenceRotationOrder = GestureRecognition.RotationOrder.XYZ;
+                    } else
+                    {
+                        gm.frameOfReferenceRotationOrder = (GestureRecognition.RotationOrder)((int)gm.frameOfReferenceRotationOrder + 1);
+                    }
+                } else // backwards
+                {
+                    if (gm.frameOfReferenceRotationOrder == GestureRecognition.RotationOrder.XYZ) {
+                        gm.frameOfReferenceRotationOrder = GestureRecognition.RotationOrder.ZYX;
+                    } else
+                    {
+                        gm.frameOfReferenceRotationOrder = (GestureRecognition.RotationOrder)((int)gm.frameOfReferenceRotationOrder - 1);
+                    }
                 }
                 break;
         }

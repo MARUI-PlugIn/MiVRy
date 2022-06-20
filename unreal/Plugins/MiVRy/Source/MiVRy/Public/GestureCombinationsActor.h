@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -695,6 +695,20 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Rotational Frame Of Reference for Yaw"))
 	void setRotationalFrameOfReferenceYaw(GestureRecognition_FrameOfReference FrameOfReference);
+
+	/**
+	* Get the order of rotations used when interpreting the Rotational Frame of Reference.
+	* @return The rotation order currently in use.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Rotation Order for Rotational Frame Of Reference"))
+		GestureRecognition_RotationOrder getRotationalFrameOfReferenceRotationOrder();
+
+	/**
+	* Set the order of rotations used when interpreting the Rotational Frame of Reference.
+	* @param RotationOrder The rotation order to use.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Rotation Order for Rotational Frame Of Reference"))
+		void setRotationalFrameOfReferenceRotationOrder(GestureRecognition_RotationOrder RotationOrder);
 
 	/**
 	* Delegate for training callbacks.

@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 2,
-	"VersionName": "2.2",
+	"Version": 23,
+	"VersionName": "2.3",
 	"FriendlyName": "MiVRy",
 	"Description": "MiVRy Gesture Recognition",
 	"Category": "Other",

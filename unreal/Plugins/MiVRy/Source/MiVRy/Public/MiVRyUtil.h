@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -61,6 +61,21 @@ enum class GestureRecognition_FrameOfReference : uint8
     Headset = 0 UMETA(DisplayName = "Head"),
     World = 1 UMETA(DisplayName = "World"),
 };
+
+/**
+* Different orderings of rotation for (Euler) rotation angles.
+*/
+UENUM(BlueprintType)
+enum class GestureRecognition_RotationOrder : uint8
+{
+    XYZ = 0 UMETA(DisplayName = "x->y->z"),
+    XZY = 1 UMETA(DisplayName = "x->z->y"),
+    YXZ = 2 UMETA(DisplayName = "y->x->z"),
+    YZX = 3 UMETA(DisplayName = "y->z->x"),
+    ZXY = 4 UMETA(DisplayName = "z->x->y"),
+    ZYX = 5 UMETA(DisplayName = "z->y->x"),
+};
+
 
 /**
 * Type of target VR device.

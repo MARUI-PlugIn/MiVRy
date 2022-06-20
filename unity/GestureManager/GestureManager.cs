@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -262,6 +262,34 @@ public class GestureManager : MonoBehaviour
                 {
                     gc.frameOfReferenceZ = (GestureCombinations.FrameOfReference)value;
                 }
+            }
+            GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
+        }
+    }
+
+    public GestureRecognition.RotationOrder frameOfReferenceRotationOrder
+    {
+        get
+        {
+            if (gr != null)
+            {
+                return gr.frameOfReferenceRotationOrder;
+            }
+            if (gc != null)
+            {
+                return (GestureRecognition.RotationOrder)gc.frameOfReferenceRotationOrder;
+            }
+            return GestureRecognition.RotationOrder.YXZ;
+        }
+        set
+        {
+            if (gr != null)
+            {
+                gr.frameOfReferenceRotationOrder = value;
+            }
+            if (gc != null)
+            {
+                gc.frameOfReferenceRotationOrder = (GestureCombinations.RotationOrder)value;
             }
             GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
         }

@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 
 [CustomEditor(typeof(GestureManager))]
 public class GestureManagerEditor : UnityEditor.Editor
@@ -32,6 +33,8 @@ public class GestureManagerEditor : UnityEditor.Editor
         // DrawDefaultInspector();
 
         serializedObject.Update();
+        var license_id_prop = serializedObject.FindProperty("license_id");
+        var license_key_prop = serializedObject.FindProperty("license_key");
 
         GestureManager gm = (GestureManager)target;
 
@@ -70,10 +73,14 @@ public class GestureManagerEditor : UnityEditor.Editor
         {
             EditorGUILayout.BeginVertical(GUI.skin.box);
             EditorGUILayout.LabelField("LICENSE:", "(Leave empty for free version)");
-            gm.license_id = EditorGUILayout.TextField("Licence ID", gm.license_id);
-            gm.license_key = EditorGUILayout.TextField("Licence Key", gm.license_key);
+            license_id_prop.stringValue = gm.license_id = EditorGUILayout.TextField("Licence ID", license_id_prop.stringValue);
+            license_key_prop.stringValue = gm.license_key = EditorGUILayout.TextField("Licence Key", license_key_prop.stringValue);
             EditorGUILayout.EndVertical();
-
+            if (GUI.changed)
+            {
+                EditorUtility.SetDirty(gm);
+                EditorSceneManager.MarkSceneDirty(gm.gameObject.scene);
+            }
             serializedObject.ApplyModifiedProperties();
             return;
         }
@@ -407,6 +414,8 @@ public class GestureManagerEditor : UnityEditor.Editor
         gm.frameOfReferenceYaw = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Yaw (left/right)", (int)gm.frameOfReferenceYaw, framesOfReference);
         gm.frameOfReferenceUpDownPitch = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Pitch (up/down)", (int)gm.frameOfReferenceUpDownPitch, framesOfReference);
         gm.frameOfReferenceRollTilt = (GestureRecognition.FrameOfReference)EditorGUILayout.Popup("Tilt (roll)", (int)gm.frameOfReferenceRollTilt, framesOfReference);
+        string[] rotationOrders = { "XYZ", "XZY", "YXZ (Unity)", "YZX", "ZXY", "ZYX (Unreal)" };
+        gm.frameOfReferenceRotationOrder = (GestureRecognition.RotationOrder)EditorGUILayout.Popup("Rotation Order", (int)gm.frameOfReferenceRotationOrder, rotationOrders);
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space();
@@ -508,10 +517,14 @@ public class GestureManagerEditor : UnityEditor.Editor
 
         EditorGUILayout.BeginVertical(GUI.skin.box);
         EditorGUILayout.LabelField("LICENSE:", "(Leave empty for free version)");
-        gm.license_id = EditorGUILayout.TextField("Licence ID", gm.license_id);
-        gm.license_key = EditorGUILayout.TextField("Licence Key", gm.license_key);
+        license_id_prop.stringValue = gm.license_id = EditorGUILayout.TextField("Licence ID", license_id_prop.stringValue);
+        license_key_prop.stringValue = gm.license_key = EditorGUILayout.TextField("Licence Key", license_key_prop.stringValue);
         EditorGUILayout.EndVertical();
-
+        if (GUI.changed)
+        {
+            EditorUtility.SetDirty(gm);
+            EditorSceneManager.MarkSceneDirty(gm.gameObject.scene);
+        }
         serializedObject.ApplyModifiedProperties();
     }
 }

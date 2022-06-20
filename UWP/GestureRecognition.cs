@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -387,6 +387,42 @@ public class GestureRecognition
         set
         {
             GestureRecognition_setIgnoreHeadRotationZ(m_gro, value ? 1 : 0);
+        }
+    }
+    //                                                                       ___________________
+    //______________________________________________________________________/   RotationOrder
+    /// <summary>
+    /// Different orderings of rotation for (Euler) rotation angles.
+    /// </summary>
+    public enum RotationOrder
+    {
+        XYZ = 0 //!< Identifier for x->y->z order of (Euler) rotation angles.
+        ,
+        XZY = 1 //!< Identifier for x->z->y order of (Euler) rotation angles.
+        ,
+        YXZ = 2 //!< Identifier for y->x->z order of (Euler) rotation angles.
+        ,
+        YZX = 3 //!< Identifier for y->z->x order of (Euler) rotation angles.
+        ,
+        ZXY = 4 //!< Identifier for z->x->y order of (Euler) rotation angles.
+        ,
+        ZYX = 5 //!< Identifier for z->y->x order of (Euler) rotation angles.
+    }
+    //                                                           _______________________________
+    //__________________________________________________________/ frameOfReferenceRotationOrder
+    /// <summary>
+    /// The order of rotation used when interpreting the rotational frame of reference
+    /// (eg. Y->X->Z order of rotations).
+    /// </summary>
+    public RotationOrder frameOfReferenceRotationOrder
+    {
+        get
+        {
+            return (RotationOrder)GestureRecognition_getRotationalFrameOfReferenceRotationOrder(m_gro);
+        }
+        set
+        {
+            GestureRecognition_setRotationalFrameOfReferenceRotationOrder(m_gro, (int)value);
         }
     }
     //                                                          ________________________________
@@ -1973,6 +2009,10 @@ public class GestureRecognition
     public static extern int GestureRecognition_getRotationalFrameOfReferenceZ(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_setRotationalFrameOfReferenceZ", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureRecognition_setRotationalFrameOfReferenceZ(IntPtr gro, int i);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getRotationalFrameOfReferenceRotationOrder", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getRotationalFrameOfReferenceRotationOrder(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setRotationalFrameOfReferenceRotationOrder", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureRecognition_setRotationalFrameOfReferenceRotationOrder(IntPtr gro, int rotOrd);
     // [DllImport(libfile, EntryPoint = "GestureRecognition_getVersionString", CallingConvention = CallingConvention.Cdecl)]
     // public static extern string GestureRecognition_getVersionString();
     [DllImport(libfile, EntryPoint = "GestureRecognition_getVersionStringLength", CallingConvention = CallingConvention.Cdecl)]

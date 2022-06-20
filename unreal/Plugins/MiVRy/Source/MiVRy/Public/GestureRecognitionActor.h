@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -604,22 +604,36 @@ public:
 	void setRotationalFrameOfReferenceYaw(GestureRecognition_FrameOfReference FrameOfReference);
 
 	/**
+	* Get the order of rotations used when interpreting the Rotational Frame of Reference.
+	* @return The rotation order currently in use.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Rotation Order for Rotational Frame Of Reference"))
+	GestureRecognition_RotationOrder getRotationalFrameOfReferenceRotationOrder();
+
+	/**
+	* Set the order of rotations used when interpreting the Rotational Frame of Reference.
+	* @param RotationOrder The rotation order to use.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Rotation Order for Rotational Frame Of Reference"))
+	void setRotationalFrameOfReferenceRotationOrder(GestureRecognition_RotationOrder RotationOrder);
+
+	/**
 	* Delegate for training callbacks.
-	* @param Source The GestureCombinationsActor from which the callback originated.
+	* @param Source The GestureRecognitionActor from which the callback originated.
 	* @param Performance The current gesture recognition performance (0~1).
 	*/
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FTrainingCallbackDelegate, AGestureRecognitionActor*, Source, float, Performance);
 
 	/**
 	* Delegate for loading callbacks.
-	* @param Source The GestureCombinationsActor from which the callback originated.
+	* @param Source The GestureRecognitionActor from which the callback originated.
 	* @param Status during loading: the percentage of loading progress; on finish: the result of the loading process (zero on success, a negative error code on failure).
 	*/
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FLoadingCallbackDelegate, AGestureRecognitionActor*, Source, int, Status);
 
 	/**
 	* Delegate for saving callbacks.
-	* @param Source The GestureCombinationsActor from which the callback originated.
+	* @param Source The GestureRecognitionActor from which the callback originated.
 	* @param Status during saving: the percentage of saving progress; on finish: the result of the saving process (zero on success, a negative error code on failure).
 	*/
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FSavingCallbackDelegate, AGestureRecognitionActor*, Source, int, Status);
@@ -639,7 +653,7 @@ public:
 	/**
 	* Delegate to be called (repeatedly) during loading.
 	*/
-	UPROPERTY(BlueprintAssignable, Category = "GestureCombinations Loading Events")
+	UPROPERTY(BlueprintAssignable, Category = "GestureRecognition Loading Events")
 		FLoadingCallbackDelegate OnLoadingUpdateDelegate;
 
 	/**
@@ -651,7 +665,7 @@ public:
 	/**
 	* Delegate to be called (repeatedly) during saving.
 	*/
-	UPROPERTY(BlueprintAssignable, Category = "GestureCombinations Saving Events")
+	UPROPERTY(BlueprintAssignable, Category = "GestureRecognition Saving Events")
 		FSavingCallbackDelegate OnSavingUpdateDelegate;
 
 	/**

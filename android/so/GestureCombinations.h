@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -245,6 +245,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceY(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their y-axis rotation (commonly: pan/yaw, looking left or right).
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceZ(void* gco); //!< Get wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
     GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceZ(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceRotationOrder(void* gco); //!< Get the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceRotationOrder(void* gco, int rotOrd); //!< Set the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
 
     GESTURERECOGNITION_LIBEXPORT const char* GestureCombinations_getVersionString(); //!< Get the version of this library as human-readable string.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getVersionStringLength(); //!< Get the length of the version string.

@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.2
+ * Version 2.3
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -52,7 +52,14 @@ void AGestureCombinationsActor::BeginPlay()
 	this->gco = (IGestureCombinations*)GestureCombinations_create(this->NumberOfParts);
 	if (this->gco == nullptr) {
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("GestureCombinations::create returned null"));
-	} else if (this->LicenseName.IsEmpty() == false) {
+		return;
+	}
+	if (this->CoordinateSystem == GestureRecognition_CoordinateSystem::Unreal) {
+		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::ZYX;
+	} else { // Unity
+		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::YXZ;
+	}
+	if (this->LicenseName.IsEmpty() == false) {
 		auto license_name = StringCast<ANSICHAR>(*this->LicenseName);
 		auto license_key = StringCast<ANSICHAR>(*this->LicenseKey);
 		int ret = this->gco->activateLicense(license_name.Get(), license_key.Get());
@@ -861,6 +868,22 @@ void AGestureCombinationsActor::setRotationalFrameOfReferenceYaw(GestureRecognit
 		return;
 	}
 	this->gco->rotationalFrameOfReference.z = IGestureRecognition::FrameOfReference(i);
+}
+
+GestureRecognition_RotationOrder AGestureCombinationsActor::getRotationalFrameOfReferenceRotationOrder()
+{
+	if (!this->gco) {
+		return (GestureRecognition_RotationOrder)-1;
+	}
+	return (GestureRecognition_RotationOrder)this->gco->rotationalFrameOfReference.rotationOrder;
+}
+
+void AGestureCombinationsActor::setRotationalFrameOfReferenceRotationOrder(GestureRecognition_RotationOrder i)
+{
+	if (!this->gco) {
+		return;
+	}
+	this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder(i);
 }
 
 void AGestureCombinationsActor::TrainingCallbackFunction(double performance, TrainingCallbackMetadata* metadata) {
