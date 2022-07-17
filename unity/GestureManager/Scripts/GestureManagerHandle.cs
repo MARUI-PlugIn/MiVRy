@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -22,11 +22,111 @@ using UnityEngine;
 
 public class GestureManagerHandle : MonoBehaviour
 {
-    public float radius = 0.05f;
-    public float magneticField = 0.01f;
-    public float intersectionDepth = 0.01f;
+    public enum Target
+    {
+        GestureManager
+        ,
+        Keyboard
+    };
+    [SerializeField] public  Target   target;
+    [SerializeField] private Material inactiveHandleMaterial;
+    [SerializeField] private Material hoverHandleMaterial;
+    [SerializeField] private Material activeHandleMaterial;
 
-    private Quaternion rotationOffset = Quaternion.AngleAxis(90.0f, Vector3.right) * Quaternion.AngleAxis(180.0f, Vector3.up);
+    private GameObject activePointer = null;
+    private Matrix4x4  lastPointerMat;
+
+    public static GestureManagerHandle hoverHandle = null;
+    public static GestureManagerHandle draggingHandle = null;
+    public static float hoverHandleLastUpdate = 0.0f;
+    public static float draggingHandleLastUpdate = 0.0f;
+
+    private void Update()
+    {
+        if (draggingHandle == this) {
+            #if ENABLE_INPUT_SYSTEM
+            float trigger_pressure = activePointer.name.ToLower().Contains("left")
+                ? GestureManager.getInputControlValue("<XRController>{LeftHand}/trigger")
+                : GestureManager.getInputControlValue("<XRController>{RightHand}/trigger");
+            #else
+            float trigger_pressure = active_pointer.name.ToLower().Contains("left")
+                ? Input.GetAxis("LeftControllerTrigger")
+                : Input.GetAxis("RightControllerTrigger");
+            #endif
+            if (trigger_pressure < 0.80f)
+            {
+                draggingHandle = null;
+                GestureManagerVR.gesturingEnabled = true;
+                this.GetComponent<Renderer>().material = (hoverHandle == this) ? hoverHandleMaterial : inactiveHandleMaterial;
+                this.lastPointerMat = Matrix4x4.identity;
+                return;
+            } // else:
+            Matrix4x4 pointerMat = Matrix4x4.TRS(this.activePointer.transform.position, this.activePointer.transform.rotation, Vector3.one);
+            if (!this.lastPointerMat.isIdentity) {
+                GameObject targetObject = this.target == Target.Keyboard
+                ? GestureManagerVR.me.keyboard
+                : GestureManagerVR.me.gameObject;
+                Matrix4x4 gmMat = Matrix4x4.TRS(
+                    targetObject.transform.position,
+                    targetObject.transform.rotation,
+                    Vector3.one
+                );
+                gmMat = (pointerMat * this.lastPointerMat.inverse) * gmMat;
+                targetObject.transform.position = gmMat.GetColumn(3);
+                targetObject.transform.rotation = gmMat.rotation;
+            }
+            this.GetComponent<Renderer>().material = activeHandleMaterial;
+            this.lastPointerMat = pointerMat;
+            draggingHandleLastUpdate = Time.time;
+            if (GestureManagerVR.me != null && GestureManagerVR.me.followUser)
+            {
+                GestureManagerVR.me.followUser = false;
+                GameObject followMeButtonText = GameObject.Find("SubmenuGestureManagerFollowValue");
+                TextMesh followMeButtonTextComponent = followMeButtonText?.GetComponent<TextMesh>();
+                if (followMeButtonTextComponent != null)
+                {
+                    followMeButtonTextComponent.text = "No";
+                }
+            }
+            return;
+        }
+
+        if (hoverHandle == this)
+        {
+            #if ENABLE_INPUT_SYSTEM
+            float trigger_pressure = activePointer.name.ToLower().Contains("left")
+                ? GestureManager.getInputControlValue("<XRController>{LeftHand}/trigger")
+                : GestureManager.getInputControlValue("<XRController>{RightHand}/trigger");
+            #else
+            float trigger_pressure = active_pointer.name.ToLower().Contains("left")
+                ? Input.GetAxis("LeftControllerTrigger")
+                : Input.GetAxis("RightControllerTrigger");
+            #endif
+            if (trigger_pressure > 0.85f) {
+                GestureManagerVR.gesturingEnabled = false;
+                draggingHandle = this;
+                draggingHandleLastUpdate = Time.time;
+                this.GetComponent<Renderer>().material = activeHandleMaterial;
+                this.lastPointerMat = Matrix4x4.identity;
+            }
+            return;
+        }
+    }
+
+    public void OnTriggerEnter(Collider other)
+    {
+        if (!other.name.EndsWith("pointer"))
+            return;
+        if (GestureManagerVR.isGesturing)
+            return;
+        if (hoverHandle != null)
+            return;
+        GestureManagerVR.gesturingEnabled = false;
+        hoverHandle = this;
+        activePointer = other.gameObject;
+        hoverHandleLastUpdate = Time.time;
+        this.GetComponent<Renderer>().material = hoverHandleMaterial;
+    }
 
     public void OnTriggerStay(Collider other)
     {
@@ -34,26 +134,22 @@ public class GestureManagerHandle : MonoBehaviour
             return;
         if (GestureManagerVR.isGesturing)
             return;
-        SphereCollider sphereCollider = (SphereCollider)other;
-        Vector3 dir = (this.gameObject.transform.position - other.transform.position);
-        float dist = dir.magnitude;
-        if (dist == 0)
-            return;
-        dir /= dist;
-        float touchDist = this.radius + (sphereCollider.radius * sphereCollider.transform.localScale.x) - intersectionDepth;
-        float fieldDist = touchDist + magneticField * Mathf.Min(2.0f, Time.deltaTime * 50.0f);
-        if (dist > fieldDist)
-            return; // escaped the magnetic field
-        this.transform.parent.position = this.transform.parent.position + (dir * (touchDist - dist));
-        if (Camera.main != null) {
-            Vector3 lookDir = Camera.main.transform.position - this.transform.parent.position;
-            lookDir.y = 0; // not facing up or down
-            this.transform.parent.rotation = Quaternion.LookRotation(lookDir) * rotationOffset;
+        if (hoverHandle == null)
+        {
+            this.OnTriggerEnter(other);
+        } else if (hoverHandle == this)
+        {
+            hoverHandleLastUpdate = Time.time;
         }
     }
 
     public void OnTriggerExit(Collider other)
     {
-        this.OnTriggerStay(other);
+        if (other.gameObject != this.activePointer)
+            return;
+        if (hoverHandle != this)
+            return;
+        hoverHandle = null;
+        this.GetComponent<Renderer>().material = inactiveHandleMaterial;
     }
 }

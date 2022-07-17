@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -187,9 +187,9 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void*       GestureRecognition_getGestureMetadata(void* gro, int index); //!< Get the command of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureNumberOfSamples(void* gro, int index); //!< Get the number of recorded samples of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleLength(void* gro, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
-    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size); //!< Retrieve a sample stroke.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]); //!< Retrieve a sample stroke.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanLength(void* gro, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
-    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanStroke(void* gro, int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double hmd_p[3], double hmd_q[4], double* scale); //!< Retrieve a gesture mean (average over samples).
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanStroke(void* gro, int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double stroke_p[3], double stroke_q[4], double* scale); //!< Retrieve a gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteGestureSample(void* gro, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteAllGestureSamples(void* gro, int gesture_index); //!< Delete all gesture sample recordings from the set.
 
@@ -639,14 +639,14 @@ public:
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the sample.
     * \param   sample_index    The zero-based index (ID) of the sample to retrieve.
     * \param   processed       Whether the raw data points should be retrieved (false) or the processed data points (true).
-    * \param   hmd_p           [OUT][OPTIONAL] A place to store the HMD positional data. May be zero if this data is not required.
-    * \param   hmd_q           [OUT][OPTIONAL] A place to store the HMD rotational data. May be zero if this data is not required.
+    * \param   stroke_buf_size The length of p, q, hmd_p, hmd_q in number of data points. The function will at most write this many data points.
     * \param   p               [OUT][OPTIONAL] A place to store the stroke positional data. May be zero if this data is not required.
     * \param   q               [OUT][OPTIONAL] A place to store the stroke rotational data. May be zero if this data is not required.
-    * \param   stroke_buf_size The length of p and/or q in number of data points. The function will at most write this many data points.
+    * \param   hmd_p           [OUT][OPTIONAL] A place to store the HMD positional data. May be zero if this data is not required.
+    * \param   hmd_q           [OUT][OPTIONAL] A place to store the HMD rotational data. May be zero if this data is not required.
     * \return  The number of stroke sample data points that have been written, 0 if an error occurred.
     */
-    virtual int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, double hmd_p[3], double hmd_q[4], double p[][3], double q[][4], int stroke_buf_size)=0;
+    virtual int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4])=0;
 
     /**
     * Get the number of samples of the gesture mean (average over samples).
@@ -661,12 +661,12 @@ public:
     * \param   p               [OUT] A place to store the stroke positional data. May be zero if this data is not required.
     * \param   q               [OUT] A place to store the stroke rotational data. May be zero if this data is not required.
     * \param   stroke_buf_size The length of p and/or q in number of data points. The function will at most write this many data points.
-    * \param   hmd_p           [OUT][OPTIONAL] A place to store the average gesture position relative to (ie. as seen by) the headset. May be zero if this data is not required.
-    * \param   hmd_q           [OUT][OPTIONAL] A place to store the average gesture rotation relative to (ie. as seen by) the headset. May be zero if this data is not required.
+    * \param   stroke_p        [OUT][OPTIONAL] A place to store the average gesture position relative to (ie. as seen by) the headset. May be zero if this data is not required.
+    * \param   stroke_q        [OUT][OPTIONAL] A place to store the average gesture rotation relative to (ie. as seen by) the headset. May be zero if this data is not required.
     * \param   scale           [OUT][OPTIONAL] A place to store the average gesture Scale. May be zero if this data is not required.
     * \return  The number of stroke sample data points that have been written, 0 if an error occurred.
     */
-    virtual int getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double hmd_p[3], double hmd_q[4], double* scale)=0;
+    virtual int getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double stroke_p[3], double stroke_q[4], double* scale)=0;
 
     /**
     * Delete a gesture sample recording from the set.

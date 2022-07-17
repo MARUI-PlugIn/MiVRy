@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -324,8 +324,8 @@ public class GestureManager : MonoBehaviour
 
     // The gesture recognition object:
     // You can have as many of these as you want simultaneously.
-    public GestureRecognition gr = null;
-    public GestureCombinations gc = null;
+    [System.NonSerialized] public GestureRecognition gr = null;
+    [System.NonSerialized] public GestureCombinations gc = null;
 
     // The text field to display instructions.
     private Text ConsoleText;
@@ -337,58 +337,52 @@ public class GestureManager : MonoBehaviour
     private GameObject active_controller_pointer = null;
 
     // Whether the training process is was recently started.
-    public bool training_started = false;
-
-    // Whether the training process is was recently completed.
-    public bool training_finished = false;
+    [System.NonSerialized] public bool training_started = false;
 
     // Last reported recognition performance (during training).
     // 0 = 0% correctly recognized, 1 = 100% correctly recognized.
-    public double last_performance_report = 0;
+    [System.NonSerialized] public double last_performance_report = 0;
 
     // Whether the loading process is was recently started.
-    public bool loading_started = false;
-
-    // Whether the loading process is was recently completed.
-    public bool loading_finished = false;
+    [System.NonSerialized] public bool loading_started = false;
 
     // Result of the loading result. Zero on success, a negative error code on failure.
-    public int loading_result = 0;
+    [System.NonSerialized] public int loading_result = 0;
 
     // Whether the saving process is was recently started.
-    public bool saving_started = false;
-
-    // Whether the saving process is was recently completed.
-    public bool saving_finished = false;
+    [System.NonSerialized] public bool saving_started = false;
 
     // Result of the saving result. Zero on success, a negative error code on failure.
-    public int saving_result = 0;
+    [System.NonSerialized] public int saving_result = 0;
 
     // The path where the file was saved.
-    public string saving_path = "";
+    private string saving_path = "";
 
     // Temporary storage for objects to display the gesture stroke.
-    List<string> stroke = new List<string>(); 
+    private List<string> stroke = new List<string>(); 
 
     // Temporary counter variable when creating objects for the stroke display:
-    public int stroke_index = 0; 
+    private int stroke_index = 0; 
     
     // Handle to this object/script instance, so that callbacks from the plug-in arrive at the correct instance.
-    public GCHandle me;
+    private GCHandle me;
 
     // Whether the user is currently pressing the contoller trigger.
     private bool trigger_pressed_left = false;
     private bool trigger_pressed_right = false;
 
+    // Whether gesturing (performing gesture motions) is currently possible.
+    [System.NonSerialized] public bool gesturing_enabled = true;
+
     // Wether a gesture was already started
-    public bool gesture_started = false;
+    [System.NonSerialized] public bool gesture_started = false;
 
     // Whether or not to update (and thus compensate for) the head position during gesturing.
     public bool compensate_head_motion = false;
 
     // File/folder suggestions for the load files button
-    public int file_suggestion = 0;
-    public List<string> file_suggestions = new List<string>();
+    [System.NonSerialized] public int file_suggestion = 0;
+    [System.NonSerialized] public List<string> file_suggestions = new List<string>();
 
     public GestureManager() : base()
     {
@@ -516,21 +510,21 @@ public class GestureManager : MonoBehaviour
             if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
             {
                 consoleText = "Currently training...\n"
-                                 + "Current recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+                                 + "Current recognition performance: " + (this.last_performance_report * 100).ToString("0.00") + "%.\n";
                 GestureManagerVR.refresh();
                 return;
             } else
             {
                 training_started = false;
                 consoleText = "Training finished!\n"
-                                 + "Final recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+                                 + "Final recognition performance: " + (this.last_performance_report * 100).ToString("0.00") + "%.\n";
                 GestureManagerVR.refresh();
             }
         } else if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
         {
             training_started = true;
             consoleText = "Currently training...\n"
-                             + "Current recognition performance: " + (this.last_performance_report * 100).ToString() + "%.\n";
+                             + "Current recognition performance: " + (this.last_performance_report * 100).ToString("0.00") + "%.\n";
             GestureManagerVR.refresh();
             return;
         }
@@ -586,6 +580,11 @@ public class GestureManager : MonoBehaviour
             saving_started = true;
             consoleText = "Currently saving...\n";
             GestureManagerVR.refresh();
+            return;
+        }
+
+        if (!this.gesturing_enabled)
+        {
             return;
         }
 
@@ -687,7 +686,7 @@ public class GestureManager : MonoBehaviour
             else
             {
                 string gesture_name = gr.getGestureName(gesture_id);
-                consoleText = "Identified gesture " + gesture_name + "(" + gesture_id + ")\n(Similarity: " + similarity + ")";
+                consoleText = "Identified gesture " + gesture_name + "(" + gesture_id + ")\n(Similarity: " + similarity.ToString("0.000") + ")";
             }
             return;
         }
@@ -818,7 +817,7 @@ public class GestureManager : MonoBehaviour
             else
             {
                 string combination_name = gc.getGestureCombinationName(recognized_combination_id);
-                consoleText = "Identified gesture combination '"+ combination_name+"' ("+ recognized_combination_id + ")\n(Similarity: " + similarity + ")";
+                consoleText = "Identified gesture combination '"+ combination_name+"' ("+ recognized_combination_id + ")\n(Similarity: " + similarity.ToString("0.000") + ")";
             }
         }
     }
@@ -851,7 +850,6 @@ public class GestureManager : MonoBehaviour
         GestureManager me = (obj.Target as GestureManager);
         // Update the performance indicator with the latest estimate.
         me.last_performance_report = performance;
-        me.training_finished = true;
     }
 
     // Callback function to be called by the gesture recognition plug-in when the loading process was finished.
@@ -866,7 +864,6 @@ public class GestureManager : MonoBehaviour
         GCHandle obj = (GCHandle)ptr;
         GestureManager me = (obj.Target as GestureManager);
         me.loading_result = result;
-        me.loading_finished = true;
     }
 
     // Callback function to be called by the gesture recognition plug-in when the saving process was finished.
@@ -881,7 +878,6 @@ public class GestureManager : MonoBehaviour
         GCHandle obj = (GCHandle)ptr;
         GestureManager me = (obj.Target as GestureManager);
         me.saving_result = result;
-        me.saving_finished = true;
     }
 
     // Helper function to add a new star to the stroke trail.
@@ -986,6 +982,7 @@ public class GestureManager : MonoBehaviour
                     return false;
                 }
             }
+            this.loading_started = true;
             return true;
         }
         else if (this.gc != null)
@@ -1008,6 +1005,7 @@ public class GestureManager : MonoBehaviour
                     return false;
                 }
             }
+            this.loading_started = true;
             return true;
         }
         this.consoleText = "[ERROR] No Gesture Recognition object\nto load gestures into.";
@@ -1060,6 +1058,7 @@ public class GestureManager : MonoBehaviour
             if (ret == 0)
             {
                 this.consoleText = "Started saving file at\n" + this.saving_path;
+                this.saving_started = true;
                 return true;
             }
             else
@@ -1075,6 +1074,7 @@ public class GestureManager : MonoBehaviour
             if (ret == 0)
             {
                 this.consoleText = "Started saving file at\n" + this.saving_path;
+                this.saving_started = true;
                 return true;
             }
             else
@@ -1100,7 +1100,7 @@ public class GestureManager : MonoBehaviour
 
 
 #if ENABLE_INPUT_SYSTEM
-    public float getInputControlValue(string controlName)
+    public static float getInputControlValue(string controlName)
     {
 
         InputControl control = InputSystem.FindControl(controlName); // eg: "<XRController>{RightHand}/trigger"

@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -35,6 +35,29 @@ public class GestureManagerEditor : UnityEditor.Editor
         serializedObject.Update();
         var license_id_prop = serializedObject.FindProperty("license_id");
         var license_key_prop = serializedObject.FindProperty("license_key");
+        var unityXrPlugin_prop = serializedObject.FindProperty("unityXrPlugin");
+        var mivryCoordinateSystem_prop = serializedObject.FindProperty("mivryCoordinateSystem");
+        var file_load_combinations_prop = serializedObject.FindProperty("file_load_combinations");
+        var file_import_combinations_prop = serializedObject.FindProperty("file_import_combinations");
+        var file_load_subgestures_prop = serializedObject.FindProperty("file_load_subgestures");
+        var file_load_subgestures_i_prop = serializedObject.FindProperty("file_load_subgestures_i");
+        var file_load_gestures_prop = serializedObject.FindProperty("file_load_gestures");
+        var file_import_gestures_prop = serializedObject.FindProperty("file_import_gestures");
+        var file_save_combinations_prop = serializedObject.FindProperty("file_save_combinations");
+        var file_save_gestures_prop = serializedObject.FindProperty("file_save_gestures");
+        var create_combination_name_prop = serializedObject.FindProperty("create_combination_name");
+        var create_gesture_name_prop = serializedObject.FindProperty("create_gesture_name");
+        // var create_gesture_names_prop = serializedObject.FindProperty("create_gesture_names");
+        var record_gesture_id_prop = serializedObject.FindProperty("record_gesture_id");
+        var record_combination_id_prop = serializedObject.FindProperty("record_combination_id");
+        var lefthand_combination_part_prop = serializedObject.FindProperty("lefthand_combination_part");
+        var righthand_combination_part_prop = serializedObject.FindProperty("righthand_combination_part");
+        var copy_gesture_from_part_prop = serializedObject.FindProperty("copy_gesture_from_part");
+        var copy_gesture_to_part_prop = serializedObject.FindProperty("copy_gesture_to_part");
+        var copy_gesture_to_id_prop = serializedObject.FindProperty("copy_gesture_to_id");
+        var copy_gesture_mirror_prop = serializedObject.FindProperty("copy_gesture_mirror");
+        var copy_gesture_rotate_prop = serializedObject.FindProperty("copy_gesture_rotate");
+        var compensate_head_motion_prop = serializedObject.FindProperty("compensate_head_motion");
 
         GestureManager gm = (GestureManager)target;
 
@@ -58,11 +81,11 @@ public class GestureManagerEditor : UnityEditor.Editor
             }
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Left hand:");
-            gm.lefthand_combination_part = EditorGUILayout.Popup(gm.lefthand_combination_part, part_names);
+            lefthand_combination_part_prop.intValue = EditorGUILayout.Popup(lefthand_combination_part_prop.intValue, part_names);
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Right hand:");
-            gm.righthand_combination_part = EditorGUILayout.Popup(gm.righthand_combination_part, part_names);
+            righthand_combination_part_prop.intValue = EditorGUILayout.Popup(righthand_combination_part_prop.intValue, part_names);
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
@@ -91,41 +114,41 @@ public class GestureManagerEditor : UnityEditor.Editor
         EditorGUILayout.LabelField("GESTURE FILES:");
         if (gm.gr != null)
         {
-            gm.file_load_gestures = EditorGUILayout.TextField("Load gestures file:", gm.file_load_gestures);
+            file_load_gestures_prop.stringValue = EditorGUILayout.TextField("Load gestures file:", file_load_gestures_prop.stringValue);
             if (GUILayout.Button("Load Gestures from File"))
             {
                 gm.loadFromFile();
             }
-            gm.file_import_gestures = EditorGUILayout.TextField("Import gestures file:", gm.file_import_gestures);
+            file_import_gestures_prop.stringValue = EditorGUILayout.TextField("Import gestures file:", file_import_gestures_prop.stringValue);
             if (GUILayout.Button("Import Gestures from File"))
             {
                 gm.importFromFile();
             }
-            gm.file_save_gestures = EditorGUILayout.TextField("Save gestures file:", gm.file_save_gestures);
+            file_save_gestures_prop.stringValue = EditorGUILayout.TextField("Save gestures file:", file_save_gestures_prop.stringValue);
             if (GUILayout.Button("Save Gestures to File"))
             {
                 gm.saveToFile();
             }
         } else if (gm.gc != null)
         {
-            gm.file_load_combinations = EditorGUILayout.TextField("Load GestureCombinations File: ", gm.file_load_combinations);
+            file_load_combinations_prop.stringValue = EditorGUILayout.TextField("Load GestureCombinations File: ", file_load_combinations_prop.stringValue);
             if (GUILayout.Button("Load GestureCombinations File"))
             {
                 gm.loadFromFile();
             }
-            gm.file_import_combinations = EditorGUILayout.TextField("Import GestureCombinations File: ", gm.file_import_combinations);
+            file_import_combinations_prop.stringValue = EditorGUILayout.TextField("Import GestureCombinations File: ", file_import_combinations_prop.stringValue);
             if (GUILayout.Button("Import GestureCombinations File"))
             {
                 gm.importFromFile();
             }
-            gm.file_save_combinations = EditorGUILayout.TextField("Save GestureCombinations File: ", gm.file_save_combinations);
+            file_save_combinations_prop.stringValue = EditorGUILayout.TextField("Save GestureCombinations File: ", file_save_combinations_prop.stringValue);
             if (GUILayout.Button("Save GestureCombinations File"))
             {
                 gm.saveToFile();
             }
             EditorGUILayout.LabelField("(optional) Import single-handed gesture file:");
-            gm.file_load_subgestures = EditorGUILayout.TextField("Import SubGestures File:", gm.file_load_subgestures);
-            gm.file_load_subgestures_i = EditorGUILayout.IntField("^ ... for subgesture #", gm.file_load_subgestures_i);
+            file_load_subgestures_prop.stringValue = EditorGUILayout.TextField("Import SubGestures File:", file_load_subgestures_prop.stringValue);
+            file_load_subgestures_i_prop.intValue = EditorGUILayout.IntField("^ ... for subgesture #", file_load_subgestures_i_prop.intValue);
             if (GUILayout.Button("Import SubGesture File"))
             {
                 int ret = gm.gc.loadGestureFromFile(gm.file_load_subgestures_i, gm.file_load_subgestures);
@@ -185,7 +208,7 @@ public class GestureManagerEditor : UnityEditor.Editor
                 GUILayout.EndHorizontal();
             }
             GUILayout.BeginHorizontal();
-            gm.create_gesture_name = EditorGUILayout.TextField(gm.create_gesture_name);
+            create_gesture_name_prop.stringValue = EditorGUILayout.TextField(create_gesture_name_prop.stringValue);
             if (GUILayout.Button("Create new gesture"))
             {
                 int gesture_id = gm.gr.createGesture(gm.create_gesture_name);
@@ -197,7 +220,7 @@ public class GestureManagerEditor : UnityEditor.Editor
 
             }
             GUILayout.EndHorizontal();
-            gm.file_load_gestures = EditorGUILayout.TextField("Import gestures:", gm.file_load_gestures);
+            file_load_gestures_prop.stringValue = EditorGUILayout.TextField("Import gestures:", file_load_gestures_prop.stringValue);
             if (GUILayout.Button("Import Gestures from File"))
             {
                 GestureRecognition importGR = new GestureRecognition();
@@ -269,7 +292,7 @@ public class GestureManagerEditor : UnityEditor.Editor
                 }
             }
             GUILayout.BeginHorizontal();
-            gm.create_combination_name = EditorGUILayout.TextField(gm.create_combination_name);
+            create_combination_name_prop.stringValue = EditorGUILayout.TextField(create_combination_name_prop.stringValue);
             if (GUILayout.Button("Create new Gesture Combination"))
             {
                 int gesture_id = gm.gc.createGestureCombination(gm.create_combination_name);
@@ -360,7 +383,7 @@ public class GestureManagerEditor : UnityEditor.Editor
             }
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("From (part/side):");
-            gm.copy_gesture_from_part = EditorGUILayout.Popup(gm.copy_gesture_from_part, part_names);
+            copy_gesture_from_part_prop.intValue = EditorGUILayout.Popup(copy_gesture_from_part_prop.intValue, part_names);
             EditorGUILayout.EndHorizontal();
 
             int copy_gestures_from_num = gm.gc.numberOfGestures(gm.copy_gesture_from_part);
@@ -376,7 +399,7 @@ public class GestureManagerEditor : UnityEditor.Editor
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("To (part/side):");
-            gm.copy_gesture_to_part = EditorGUILayout.Popup(gm.copy_gesture_to_part, part_names);
+            copy_gesture_to_part_prop.intValue = EditorGUILayout.Popup(copy_gesture_to_part_prop.intValue, part_names);
             EditorGUILayout.EndHorizontal();
             
             int copy_gestures_to_num = gm.gc.numberOfGestures(gm.copy_gesture_to_part);
@@ -388,11 +411,11 @@ public class GestureManagerEditor : UnityEditor.Editor
             }
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Copy into:");
-            gm.copy_gesture_to_id = EditorGUILayout.Popup(gm.copy_gesture_to_id, copy_gesture_to_names);
+            copy_gesture_to_id_prop.intValue = EditorGUILayout.Popup(copy_gesture_to_id_prop.intValue, copy_gesture_to_names);
             EditorGUILayout.EndHorizontal();
             
-            gm.copy_gesture_mirror = EditorGUILayout.Toggle("Mirror left/right", gm.copy_gesture_mirror);
-            gm.copy_gesture_rotate = EditorGUILayout.Toggle("Rotate 180 degrees", gm.copy_gesture_rotate);
+            copy_gesture_mirror_prop.boolValue = EditorGUILayout.Toggle("Mirror left/right", copy_gesture_mirror_prop.boolValue);
+            copy_gesture_rotate_prop.boolValue = EditorGUILayout.Toggle("Rotate 180 degrees", copy_gesture_rotate_prop.boolValue);
 
             if (GUILayout.Button("Copy"))
             {
@@ -430,7 +453,7 @@ public class GestureManagerEditor : UnityEditor.Editor
             {
                 gesture_names[i+1] = gm.gr.getGestureName(i);
             }
-            gm.record_gesture_id = EditorGUILayout.Popup(gm.record_gesture_id +1, gesture_names)-1;
+            record_gesture_id_prop.intValue = EditorGUILayout.Popup(record_gesture_id_prop.intValue + 1, gesture_names) - 1;
         } else if (gm.gc != null)
         {
             int num_combinations = gm.gc.numberOfGestureCombinations();
@@ -440,12 +463,12 @@ public class GestureManagerEditor : UnityEditor.Editor
             {
                 combination_names[i+1] = gm.gc.getGestureCombinationName(i);
             }
-            gm.record_combination_id = EditorGUILayout.Popup(gm.record_combination_id + 1, combination_names) - 1;
+            record_combination_id_prop.intValue = EditorGUILayout.Popup(record_combination_id_prop.intValue + 1, combination_names) - 1;
         }
-        gm.compensate_head_motion = EditorGUILayout.Toggle("Compensate head motion during gesture", gm.compensate_head_motion);
+        compensate_head_motion_prop.boolValue = EditorGUILayout.Toggle("Compensate head motion during gesture", compensate_head_motion_prop.boolValue);
         EditorGUILayout.LabelField("COORDINATE SYSTEM CONVERSION:", "");
-        gm.unityXrPlugin = (Mivry.UnityXrPlugin)EditorGUILayout.Popup("Unity XR Plug-in", (int)gm.unityXrPlugin, unityXrPlugins);
-        gm.mivryCoordinateSystem = (Mivry.MivryCoordinateSystem)EditorGUILayout.Popup("MiVRy Coordinate System", (int)gm.mivryCoordinateSystem, mivryCoordinateSystems);
+        unityXrPlugin_prop.intValue = EditorGUILayout.Popup("Unity XR Plug-in", unityXrPlugin_prop.intValue, unityXrPlugins);
+        mivryCoordinateSystem_prop.intValue = EditorGUILayout.Popup("MiVRy Coordinate System", mivryCoordinateSystem_prop.intValue, mivryCoordinateSystems);
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space();
@@ -453,7 +476,7 @@ public class GestureManagerEditor : UnityEditor.Editor
         EditorGUILayout.LabelField("START/STOP TRAINING:");
         if (gm.gr != null)
         {
-            EditorGUILayout.LabelField("Performance:", (gm.gr.recognitionScore() * 100.0).ToString()+"%");
+            EditorGUILayout.LabelField("Performance:", (gm.gr.recognitionScore() * 100.0).ToString("0.00") +"%");
             EditorGUILayout.LabelField("Currently training:", (gm.gr.isTraining() ? "yes" : "no"));
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
@@ -463,7 +486,6 @@ public class GestureManagerEditor : UnityEditor.Editor
                     Debug.Log("Already training...");
                 } else
                 {
-                    gm.training_finished = false;
                     int ret = gm.gr.startTraining();
                     if (ret == 0)
                     {
@@ -484,7 +506,7 @@ public class GestureManagerEditor : UnityEditor.Editor
             GUILayout.EndHorizontal();
         } else if (gm.gc != null)
         {
-            EditorGUILayout.LabelField("Performance:", (gm.gc.recognitionScore() * 100.0).ToString() + "%");
+            EditorGUILayout.LabelField("Performance:", (gm.gc.recognitionScore() * 100.0).ToString("0.00") + "%");
             EditorGUILayout.LabelField("Currently training:", (gm.gc.isTraining() ? "yes" : "no"));
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Start training"))
@@ -493,7 +515,6 @@ public class GestureManagerEditor : UnityEditor.Editor
                 {
                     Debug.Log("Already training...");
                 } else {
-                    gm.training_finished = true;
                     int ret = gm.gc.startTraining();
                     if (ret == 0)
                     {

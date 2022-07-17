@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -55,28 +55,31 @@ public class SubmenuTraining : MonoBehaviour
             this.init();
         if (GestureManagerVR.me == null || GestureManagerVR.me.gestureManager == null)
             return;
+        double score = 0;
         if (GestureManagerVR.me.gestureManager.gr != null)
         {
-            if (GestureManagerVR.me.gestureManager.gr.isTraining())
+            if (GestureManagerVR.me.gestureManager.gr.isTraining() || GestureManagerVR.me.gestureManager.gr.isLoading())
             {
                 TrainingCurrentStatus.text = "yes";
-                TrainingCurrentPerformance.text = $"{GestureManagerVR.me.gestureManager.last_performance_report * 100.0f}%";
+                score = GestureManagerVR.me.gestureManager.last_performance_report;
             } else
             {
                 TrainingCurrentStatus.text = "no";
-                TrainingCurrentPerformance.text = $"{GestureManagerVR.me.gestureManager.gr.recognitionScore() * 100.0f}%";
+                score = GestureManagerVR.me.gestureManager.gr.recognitionScore();
             }
         } else if (GestureManagerVR.me.gestureManager.gc != null)
         {
-            if (GestureManagerVR.me.gestureManager.gc.isTraining())
+            if (GestureManagerVR.me.gestureManager.gc.isTraining() || GestureManagerVR.me.gestureManager.gc.isLoading())
             {
                 TrainingCurrentStatus.text = "yes";
-                TrainingCurrentPerformance.text = $"{GestureManagerVR.me.gestureManager.last_performance_report * 100.0f}%";
+                score = GestureManagerVR.me.gestureManager.last_performance_report;
             } else
             {
                 TrainingCurrentStatus.text = "no";
-                TrainingCurrentPerformance.text = $"{GestureManagerVR.me.gestureManager.gc.recognitionScore() * 100.0f}%";
+                score = GestureManagerVR.me.gestureManager.gc.recognitionScore();
             }
         }
+        score *= 100.0;
+        TrainingCurrentPerformance.text = score.ToString("0.00") + "%";
     }
 }

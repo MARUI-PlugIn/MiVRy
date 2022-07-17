@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -368,14 +368,14 @@ public:
 	* @param gesture_index The ID/index of the Gesture for which to query a sample.
 	* @param sample_index The ID/index of the sample whose length to query.
 	* @param processed Whether to get the raw length of the sample recording (false) or the length after pre-processing (true).
-	* @param HMD_Location The location of the VR headset when the gesture was recorded.
-	* @param HMD_Rotation The rotation of the VR headset when the gesture was recorded.
 	* @param Locations The locations of the recorded data points.
 	* @param Rotations The rotations of the recorded data points.
+	* @param HMD_Locations The location of the VR headset when the gesture was recorded.
+	* @param HMD_Rotations The rotation of the VR headset when the gesture was recorded.
 	* @return The number of data points in the sample recording, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Gesture Sample Stroke"))
-	int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, FVector& HMD_Location, FRotator& HMD_Rotation, TArray<FVector>& Locations, TArray<FRotator>& Rotations);
+	int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, TArray<FVector>& Locations, TArray<FRotator>& Rotations, TArray<FVector>& HMD_Locations, TArray<FRotator>& HMD_Rotations);
 
 	/**
 	* Get the number of samples of the gesture mean (average over samples).

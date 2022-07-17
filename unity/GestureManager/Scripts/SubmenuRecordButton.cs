@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -27,6 +27,8 @@ public class SubmenuRecordButton : MonoBehaviour, GestureManagerButton
 
     [SerializeField] private Material inactiveButtonMaterial;
     [SerializeField] private Material activeButtonMaterial;
+    [SerializeField] private SubmenuRecord submenuRecord;
+
 
     private void OnTriggerEnter(Collider other)
     {
@@ -45,17 +47,12 @@ public class SubmenuRecordButton : MonoBehaviour, GestureManagerButton
             if (this.forward)
             {
                 gm.record_gesture_id = (gm.record_gesture_id + 1 >= num_gestures) ? -1 : gm.record_gesture_id + 1;
-                GestureManagerVR.setSubmenuGesture(gm.record_gesture_id);
             } else
             {
                 gm.record_gesture_id = (gm.record_gesture_id - 1 < -1) ? num_gestures - 1 : gm.record_gesture_id - 1;
-                GestureManagerVR.setSubmenuGesture(gm.record_gesture_id);
             }
-            if (gestureNameDisplay != null)
-            {
-                string gestureName = gm.record_gesture_id == -1 ? "[Testing, not recording]" : gm.gr.getGestureName(gm.record_gesture_id);
-                gestureNameDisplay.text = gestureName;
-            }
+            GestureManagerVR.setSubmenuGesture(gm.record_gesture_id);
+            this.submenuRecord.refresh();
         }
         else if (gm.gc != null)
         {
@@ -63,18 +60,13 @@ public class SubmenuRecordButton : MonoBehaviour, GestureManagerButton
             if (this.forward)
             {
                 gm.record_combination_id = (gm.record_combination_id + 1 >= num_combinations) ? -1 : gm.record_combination_id + 1;
-                GestureManagerVR.setSubmenuCombination(gm.record_combination_id);
             }
             else
             {
                 gm.record_combination_id = (gm.record_combination_id - 1 < -1) ? num_combinations - 1 : gm.record_combination_id - 1;
-                GestureManagerVR.setSubmenuCombination(gm.record_combination_id);
             }
-            if (gestureNameDisplay != null)
-            {
-                string gestureName = gm.record_combination_id == -1 ? "[Testing, not recording]" : gm.gc.getGestureCombinationName(gm.record_combination_id);
-                gestureNameDisplay.text = gestureName;
-            }
+            GestureManagerVR.setSubmenuCombination(gm.record_combination_id);
+            this.submenuRecord.refresh();
         }
         GestureManagerVR.setInputFocus(null);
     }

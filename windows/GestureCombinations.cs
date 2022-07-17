@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -1331,38 +1331,37 @@ public class GestureCombinations
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
     /// <param name="sample_index">The zero-based index(ID) of the sample to retrieve.</param>
     /// <param name="processed">Whether the raw data points should be retrieved (0) or the processed data points (1).</param>
-    /// <param name="hmd_p">[OUT] A vector to receive the position of the HMD at the time of the stroke sample recording.</param>
-    /// <param name="hmd_q">[OUT] A quaternion to receive the rotation of the HMD at the time of the stroke sample recording.</param>
     /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
     /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
+    /// <param name="hmd_p">[OUT] A vector array to receive the position of the HMD at the time of the stroke sample recording.</param>
+    /// <param name="hmd_q">[OUT] A quaternion array to receive the rotation of the HMD at the time of the stroke sample recording.</param>
     /// <returns>
     /// The number of data points on that sample (ie. resulting length of p and q).
     /// </returns>
-    public int getGestureSampleStroke(int part, int gesture_index, int sample_index, int processed, ref Vector3 hmd_p, ref Quaternion hmd_q, ref Vector3[] p, ref Quaternion[] q)
+    public int getGestureSampleStroke(int part, int gesture_index, int sample_index, int processed, ref Vector3[] p, ref Quaternion[] q, ref Vector3[] hmd_p, ref Quaternion[] hmd_q)
     {
+        p = null;
+        q = null;
+        hmd_p = null;
+        hmd_q = null;
         int sample_length = this.getGestureSampleLength(part, gesture_index, sample_index, processed);
         if (sample_length == 0)
         {
             return 0;
         }
-        double[] _hmd_p = new double[3];
-        double[] _hmd_q = new double[4];
+        double[] _hmd_p = new double[3 * sample_length];
+        double[] _hmd_q = new double[4 * sample_length];
         double[] _p = new double[3 * sample_length];
         double[] _q = new double[4 * sample_length];
-        int samples_written = GestureCombinations_getGestureSampleStroke(m_gc, part, gesture_index, sample_index, processed, _hmd_p, _hmd_q, _p, _q, sample_length);
-        if (samples_written == 0)
+        int samples_written = GestureCombinations_getGestureSampleStroke(m_gc, part, gesture_index, sample_index, processed, sample_length, _p, _q, _hmd_p, _hmd_q);
+        if (samples_written <= 0)
         {
-            return 0;
+            return samples_written;
         }
-        hmd_p.x = (float)_hmd_p[0];
-        hmd_p.y = (float)_hmd_p[1];
-        hmd_p.z = (float)_hmd_p[2];
-        hmd_q.x = (float)_hmd_q[0];
-        hmd_q.y = (float)_hmd_q[1];
-        hmd_q.z = (float)_hmd_q[2];
-        hmd_q.w = (float)_hmd_q[3];
         p = new Vector3[samples_written];
         q = new Quaternion[samples_written];
+        hmd_p = new Vector3[samples_written];
+        hmd_q = new Quaternion[samples_written];
         for (int k = 0; k < samples_written; k++)
         {
             p[k].x = (float)_p[k * 3 + 0];
@@ -1372,6 +1371,13 @@ public class GestureCombinations
             q[k].y = (float)_q[k * 4 + 1];
             q[k].z = (float)_q[k * 4 + 2];
             q[k].w = (float)_q[k * 4 + 3];
+            hmd_p[k].x = (float)_hmd_p[k * 3 + 0];
+            hmd_p[k].y = (float)_hmd_p[k * 3 + 1];
+            hmd_p[k].z = (float)_hmd_p[k * 3 + 2];
+            hmd_q[k].x = (float)_hmd_q[k * 4 + 0];
+            hmd_q[k].y = (float)_hmd_q[k * 4 + 1];
+            hmd_q[k].z = (float)_hmd_q[k * 4 + 2];
+            hmd_q[k].w = (float)_hmd_q[k * 4 + 3];
         }
         return samples_written;
     }
@@ -1384,14 +1390,19 @@ public class GestureCombinations
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
     /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
     /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
-    /// <param name="hmd_p">[OUT] A vector to receive the average gesture position relative to (ie. as seen by) the headset.</param>
-    /// <param name="hmd_q">[OUT] A quaternion to receive the average gesture position rotation to (ie. as seen by) the headset.</param>
+    /// <param name="stroke_p">[OUT] A vector to receive the average gesture position relative to (ie. as seen by) the headset.</param>
+    /// <param name="stroke_q">[OUT] A quaternion to receive the average gesture position rotation to (ie. as seen by) the headset.</param>
     /// <param name="scale">[OUT] The average scale of the gesture.</param>
     /// <returns>
     /// The number of data points on that sample (ie. resulting length of p and q).
     /// </returns>
-    public int getGestureMeanStroke(int part, int gesture_index, ref Vector3[] p, ref Quaternion[] q, ref Vector3 hmd_p, ref Quaternion hmd_q, ref float scale)
+    public int getGestureMeanStroke(int part, int gesture_index, ref Vector3[] p, ref Quaternion[] q, ref Vector3 stroke_p, ref Quaternion stroke_q, ref float scale)
     {
+        p = null;
+        q = null;
+        stroke_p = Vector3.zero;
+        stroke_q = Quaternion.identity;
+        scale = 0.0f;
         int sample_length = GestureCombinations_getGestureMeanLength(m_gc, part, gesture_index);
         if (sample_length == 0)
         {
@@ -1399,24 +1410,24 @@ public class GestureCombinations
         }
         double[] _p = new double[3 * sample_length];
         double[] _q = new double[4 * sample_length];
-        double[] _hmd_p = new double[3];
-        double[] _hmd_q = new double[4];
+        double[] _stroke_p = new double[3];
+        double[] _stroke_q = new double[4];
         double[] _scale = new double[1];
-        int samples_written = GestureCombinations_getGestureMeanStroke(m_gc, part, gesture_index, _p, _q, sample_length, _hmd_p, _hmd_q, _scale);
+        int samples_written = GestureCombinations_getGestureMeanStroke(m_gc, part, gesture_index, _p, _q, sample_length, _stroke_p, _stroke_q, _scale);
         if (samples_written <= 0)
         {
-            return 0;
+            return samples_written;
         }
-        hmd_p.x = (float)_hmd_p[0];
-        hmd_p.y = (float)_hmd_p[1];
-        hmd_p.z = (float)_hmd_p[2];
-        hmd_q.x = (float)_hmd_q[0];
-        hmd_q.y = (float)_hmd_q[1];
-        hmd_q.z = (float)_hmd_q[2];
-        hmd_q.w = (float)_hmd_q[3];
         scale = (float)_scale[0];
         p = new Vector3[samples_written];
         q = new Quaternion[samples_written];
+        stroke_p.x = (float)_stroke_p[0];
+        stroke_p.y = (float)_stroke_p[1];
+        stroke_p.z = (float)_stroke_p[2];
+        stroke_q.x = (float)_stroke_q[0];
+        stroke_q.y = (float)_stroke_q[1];
+        stroke_q.z = (float)_stroke_q[2];
+        stroke_q.w = (float)_stroke_q[3];
         for (int k = 0; k < samples_written; k++)
         {
             p[k].x = (float)_p[k * 3 + 0];
@@ -2009,11 +2020,11 @@ public class GestureCombinations
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureSampleLength", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getGestureSampleLength(IntPtr gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureSampleStroke", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_getGestureSampleStroke(IntPtr gco, int part, int gesture_index, int sample_index, int processed, double[] hmd_p, double[] hmd_q, double[] p, double[] q, int stroke_buf_size); //!< Retrieve a sample stroke.
+    public static extern int GestureCombinations_getGestureSampleStroke(IntPtr gco, int part, int gesture_index, int sample_index, int processed, int stroke_buf_size, double[] p, double[] q, double[] hmd_p, double[] hmd_q); //!< Retrieve a sample stroke.
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureMeanLength", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getGestureMeanLength(IntPtr gco, int part, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureMeanStroke", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_getGestureMeanStroke(IntPtr gco, int part, int gesture_index, double[] p, double[] q, int stroke_buf_size, double[] hmd_p, double[] hmd_q, double[] scale); //!< Retrieve a gesture mean (average over samples).
+    public static extern int GestureCombinations_getGestureMeanStroke(IntPtr gco, int part, int gesture_index, double[] p, double[] q, int stroke_buf_size, double[] stroke_p, double[] stroke_q, double[] scale); //!< Retrieve a gesture mean (average over samples).
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteGestureSample", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_deleteGestureSample(IntPtr gco, int part, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
     [DllImport(libfile, EntryPoint = "GestureCombinations_deleteAllGestureSamples", CallingConvention = CallingConvention.Cdecl)]

@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -375,7 +375,7 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 		int ret = this->gco->endStroke((int)side, position, &scale, dir0, dir1, dir2);
 		if (ret < 0) {
 			Result = GestureRecognition_Identification::FailedToIdentify;
-			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::endStroke() failed with %i"), Result);
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::endStroke() failed with %i"), ret);
 			return;
 		}
 		FMiVRyGesturePart* part = nullptr;
@@ -442,6 +442,7 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 		this->gesture_id = this->gco->identifyGestureCombination(nullptr, &this->similarity);
 		if (this->gesture_id < 0) {
 			Result = GestureRecognition_Identification::FailedToIdentify;
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::identifyGestureCombination() failed with %i"), this->gesture_id);
 			for (int i = 0; i < parts.Num(); i++) {
 				parts[i].PartGestureID = -1;
 			}

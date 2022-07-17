@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -408,7 +408,7 @@ int AGestureCombinationsActor::getGestureSampleLength(int part, int gesture_inde
 	return this->gco->getGestureSampleLength(part, gesture_index, sample_index, processed);
 }
 
-int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_index, int sample_index, bool processed, FVector& HMD_Location, FRotator& HMD_Rotation, TArray<FVector>& Locations, TArray<FRotator>& Rotations)
+int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_index, int sample_index, bool processed, TArray<FVector>& Locations, TArray<FRotator>& Rotations, TArray<FVector>& HMD_Locations, TArray<FRotator>& HMD_Rotations)
 {
 	if (!this->gco)
 		return -99;
@@ -416,50 +416,35 @@ int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_inde
 	int sample_len = this->gco->getGestureSampleLength(part, gesture_index, sample_index, processed);
 	if (sample_len <= 0)
 		return sample_len;
-	double hmd_p[3];
-	double hmd_q[4];
 	double* p = new double[3 * sample_len];
 	double* q = new double[4 * sample_len];
-	int ret = this->gco->getGestureSampleStroke(part, gesture_index, sample_index, processed, hmd_p, hmd_q, (double(*)[3])p, (double(*)[4])q, sample_len);
+	double* hmd_p = new double[3 * sample_len];
+	double* hmd_q = new double[4 * sample_len];
+	int ret = this->gco->getGestureSampleStroke(part, gesture_index, sample_index, processed, sample_len, (double(*)[3])p, (double(*)[4])q, (double(*)[3])hmd_p, (double(*)[4])hmd_q);
 	if (ret < 0) {
 		delete[] p;
 		delete[] q;
+		delete[] hmd_p;
+		delete[] hmd_q;
 		return ret;
 	}
 	const int len = (sample_len < ret) ? sample_len : ret;
 	Locations.SetNum(len);
 	Rotations.SetNum(len);
+	HMD_Locations.SetNum(len);
+	HMD_Rotations.SetNum(len);
 	FQuat quat;
-	UMiVRyUtil::convertOutput(this->CoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, HMD_Location, quat);
-	HMD_Rotation = quat.Rotator();
 	for (int i = 0; i < len; i++) {
-		Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
-		Locations[i].Y = (float)p[3 * i + 1]; // y = secondary axis
-		Locations[i].Z = (float)p[3 * i + 2]; // z = least-significant axis
-		quat.X = (float)q[4 * i + 0];
-		quat.Y = (float)q[4 * i + 1];
-		quat.Z = (float)q[4 * i + 2];
-		quat.W = (float)q[4 * i + 3];
-		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
-			const FVector xaxis = quat.GetAxisX();
-			const FVector yaxis = quat.GetAxisY();
-			const FVector zaxis = quat.GetAxisZ();
-			FRotationMatrix m(FRotator::ZeroRotator);
-			m.M[0][0] = -yaxis.Z;
-			m.M[0][1] = -yaxis.X;
-			m.M[0][2] = -yaxis.Y;
-			m.M[1][0] = xaxis.Z;
-			m.M[1][1] = xaxis.X;
-			m.M[1][2] = xaxis.Y;
-			m.M[2][0] = zaxis.Z;
-			m.M[2][1] = zaxis.X;
-			m.M[2][2] = zaxis.Y;
-			quat = m.ToQuat();
-		}
+		UMiVRyUtil::convertOutput(this->CoordinateSystem, &p[3*i], &q[4*i], GestureRecognition_DeviceType::Controller, Locations[i], quat);
 		Rotations[i] = quat.Rotator();
+
+		UMiVRyUtil::convertOutput(this->CoordinateSystem, &hmd_p[3*i], &hmd_q[4*i], GestureRecognition_DeviceType::Headset, HMD_Locations[i], quat);
+		HMD_Rotations[i] = quat.Rotator();
 	}
 	delete[] p;
 	delete[] q;
+	delete[] hmd_p;
+	delete[] hmd_q;
 	return len;
 }
 

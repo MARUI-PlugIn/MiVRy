@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -26,6 +26,9 @@ public class KeyboardKey : MonoBehaviour
     public string keyShift = null;
     public string keyAlt = null;
 
+    [SerializeField] private Material inactiveButtonMaterial;
+    [SerializeField] private Material activeButtonMaterial;
+
     public static bool shiftActive = false;
     public static bool altActive = false;
 
@@ -35,6 +38,9 @@ public class KeyboardKey : MonoBehaviour
             return;
         if (GestureManagerVR.isGesturing)
             return;
+        if (GestureManagerVR.activeButton != null)
+            return;
+        this.GetComponent<Renderer>().material = activeButtonMaterial;
         if (this.key == "Shift")
         {
             shiftActive = true;
@@ -62,6 +68,7 @@ public class KeyboardKey : MonoBehaviour
     {
         if (!other.name.EndsWith("pointer"))
             return;
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
         if (GestureManagerVR.isGesturing)
             return;
         if (this.key == "Shift")
@@ -90,5 +97,15 @@ public class KeyboardKey : MonoBehaviour
             default:
                 return input + k;
         }
+    }
+
+    private void OnEnable()
+    {
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+    }
+
+    private void OnDisable()
+    {
+        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
     }
 }

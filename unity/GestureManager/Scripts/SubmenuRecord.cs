@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -24,7 +24,8 @@ public class SubmenuRecord : MonoBehaviour
 {
     private bool initialized = false;
     private TextMesh SubmenuRecordValue;
-    
+    private TextMesh SubmenuRecordSampleDisplayValue;
+
     void Start()
     {
         this.init();
@@ -39,6 +40,9 @@ public class SubmenuRecord : MonoBehaviour
             {
                 case "SubmenuRecordValue":
                     this.SubmenuRecordValue = child.GetComponent<TextMesh>();
+                    break;
+                case "SubmenuRecordSampleDisplayValue":
+                    this.SubmenuRecordSampleDisplayValue = child.GetComponent<TextMesh>();
                     break;
             }
         }
@@ -55,18 +59,71 @@ public class SubmenuRecord : MonoBehaviour
         if (gm.gr != null)
         {
             int num_gestures = gm.gr.numberOfGestures();
-            if (gm.record_gesture_id >= num_gestures)
+            if (gm.record_gesture_id >= num_gestures) {
                 gm.record_gesture_id = num_gestures - 1;
-            string gestureName = (gm.record_gesture_id == -1) ? "[Testing, not recording]" : gm.gr.getGestureName(gm.record_gesture_id);
-            SubmenuRecordValue.text = gestureName;
+            }
+            if (gm.record_gesture_id < 0) {
+                this.SubmenuRecordValue.text = "[Testing, not recording]";
+                this.SubmenuRecordSampleDisplayValue.text = "[off]";
+                GestureManagerVR.sampleDisplay.sampleId = -1;
+            } else
+            {
+                SubmenuRecordValue.text = gm.gr.getGestureName(gm.record_gesture_id);
+                int numSamples = gm.gr.getGestureNumberOfSamples(gm.record_gesture_id);
+                if (GestureManagerVR.sampleDisplay.sampleId >= numSamples)
+                {
+                    GestureManagerVR.sampleDisplay.sampleId = numSamples - 1;
+                }
+                if (GestureManagerVR.sampleDisplay.sampleId >= 0) {
+                    this.SubmenuRecordSampleDisplayValue.text = $"{GestureManagerVR.sampleDisplay.sampleId}";
+                } else
+                {
+                    this.SubmenuRecordSampleDisplayValue.text = "[off]";
+                }
+            }
         }
         else if (gm.gc != null)
         {
             int num_combinations = gm.gc.numberOfGestureCombinations();
             if (gm.record_combination_id >= num_combinations)
                 gm.record_combination_id = num_combinations - 1;
-            string gestureName = (gm.record_combination_id == -1) ? "[Testing, not recording]" : gm.gc.getGestureCombinationName(gm.record_combination_id);
-            SubmenuRecordValue.text = gestureName;
+            if (gm.record_combination_id < 0)
+            {
+                this.SubmenuRecordValue.text = "[Testing, not recording]";
+                this.SubmenuRecordSampleDisplayValue.text = "[off]";
+                GestureManagerVR.sampleDisplay.sampleId = -1;
+            } else
+            {
+                this.SubmenuRecordValue.text = gm.gc.getGestureCombinationName(gm.record_combination_id);
+                int numSamples = 0;
+                for (int part = gm.gc.numberOfParts() - 1; part >=0; part--)
+                {
+                    int partGestureId = gm.gc.getCombinationPartGesture(gm.record_combination_id, part);
+                    if (partGestureId >= 0)
+                    {
+                        int partNumSamples = gm.gc.getGestureNumberOfSamples(part, partGestureId);
+                        numSamples = Mathf.Max(numSamples, partNumSamples);
+                    }
+                }
+                if (GestureManagerVR.sampleDisplay.sampleId >= numSamples)
+                {
+                    GestureManagerVR.sampleDisplay.sampleId = numSamples - 1;
+                }
+                if (GestureManagerVR.sampleDisplay.sampleId >= 0)
+                {
+                    this.SubmenuRecordSampleDisplayValue.text = $"{GestureManagerVR.sampleDisplay.sampleId}";
+                }
+                else
+                {
+                    this.SubmenuRecordSampleDisplayValue.text = "[off]";
+                }
+            }
+        } else
+        {
+            this.SubmenuRecordValue.text = "[Testing, not recording]";
+            this.SubmenuRecordSampleDisplayValue.text = "[off]";
+            GestureManagerVR.sampleDisplay.sampleId = -1;
         }
+        GestureManagerVR.sampleDisplay.reloadStrokes();
     }
 }

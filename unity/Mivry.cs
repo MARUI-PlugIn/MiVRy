@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.3
+ * Version 2.4
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -333,6 +333,86 @@ public class Mivry : MonoBehaviour
     [SerializeField]
     public GestureCompletionEvent OnGestureCompletion = null;
 
+#if ENABLE_INPUT_SYSTEM
+    /// <summary>
+    /// InputAction compatible function to start a gesture motion.
+    /// You can use these in your project by adding it to your Input Controls, for example:
+    /// private void Awake()
+    /// {
+    ///     GameObject mivryGameObject = GameObject.Find("Name of the GameObject with MiVRy component");
+    ///     Mivry mivryComponent = mivryGameObject.GetComponent<Mivry>();
+    ///     this.myControls = new MyInputActionControls();
+    ///     this.myControls.DefaultActionMap.userPressedTheLeftTriggerAction.Enable();
+    ///     this.myControls.DefaultActionMap.userPressedTheLeftTriggerAction.started += mivryComponent.OnInputAction_LeftTriggerPress;
+    /// }
+    /// </summary>
+    /// <param name="callbackContext">The InputAction CallbackContext</param>
+    public void OnInputAction_LeftTriggerPress(InputAction.CallbackContext callbackContext)
+    {
+        this.InputAction_LeftTriggerPressed = true;
+    }
+
+    /// <summary>
+    /// InputAction compatible function to start a gesture motion.
+    /// You can use these in your project by adding it to your Input Controls, for example:
+    /// private void Awake()
+    /// {
+    ///     GameObject mivryGameObject = GameObject.Find("Name of the GameObject with MiVRy component");
+    ///     Mivry mivryComponent = mivryGameObject.GetComponent<Mivry>();
+    ///     this.myControls = new MyInputActionControls();
+    ///     this.myControls.DefaultActionMap.userPressedTheLeftTriggerAction.Enable();
+    ///     this.myControls.DefaultActionMap.userPressedTheLeftTriggerAction.performed += mivryComponent.OnInputAction_LeftTriggerRelease;
+    ///     this.myControls.DefaultActionMap.userPressedTheLeftTriggerAction.canceled += mivryComponent.OnInputAction_LeftTriggerRelease;
+    /// }
+    /// </summary>
+    /// <param name="callbackContext">The InputAction CallbackContext</param>
+    public void OnInputAction_LeftTriggerRelease(InputAction.CallbackContext callbackContext)
+    {
+        this.InputAction_LeftTriggerPressed = false;
+    }
+
+    /// <summary>
+    /// InputAction compatible function to start a gesture motion.
+    /// You can use these in your project by adding it to your Input Controls, for example:
+    /// private void Awake()
+    /// {
+    ///     GameObject mivryGameObject = GameObject.Find("Name of the GameObject with MiVRy component");
+    ///     Mivry mivryComponent = mivryGameObject.GetComponent<Mivry>();
+    ///     this.myControls = new MyInputActionControls();
+    ///     this.myControls.DefaultActionMap.userPressedTheRightTriggerAction.Enable();
+    ///     this.myControls.DefaultActionMap.userPressedTheRightTriggerAction.started += mivryComponent.OnInputAction_RightTriggerPress;
+    /// }
+    /// </summary>
+    /// <param name="callbackContext">The InputAction CallbackContext</param>
+    public void OnInputAction_RightTriggerPress(InputAction.CallbackContext callbackContext)
+    {
+        this.InputAction_RightTriggerPressed = true;
+    }
+
+    /// <summary>
+    /// InputAction compatible function to start a gesture motion.
+    /// You can use these in your project by adding it to your Input Controls, for example:
+    /// private void Awake()
+    /// {
+    ///     GameObject mivryGameObject = GameObject.Find("Name of the GameObject with MiVRy component");
+    ///     Mivry mivryComponent = mivryGameObject.GetComponent<Mivry>();
+    ///     this.myControls = new MyInputActionControls();
+    ///     this.myControls.DefaultActionMap.userPressedTheRightTriggerAction.Enable();
+    ///     this.myControls.DefaultActionMap.userPressedTheRightTriggerAction.performed += mivryComponent.OnInputAction_RightTriggerRelease;
+    ///     this.myControls.DefaultActionMap.userPressedTheRightTriggerAction.canceled += mivryComponent.OnInputAction_RightTriggerRelease;
+    /// }
+    /// </summary>
+    /// <param name="callbackContext">The InputAction CallbackContext</param>
+    public void OnInputAction_RightTriggerRelease(InputAction.CallbackContext callbackContext)
+    {
+        this.InputAction_RightTriggerPressed = false;
+    }
+
+    private bool InputAction_LeftTriggerPressed = false;
+
+    private bool InputAction_RightTriggerPressed = false;
+#endif
+
     private bool LeftHandActive = false;
     private bool RightHandActive = false;
 
@@ -500,6 +580,13 @@ public class Mivry : MonoBehaviour
     /// </summary>
     void Update()
     {
+#if ENABLE_INPUT_SYSTEM
+        if (InputAction_LeftTriggerPressed)
+        {
+            LeftTriggerValue = 1.0f;
+        }
+        else
+#endif
         if (LeftTriggerInput != null && LeftTriggerInput.Length > 0) {
             switch (LeftTriggerInputType)
             {
@@ -518,8 +605,19 @@ public class Mivry : MonoBehaviour
                     LeftTriggerValue = Input.GetKey(LeftTriggerInput) ? 1 : 0;
                     break;
             }
+        } else
+        {
+            LeftTriggerValue = 0.0f;
         }
-            
+
+
+#if ENABLE_INPUT_SYSTEM
+        if (InputAction_RightTriggerPressed)
+        {
+            RightTriggerValue = 1.0f;
+        }
+        else
+#endif
         if (RightTriggerInput != null && RightTriggerInput.Length > 0) {
             switch (RightTriggerInputType)
             {
@@ -538,6 +636,10 @@ public class Mivry : MonoBehaviour
                     RightTriggerValue = Input.GetKey(RightTriggerInput) ? 1 : 0;
                     break;
             }
+        }
+        else
+        {
+            RightTriggerValue = 0.0f;
         }
 
         if (gr != null)
@@ -868,6 +970,66 @@ public class Mivry : MonoBehaviour
         {
             p = new Vector3(p.y, p.z, p.x) * 0.01f;
             q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q;
+        }
+    }
+
+
+
+    /// <summary>
+    /// Convert back position and orientation of a VR controller from MiVRy's internal coordinate system
+    /// to the one used by the Unity XR plugin in use (if it should differ).
+    /// </summary>
+    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
+    /// <param name="unityXrPlugin">Which Unity XR plug-in is used by your project (see: Project Settings -> XR Plugin Manager).</param>
+    /// <param name="p">The VR controller position.</param>
+    /// <param name="q">The VR controller orientation.</param>
+    public static void convertBackHandInput(MivryCoordinateSystem mivryCoordinateSystem, UnityXrPlugin unityXrPlugin, ref Vector3 p, ref Quaternion q)
+    {
+        switch (unityXrPlugin)
+        {
+            case UnityXrPlugin.OpenXR:
+            case UnityXrPlugin.SteamVR:
+                switch (mivryCoordinateSystem)
+                {
+                    case MivryCoordinateSystem.OculusVR:
+                        q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
+                        break;
+                    case MivryCoordinateSystem.UnrealEngine:
+                        q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0, 0, 0.7071068f, 0.7071068f);
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                }
+                break;
+            case UnityXrPlugin.OculusVR:
+                switch (mivryCoordinateSystem)
+                {
+                    case MivryCoordinateSystem.OpenXR:
+                    case MivryCoordinateSystem.SteamVR:
+                        q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
+                        break;
+                    case MivryCoordinateSystem.UnrealEngine:
+                        q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                }
+                break;
+        }
+    }
+
+
+    /// <summary>
+    /// Convert back position and orientation of a VR headset from MiVRy's internal coordinate system,
+    /// to the one being used by the Unity XR plugin.
+    /// </summary>
+    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
+    /// <param name="p">The VR headset position.</param>
+    /// <param name="q">The VR headset orientation.</param>
+    public static void convertBackHeadInput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
+    {
+        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
+        {
+            p = new Vector3(p.y, p.z, p.x) * 0.01f;
+            q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
         }
     }
 }
