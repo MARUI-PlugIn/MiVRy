@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.4
+ * Version 2.5
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -335,6 +335,29 @@ public class Mivry : MonoBehaviour
 
 #if ENABLE_INPUT_SYSTEM
     /// <summary>
+    /// InputAction compatible function to start/stop gesture motions.
+    /// To use this function, set the "Behavior" of your "Player Input" component to "Invoke Unity Events",
+    /// add an event listener by pressing for the input in your "Action Map", and select this function as target.
+    /// </summary>
+    /// <param name="callbackContext">The InputAction CallbackContext</param>
+    public void OnInputAction_LeftTrigger(InputAction.CallbackContext callbackContext)
+    {
+        if (callbackContext.action.type == InputActionType.Button) {
+            if (callbackContext.started) {
+                this.InputAction_LeftTriggerPressed = true;
+            }
+            if (callbackContext.canceled) {
+                this.InputAction_LeftTriggerPressed = false;
+            }
+            return;
+        }
+        this.LeftTriggerValue = this.getInputControlValue(callbackContext.action.activeControl);
+        this.InputAction_LeftTriggerPressed = this.InputAction_LeftTriggerPressed
+            ? this.LeftTriggerValue >= this.LeftTriggerThreshold * 0.9f
+            : this.LeftTriggerValue >= this.LeftTriggerThreshold;
+    }
+
+    /// <summary>
     /// InputAction compatible function to start a gesture motion.
     /// You can use these in your project by adding it to your Input Controls, for example:
     /// private void Awake()
@@ -369,6 +392,29 @@ public class Mivry : MonoBehaviour
     public void OnInputAction_LeftTriggerRelease(InputAction.CallbackContext callbackContext)
     {
         this.InputAction_LeftTriggerPressed = false;
+    }
+
+    /// <summary>
+    /// InputAction compatible function to start/stop gesture motions.
+    /// To use this function, set the "Behavior" of your "Player Input" component to "Invoke Unity Events",
+    /// add an event listener by pressing for the input in your "Action Map", and select this function as target.
+    /// </summary>
+    /// <param name="callbackContext">The InputAction CallbackContext</param>
+    public void OnInputAction_RightTrigger(InputAction.CallbackContext callbackContext)
+    {
+        if (callbackContext.action.type == InputActionType.Button) {
+            if (callbackContext.started) {
+                this.InputAction_RightTriggerPressed = true;
+            }
+            if (callbackContext.canceled) {
+                this.InputAction_RightTriggerPressed = false;
+            }
+            return;
+        }
+        this.RightTriggerValue = this.getInputControlValue(callbackContext.action.activeControl);
+        this.InputAction_RightTriggerPressed = this.InputAction_RightTriggerPressed
+            ? this.RightTriggerValue >= this.RightTriggerThreshold * 0.9f
+            : this.RightTriggerValue >= this.RightTriggerThreshold;
     }
 
     /// <summary>
@@ -411,6 +457,54 @@ public class Mivry : MonoBehaviour
     private bool InputAction_LeftTriggerPressed = false;
 
     private bool InputAction_RightTriggerPressed = false;
+    
+    public float getInputControlValue(string controlName)
+    {
+        InputControl control = InputSystem.FindControl(controlName); // eg: "<XRController>{RightHand}/trigger"
+        if (control == null) {
+            Debug.LogError($"Mivry.getInputControlValue : Control '${controlName}' not found.");
+            return 0.0f;
+        }
+        return getInputControlValue(control);
+    }
+
+    public float getInputControlValue(InputControl control)
+    {
+        switch (control) {
+            case AxisControl axisControl:
+                return axisControl.ReadValue();
+            case DoubleControl doubleControl:
+                return (float)doubleControl.ReadValue();
+            case IntegerControl integerControl:
+                return integerControl.ReadValue();
+            case QuaternionControl quaternionControl:
+                Debug.LogError($"Mivry.getInputControlValue : QuaternionControl '${control.name}' not supported.");
+                return 0.0f;
+            case TouchControl touchControl:
+                return touchControl.ReadValue().pressure;
+            case TouchPhaseControl phaseControl:
+                var phase = phaseControl.ReadValue();
+                switch (phase)
+                {
+                    case UnityEngine.InputSystem.TouchPhase.Began:
+                    case UnityEngine.InputSystem.TouchPhase.Stationary:
+                    case UnityEngine.InputSystem.TouchPhase.Moved:
+                        return 1.0f;
+                    case UnityEngine.InputSystem.TouchPhase.None:
+                    case UnityEngine.InputSystem.TouchPhase.Ended:
+                    case UnityEngine.InputSystem.TouchPhase.Canceled:
+                    default:
+                        return 0.0f;
+                }
+            case Vector2Control vector2Control:
+                return vector2Control.ReadValue().magnitude;
+            case Vector3Control vector3Control:
+                return vector3Control.ReadValue().magnitude;
+
+        }
+        Debug.LogError($"Mivry.getInputControlValue : Unknown control type '${control.name}'.");
+        return 0.0f;
+    }
 #endif
 
     private bool LeftHandActive = false;
@@ -533,48 +627,6 @@ public class Mivry : MonoBehaviour
         Debug.LogError("[MiVRy] Failed to load gesture recognition database file: " + GestureRecognition.getErrorMessage(ret));
     }
 
-#if ENABLE_INPUT_SYSTEM
-    public float getInputControlValue(string controlName)
-    {
-
-        InputControl control = InputSystem.FindControl(controlName); // eg: "<XRController>{RightHand}/trigger"
-        switch (control)
-        {
-            case AxisControl axisControl:
-                return axisControl.ReadValue();
-            case DoubleControl doubleControl:
-                return (float)doubleControl.ReadValue();
-            case IntegerControl integerControl:
-                return integerControl.ReadValue();
-            case QuaternionControl quaternionControl:
-                Debug.LogError($"Mivry.getInputControlValue : QuaternionControl '${controlName}' not supported.");
-                return 0.0f;
-            case TouchControl touchControl:
-                return touchControl.ReadValue().pressure;
-            case TouchPhaseControl phaseControl:
-                var phase = phaseControl.ReadValue();
-                switch (phase)
-                {
-                    case UnityEngine.InputSystem.TouchPhase.Began:
-                    case UnityEngine.InputSystem.TouchPhase.Stationary:
-                    case UnityEngine.InputSystem.TouchPhase.Moved:
-                        return 1.0f;
-                    case UnityEngine.InputSystem.TouchPhase.None:
-                    case UnityEngine.InputSystem.TouchPhase.Ended:
-                    case UnityEngine.InputSystem.TouchPhase.Canceled:
-                    default:
-                        return 0.0f;
-                }
-            case Vector2Control vector2Control:
-                return vector2Control.ReadValue().magnitude;
-            case Vector3Control vector3Control:
-                return vector3Control.ReadValue().magnitude;
-
-        }
-        return 0.0f;
-    }
-#endif
-
     /// <summary>
     /// Unity update function.
     /// </summary>
@@ -659,11 +711,11 @@ public class Mivry : MonoBehaviour
     {   
         if (LeftHandActive == false && RightHandActive == false)
         {
-            if (LeftTriggerValue > LeftTriggerThreshold)
+            if (LeftTriggerValue >= LeftTriggerThreshold)
             {
                 LeftHandActive = true;
             }
-            else if (RightTriggerValue > RightTriggerThreshold)
+            else if (RightTriggerValue >= RightTriggerThreshold)
             {
                 RightHandActive = true;
             } else
@@ -688,7 +740,7 @@ public class Mivry : MonoBehaviour
             side = GestureCompletionData.Part.Side.Right;
             activeTriggerThreshold = RightTriggerThreshold;
         }
-        if (activeTrigger > activeTriggerThreshold * 0.9f)
+        if (activeTrigger >= activeTriggerThreshold * 0.9f)
         {
             // still gesturing
             Transform hmd = Camera.main.gameObject.transform;
@@ -770,7 +822,7 @@ public class Mivry : MonoBehaviour
         }
         if (LeftHandActive == true)
         {
-            if (LeftTriggerValue > LeftTriggerThreshold * 0.9f)
+            if (LeftTriggerValue >= LeftTriggerThreshold * 0.9f)
             {
                 Transform hmd = Camera.main.gameObject.transform;
                 Vector3 hmd_p = hmd.position;
@@ -834,7 +886,7 @@ public class Mivry : MonoBehaviour
         }
         if (RightHandActive == true)
         {
-            if (RightTriggerValue > RightTriggerThreshold*0.9f)
+            if (RightTriggerValue >= RightTriggerThreshold * 0.9f)
             {
                 Transform hmd = Camera.main.gameObject.transform;
                 Vector3 hmd_p = hmd.position;

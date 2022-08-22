@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.4
+ * Version 2.5
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -126,7 +126,7 @@
  * or if there was any error, which is helpful to find the root cause of possible issues.
  * Here is a list of the possible error codes that functions may return:
  * (0) : Return code for: function executed successfully.
- * (-1) : Return code for: invalid parameter(s) provided to function.
+ * (-1) : Return code for: No gesture (or combination) matches.
  * (-2) : Return code for: invalid index provided to function.
  * (-3) : Return code for: invalid file path provided to function.
  * (-4) : Return code for: path to an invalid file provided to function.
@@ -140,6 +140,10 @@
  * (-12) : Return code for: gesture performance (gesture motion, stroke) was not started yet (missing startStroke()).
  * (-13) : Return code for: gesture performance (gesture motion, stroke) was not finished yet (missing endStroke()).
  * (-14) : Return code for: the gesture recognition/combinations object is internally corrupted or inconsistent.
+ * (-15) : Return code for: the operation could not be performed because the AI is loading a gesture database file.
+ * (-16) : Return code for: the provided license key is not valid or the operation is not permitted under the current license.
+ * (-17) : Return code for: the operation could not be performed because the AI is currently being saved to database file.
+ * (-18) : Return code for: invalid parameter(s) provided to function.
  */
 
 using System.Collections;

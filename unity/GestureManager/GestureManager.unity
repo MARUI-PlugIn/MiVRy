@@ -1813,6 +1813,12 @@ MonoBehaviour:
   license_key: 
   unityXrPlugin: 0
   mivryCoordinateSystem: 0
+  file_imports:
+  - Samples/Sample_Continuous_Gestures.dat
+  - Samples/Sample_Military_Gestures.dat
+  - Samples/Sample_OneHanded_Gestures.dat
+  - Samples/Sample_Pixie_Gestures.dat
+  - Samples/Sample_TwoHanded_Gestures.dat
   file_load_combinations: Samples/Sample_TwoHanded_Gestures.dat
   file_import_combinations: Samples/Sample_Military_Gestures.dat
   file_load_subgestures: Samples/Sample_OneHanded_Gestures.dat

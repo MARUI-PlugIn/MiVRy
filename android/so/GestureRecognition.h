@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.4
+ * Version 2.5
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -99,7 +99,7 @@
 #include <vector>
 
 #define GESTURERECOGNITION_RESULT_SUCCESS                  0   //!< Return code for: function executed successfully.
-#define GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM       -1  //!< Return code for: invalid parameter(s) provided to function.
+#define GESTURERECOGNITION_RESULT_NOGESTURE                -1  //!< Return code for: No gesture (or combination) matches.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDINDEX       -2  //!< Return code for: invalid index provided to function.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDPATH        -3  //!< Return code for: invalid file path provided to function.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDFILE        -4  //!< Return code for: path to an invalid file provided to function.
@@ -116,6 +116,7 @@
 #define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYLOADING  -15  //!< Return code for: the operation could not be performed because the AI is loading a gesture database file.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDLICENSE    -16  //!< Return code for: the provided license key is not valid or the operation is not permitted under the current license.
 #define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYSAVING   -17  //!< Return code for: the operation could not be performed because the AI is currently being saved to database file.
+#define GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM      -18  //!< Return code for: invalid parameter(s) provided to function.
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -270,7 +271,7 @@ public:
     enum Result {
         Success = GESTURERECOGNITION_RESULT_SUCCESS //!< Return code for: function executed successfully.
         ,
-        Error_InvalidParameter = GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM //!< Return code for: invalid parameter(s) provided to function.
+        NoGesture = GESTURERECOGNITION_RESULT_NOGESTURE //!< Return code for: No gesture (or combination) matches.
         ,
         Error_InvalidIndex = GESTURERECOGNITION_RESULT_ERROR_INVALIDINDEX //!< Return code for: invalid index provided to function.
         ,
@@ -303,6 +304,8 @@ public:
         Error_InvalidLicense = GESTURERECOGNITION_RESULT_ERROR_INVALIDLICENSE //!< Return code for: the provided license key is not valid or the operation is not permitted under the current license.
         ,
         Error_CurrentlySaving = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYSAVING //!< Return code for: the operation could not be performed because the AI is current being saved to a database file.
+        ,
+        Error_InvalidParameter = GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM //!< Return code for: invalid parameter(s) provided to function.
     };
 
     /**
@@ -623,7 +626,7 @@ public:
     * \param    index           The gesture ID of the gesture whose number of samples to query.
     * \return                   The number of samples recorded for that gesture, a negative error code on failure.
     */
-    virtual int getGestureNumberOfSamples(int index)=0;
+    virtual int getGestureNumberOfSamples(int index) const =0;
 
     /**
     * Get the number of data points a sample has.
@@ -632,7 +635,7 @@ public:
     * \param   processed       Whether the number of raw data points should be retrieved (false) or the number of processed data points (true).
     * \return  The number of data points on that stroke sample, 0 if an error occurred.
     */
-    virtual int getGestureSampleLength(int gesture_index, int sample_index, bool processed)=0;
+    virtual int getGestureSampleLength(int gesture_index, int sample_index, bool processed) const =0;
 
     /**
     * Retrieve a sample stroke.
@@ -646,14 +649,14 @@ public:
     * \param   hmd_q           [OUT][OPTIONAL] A place to store the HMD rotational data. May be zero if this data is not required.
     * \return  The number of stroke sample data points that have been written, 0 if an error occurred.
     */
-    virtual int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4])=0;
+    virtual int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]) const =0;
 
     /**
     * Get the number of samples of the gesture mean (average over samples).
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the sample.
     * \return  The number of stroke sample data points that the mean stroke consists of.
     */
-    virtual int getGestureMeanLength(int gesture_index)=0;
+    virtual int getGestureMeanLength(int gesture_index) const =0;
 
     /**
     * Retrieve a gesture mean (average over samples).
@@ -666,7 +669,7 @@ public:
     * \param   scale           [OUT][OPTIONAL] A place to store the average gesture Scale. May be zero if this data is not required.
     * \return  The number of stroke sample data points that have been written, 0 if an error occurred.
     */
-    virtual int getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double stroke_p[3], double stroke_q[4], double* scale)=0;
+    virtual int getGestureMeanStroke(int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double stroke_p[3], double stroke_q[4], double* scale) const =0;
 
     /**
     * Delete a gesture sample recording from the set.

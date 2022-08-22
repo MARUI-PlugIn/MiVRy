@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.4
+ * Version 2.5
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -49,7 +49,7 @@ public class GestureManagerHandle : MonoBehaviour
                 ? GestureManager.getInputControlValue("<XRController>{LeftHand}/trigger")
                 : GestureManager.getInputControlValue("<XRController>{RightHand}/trigger");
             #else
-            float trigger_pressure = active_pointer.name.ToLower().Contains("left")
+            float trigger_pressure = activePointer.name.ToLower().Contains("left")
                 ? Input.GetAxis("LeftControllerTrigger")
                 : Input.GetAxis("RightControllerTrigger");
             #endif
@@ -98,7 +98,7 @@ public class GestureManagerHandle : MonoBehaviour
                 ? GestureManager.getInputControlValue("<XRController>{LeftHand}/trigger")
                 : GestureManager.getInputControlValue("<XRController>{RightHand}/trigger");
             #else
-            float trigger_pressure = active_pointer.name.ToLower().Contains("left")
+            float trigger_pressure = activePointer.name.ToLower().Contains("left")
                 ? Input.GetAxis("LeftControllerTrigger")
                 : Input.GetAxis("RightControllerTrigger");
             #endif

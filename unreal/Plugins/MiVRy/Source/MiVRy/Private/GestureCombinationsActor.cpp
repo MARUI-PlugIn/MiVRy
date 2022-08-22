@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.4
+ * Version 2.5
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -73,6 +73,34 @@ void AGestureCombinationsActor::BeginPlay()
 void AGestureCombinationsActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+
+void AGestureCombinationsActor::setNumberOfParts(int NewNumberOfParts)
+{
+	if (NewNumberOfParts == this->NumberOfParts) {
+		return;
+	} // else:
+	this->NumberOfParts = NewNumberOfParts;
+	this->gco = (IGestureCombinations*)GestureCombinations_create(this->NumberOfParts);
+	if (this->gco == nullptr) {
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("GestureCombinations::create returned null"));
+		return;
+	}
+	if (this->CoordinateSystem == GestureRecognition_CoordinateSystem::Unreal) {
+		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::ZYX;
+	}
+	else { // Unity
+		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::YXZ;
+	}
+	if (this->LicenseName.IsEmpty() == false) {
+		auto license_name = StringCast<ANSICHAR>(*this->LicenseName);
+		auto license_key = StringCast<ANSICHAR>(*this->LicenseKey);
+		int ret = this->gco->activateLicense(license_name.Get(), license_key.Get());
+		if (ret != 0) {
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(FString("Failed to activate license: ") + UMiVRyUtil::errorCodeToString(ret)));
+		}
+	}
 }
 
 int AGestureCombinationsActor::activateLicense(const FString& license_name, const FString& license_key)

@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.4
+ * Version 2.5
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -46,8 +46,16 @@ public:
 	/**
 	* The number of gesture parts (1 for one-handed gestures, 2 for two-handed gestures, 2+ for multi-part gestures).
 	*/
-	UPROPERTY(EditAnywhere, Category = "Gesture Combinations")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, BlueprintSetter = setNumberOfParts, Category = "Gesture Combinations")
 		int NumberOfParts = 2;
+
+	/**
+	* Set the number of parts on this GestureCombinationsActor.
+	* [WARNING] Changing the number of parts erases all internal data, including recorded gestures.
+	* @param The number of gesture parts (1 for one-handed gestures, 2 for two-handed gestures, 2+ for multi-part gestures).
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Activate License"))
+		void setNumberOfParts(int NewNumberOfParts);
 	
 	/**
 	* Whether GestureDatabase files to be loaded/saved by this actor are using the Unity coordinate system.

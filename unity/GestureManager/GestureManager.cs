@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.4
+ * Version 2.5
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -295,6 +295,14 @@ public class GestureManager : MonoBehaviour
         }
     }
 
+    public string[] file_imports = {
+        "Samples/Sample_Continuous_Gestures.dat",
+        "Samples/Sample_Military_Gestures.dat",
+        "Samples/Sample_OneHanded_Gestures.dat",
+        "Samples/Sample_Pixie_Gestures.dat",
+        "Samples/Sample_TwoHanded_Gestures.dat",
+    };
+
     public string file_load_combinations = "Samples/Sample_TwoHanded_Gestures.dat";
     public string file_import_combinations = "Samples/Sample_Military_Gestures.dat";
     public string file_load_subgestures = "Samples/Sample_OneHanded_Gestures.dat";
@@ -477,8 +485,13 @@ public class GestureManager : MonoBehaviour
         InputDevices.deviceConnected += DeviceConnected;
         List<UnityEngine.XR.InputDevice> devices = new List<UnityEngine.XR.InputDevice>();
         InputDevices.GetDevices(devices);
-        foreach (var device in devices)
+        foreach (var device in devices) {
             DeviceConnected(device);
+        }
+
+        for (int i=this.file_imports.Length-1; i>=0; i--) {
+            this.importFromStreamingAssets(this.file_imports[i]);
+        }
     }
 
 
@@ -899,64 +912,70 @@ public class GestureManager : MonoBehaviour
         }
         stroke.Add(star.name);
     }
-    
 
-    // Helper function to get the actual file path for a file to load
-    public string getLoadPath(string file)
+    public bool importFromStreamingAssets(string file)
     {
-#if UNITY_EDITOR
-        return (!Path.IsPathRooted(file))
-            ? "Assets/GestureRecognition/" + file
-            : file;
-#elif UNITY_ANDROID
+        string srcPath = Application.streamingAssetsPath + "/" + file;
+        string dstPath = Application.persistentDataPath + "/" + file;
+#if !UNITY_EDITOR && UNITY_ANDROID
         // On android, the file is in the .apk,
         // so we need to first "download" it to the apps' cache folder.
         AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
         AndroidJavaObject activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
-        string cachePath = activity.Call<AndroidJavaObject>("getCacheDir").Call<string>("getCanonicalPath");
-        UnityWebRequest request = UnityWebRequest.Get(Application.streamingAssetsPath + "/" + file);
+        UnityWebRequest request = UnityWebRequest.Get(srcPath);
         request.SendWebRequest();
-        while (!request.isDone)
-        {
+        while (!request.isDone) {
             // wait for file extraction to finish
         }
-        if (request.result == UnityWebRequest.Result.ConnectionError)
-        {
+        if (request.result == UnityWebRequest.Result.ConnectionError) {
             this.consoleText = "Failed to extract sample gesture database file from apk.";
-            return file;
+            return false;
         }
-        string path = cachePath + "/" + file;
+        // string cachePath = activity.Call<AndroidJavaObject>("getCacheDir").Call<string>("getCanonicalPath");
         try {
-            Directory.CreateDirectory(path);
-            Directory.Delete(path);
+            Directory.CreateDirectory(dstPath);
         } catch (Exception /* e */) { }
         try {
-            File.WriteAllBytes(path, request.downloadHandler.data);
+            Directory.Delete(dstPath);
+        } catch (Exception /* e */) { }
+        try {
+            File.WriteAllBytes(dstPath, request.downloadHandler.data);
         } catch (Exception e) {
             this.consoleText = "Exception writing temporary file: " + e.ToString();
+            return false;
         }
-        return path;
+        return true;
 #else
-        return (!Path.IsPathRooted(file))
-            ? Application.streamingAssetsPath + "/" + file
-            : file;
+        try {
+            Directory.CreateDirectory(dstPath);
+        } catch (Exception /* e */) { }
+        try {
+            Directory.Delete(dstPath);
+        } catch (Exception /* e */) { }
+        try {
+            File.Copy(srcPath, dstPath, true);
+        } catch (Exception e) {
+            this.consoleText = "Exception importing file: " + e.ToString();
+            return false;
+        }
+        return true;
 #endif
+    }
+
+    // Helper function to get the actual file path for a file to load
+    public string getLoadPath(string file)
+    {
+        return (Path.IsPathRooted(file))
+            ? file
+            : Application.persistentDataPath + "/" + file;
     }
 
     // Helper function to get the actual file path for a file to save
     public string getSavePath(string file)
     {
-#if UNITY_EDITOR
-        return (!Path.IsPathRooted(file))
-            ? "Assets/GestureRecognition/" + file
-            : file;
-#elif UNITY_ANDROID
-        return Application.persistentDataPath + "/" + file;
-#else
-        return (!Path.IsPathRooted(file))
-            ? Application.streamingAssetsPath + "/" + file
-            : file;
-#endif
+        return (Path.IsPathRooted(file))
+            ? file
+            : Application.persistentDataPath + "/" + file;
     }
 
     // Helper function to load from gestures file.
