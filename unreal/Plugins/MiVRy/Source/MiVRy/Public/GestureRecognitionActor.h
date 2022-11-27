@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -346,6 +346,61 @@ public:
 	int setGestureName(int index, const FString& name);
 
 	/**
+	* Set a Metadata object of a registered gesture.
+	* @param    index           The gesture ID of the gesture whose metadata to get.
+	* @param    metadata        The new metadata data.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Gesture Metadata"))
+	int setGestureMetadata(int index, const TArray<uint8>& metadata);
+
+	/**
+	* Set a Metadata object of a registered gesture to a text string.
+	* @param    index           The gesture ID of the gesture whose metadata to get.
+	* @param    metadata        The new metadata string.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Gesture Metadata as String"))
+	int setGestureMetadataAsString(int index, const FString& metadata);
+
+	/**
+	* Get the current metadata of a registered gesture.
+	* @param    index           The gesture ID of the gesture whose metadata to get.
+	* @param    metadata        The metadata registered for this IGestureRecognition object.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Gesture Metadata"))
+	int getGestureMetadata(int index, TArray<uint8>& metadata);
+
+	/**
+	* Get the current metadata of a registered gesture, assuming it's a text string.
+	* @param    index           The gesture ID of the gesture whose metadata to get.
+	* @param    metadata        The metadata registered for this GestureRecognition object as a string.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Gesture Metadata as String"))
+	int getGestureMetadataAsString(int index, FString& metadata);
+
+	/**
+	* Get whether a registered gesture is enabled or disabled.
+	* A disabled gesture is not used in training and identification, but will retain its recorded samples.
+	* @param    index           The gesture ID of the gesture whose status to get.
+	* @return                   True if the gesture is enabled, false if disabled.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Gesture Enabled"))
+	bool getGestureEnabled(int index);
+
+	/**
+	* Enable/disable a registered gesture.
+	* A disabled gesture is not used in training and identification, but will retain its recorded samples.
+	* @param    index           The gesture ID of the gesture whose status to set.
+	* @param    enabled         Whether the gesture is supposed to be enabled (default) or disabled.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Gesture Enabled"))
+	int setGestureEnabled(int index, bool enabled);
+
+	/**
 	* Get the number of recorded samples of a registered gesture.
 	* @param index The Gesture ID / index for which to query the number of samples.
 	* @return The number of samples, a negative error code on failure.
@@ -417,7 +472,39 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Delete All Gesture Samples"))
 	int deleteAllGestureSamples(int gesture_index);
-	
+
+	/**
+	* Set a Metadata object of this GestureRecognition object.
+	* @param    metadata        The new metadata data.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Metadata"))
+	int setMetadata(const TArray<uint8>& metadata);
+
+	/**
+	* Set a Metadata object of this GestureRecognition object to a text string.
+	* @param    metadata        The new metadata string.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Metadata as String"))
+	int setMetadataAsString(const FString& metadata);
+
+	/**
+	* Get the current metadata of this GestureRecognition object.
+	* @param    metadata        The metadata registered for this IGestureRecognition object.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Metadata"))
+	int getMetadata(TArray<uint8>& metadata);
+
+	/**
+	* Get the current metadata of this GestureRecognition object, assuming it's a text string.
+	* @param    metadata        The metadata registered for this GestureRecognition object as a string.
+	* @return                   Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Metadata as String"))
+	int getMetadataAsString(FString& metadata);
+
 	/**
 	* Save the neural network and recorded training data to file.
 	* @param path Where to save the gesture database file.
@@ -552,6 +639,25 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Max Training Time"))
 	void setMaxTrainingTime(int t);
+
+	/**
+	* Change the current policy on whether the AI should consider changes in head position during the gesturing.
+	* This will change whether the data provided via calls to "updateHeadPosition" functions will be used,
+	* so you also need to provide the changing head position via "updateHeadPosition" for this to have any effect.
+	* The data provided via "updateHeadPosition" is stored regardless of the policy, but is only used if the policy
+	* set by this function requires it.
+	* @param  p     The policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+	* @return       Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Update Head Position Policy"))
+	int setUpdateHeadPositionPolicy(GestureRecognition_UpdateHeadPositionPolicy p);
+
+	/**
+	* Query the current policy on whether the AI should consider changes in head position during the gesturing.
+	* @return       The current policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Update Head Position Policy"))
+	GestureRecognition_UpdateHeadPositionPolicy getUpdateHeadPositionPolicy();
 
 	/**
 	* Get whether the tilting rotation of the users head (also called "roll" or "bank",

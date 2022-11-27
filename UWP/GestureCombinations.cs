@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -452,6 +452,34 @@ public class GestureCombinations
         return GestureCombinations_numberOfParts(m_gc);
     }
     //                                                          ________________________________
+    //_________________________________________________________/        getPartEnabled()
+    /// <summary>
+    /// Get whether a subgestures / parts / hand is currently used (enabled)
+    /// in this GestureCombinations object.
+    /// </summary>
+    /// <param name="part">The sub-gesture index whose status to get.</param>
+    /// <returns>
+    /// True if the part is used, false if it is disabled and being ignored.
+    /// </returns>
+    public bool getPartEnabled(int part)
+    {
+        return GestureCombinations_getPartEnabled(m_gc, part) != 0;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/       setPartEnabled()
+    /// <summary>
+    /// Set whether a subgestures / parts / hand is currently used (enabled)
+    /// in this GestureCombinations object.
+    /// </summary>
+    /// <param name="part">The sub-gesture index whose status to set.</param>
+    /// <returns>
+    /// Zero on success, an error code on failure.
+    /// </returns>
+    public int setPartEnabled(int part, bool enabled)
+    {
+        return GestureCombinations_setPartEnabled(m_gc, part, enabled ? 1 : 0);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/         startStroke()
     /// <summary>
     /// Start a new gesture (stroke) performance.
@@ -729,9 +757,9 @@ public class GestureCombinations
     /// <param name="dir1">[OUT] The secondary direction in which the gesture was performed.</param>
     /// <param name="dir2">[OUT] The minor direction in which the gesture was performed (ie. narrowest direction).</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool endStroke(int part, ref Vector3 pos, ref double scale, ref Quaternion q)
+    public int endStroke(int part, ref Vector3 pos, ref double scale, ref Quaternion q)
     {
         double[] _pos = new double[3];
         double[] _scale = new double[1];
@@ -744,39 +772,32 @@ public class GestureCombinations
         pos.z = (float)_pos[2];
         scale = _scale[0];
         double tr = _dir0[0] + _dir1[1] + _dir2[2];
-        if (tr > 0)
-        {
+        if (tr > 0) {
             double s = Math.Sqrt(tr + 1.0) * 2.0;
             q.w = (float)(0.25 * s);
             q.x = (float)((_dir1[2] - _dir2[1]) / s);
             q.y = (float)((_dir2[0] - _dir0[2]) / s);
             q.z = (float)((_dir0[1] - _dir1[0]) / s);
-        }
-        else if ((_dir0[0] > _dir1[1]) & (_dir0[0] > _dir2[2]))
-        {
+        } else if ((_dir0[0] > _dir1[1]) & (_dir0[0] > _dir2[2])) {
             double s = Math.Sqrt(1.0 + _dir0[0] - _dir1[1] - _dir2[2]) * 2.0;
             q.w = (float)((_dir1[2] - _dir2[1]) / s);
             q.x = (float)(0.25 * s);
             q.y = (float)((_dir1[0] + _dir0[1]) / s);
             q.z = (float)((_dir2[0] + _dir0[2]) / s);
-        }
-        else if (_dir1[1] > _dir2[2])
-        {
+        } else if (_dir1[1] > _dir2[2]) {
             double s = Math.Sqrt(1.0 + _dir1[1] - _dir0[0] - _dir2[2]) * 2.0;
             q.w = (float)((_dir2[0] - _dir0[2]) / s);
             q.x = (float)((_dir1[0] + _dir0[1]) / s);
             q.y = (float)(0.25 * s);
             q.z = (float)((_dir2[1] + _dir1[2]) / s);
-        }
-        else
-        {
+        } else {
             double s = Math.Sqrt(1.0 + _dir2[2] - _dir0[0] - _dir1[1]) * 2.0;
             q.w = (float)((_dir0[1] - _dir1[0]) / s);
             q.x = (float)((_dir2[0] + _dir0[2]) / s);
             q.y = (float)((_dir2[1] + _dir1[2]) / s);
             q.z = (float)(0.25 * s);
         }
-        return ret != 0;
+        return ret;
     }
     //                                                          ________________________________
     //_________________________________________________________/          endStroke()
@@ -795,11 +816,11 @@ public class GestureCombinations
     /// <param name="dir1">[OUT] The secondary direction in which the gesture was performed. This must be a double[3] array.</param>
     /// <param name="dir2">[OUT] The minor direction in which the gesture was performed (ie. narrowest direction). This must be a double[3] array.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool endStroke(int part, ref double[] pos, ref double[] scale, ref double[] dir0, ref double[] dir1, ref double[] dir2)
+    public int endStroke(int part, ref double[] pos, ref double[] scale, ref double[] dir0, ref double[] dir1, ref double[] dir2)
     {
-        return GestureCombinations_endStroke(m_gc, part, pos, scale, dir0, dir1, dir2) != 0;
+        return GestureCombinations_endStroke(m_gc, part, pos, scale, dir0, dir1, dir2);
     }
     //                                                          ________________________________
     //_________________________________________________________/          endStroke()
@@ -813,11 +834,11 @@ public class GestureCombinations
     /// </summary>
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <returns>
-    /// True on success, false on failure.
+    /// Zero on success, a negative error code on failure.
     /// </returns>
-    public bool endStroke(int part)
+    public int endStroke(int part)
     {
-        return GestureCombinations_endStroke(m_gc, part, null, null, null, null, null) != 0;
+        return GestureCombinations_endStroke(m_gc, part, null, null, null, null, null);
     }
     //                                                __________________________________________
     //_______________________________________________/  getPartProbabilitiesAndSimilarities()
@@ -1186,6 +1207,57 @@ public class GestureCombinations
     {
         return GestureCombinations_setGestureCombinationName(m_gc, index, name);
     }
+    //                                                  ________________________________________
+    //_________________________________________________/ getGestureCombinationMetadataAsString()
+    /// <summary>
+    /// Get the metadata associated to a gesture combination, assuming it's a string. 
+    /// </summary>
+    /// <param name="index">ID of the gesture combination to query.</param>
+    /// <returns>
+    /// Metadata of the gesture combination as string. Null on failure or if no metadata was set.
+    /// </returns>
+    public string getGestureCombinationMetadataAsString(int index)
+    {
+        IntPtr dmo = GestureCombinations_getGestureCombinationMetadata(m_gc, index);
+        if (dmo == IntPtr.Zero) {
+            return null;
+        }
+        int size = GestureRecognition.GestureRecognition_getDefaultMetadataSize(dmo);
+        if (size <= 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(new string(' ', size));
+        int ret = GestureRecognition.GestureRecognition_getDefaultMetadataData(dmo, sb, sb.Capacity);
+        if (ret < 0) {
+            return null;
+        }
+        return sb.ToString(0, ret);
+    }
+    //                                                  ________________________________________
+    //_________________________________________________/ setGestureCombinationMetadataAsString()
+    /// <summary>
+    /// Set the metadata associated with a gesture combination, as a string.
+    /// </summary>
+    /// <param name="index">ID of the gesture combination whose metadata to set.</param>
+    /// <param name="str">The new string for the gesture metadata.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setGestureCombinationMetadataAsString(int index, string str)
+    {
+        int ret;
+        IntPtr dmo = GestureCombinations_getGestureCombinationMetadata(m_gc, index);
+        if (dmo == IntPtr.Zero) {
+            dmo = GestureRecognition.GestureRecognition_createDefaultMetadata();
+            ret = GestureCombinations_setGestureCombinationMetadata(m_gc, index, dmo);
+            if (ret != 0) {
+                GestureRecognition.GestureRecognition_deleteDefaultMetadata(dmo);
+                return ret;
+            }
+        }
+        ret = GestureRecognition.GestureRecognition_setDefaultMetadataData(dmo, str, str.Length);
+        return ret;
+    }
     //                                                          ________________________________
     //_________________________________________________________/      numberOfGestures()
     /// <summary>
@@ -1280,7 +1352,7 @@ public class GestureCombinations
     /// <summary>
     /// Get the name associated to a gesture. 
     /// </summary>
-    /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
+    /// <param name="part">The sub-gesture index to query.</param>
     /// <param name="index">ID of the gesture to query.</param>
     /// <returns>
     /// Name of the gesture. On failure, an empty string is returned.
@@ -1295,6 +1367,49 @@ public class GestureCombinations
         StringBuilder sb = new StringBuilder(strlen + 1);
         GestureCombinations_copyGestureName(m_gc, part, index, sb, sb.Capacity);
         return sb.ToString();
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  getGestureMetadataAsString()
+    /// <summary>
+    /// Get the metadata associated to a gesture, assuming it's a string. 
+    /// </summary>
+    /// <param name="part">The sub-gesture index to query.</param>
+    /// <param name="index">ID of the gesture to query.</param>
+    /// <returns>
+    /// Metadata of the gesture as string. Null on failure or if no metadata was set.
+    /// </returns>
+    public string getGestureMetadataAsString(int part, int index)
+    {
+        IntPtr dmo = GestureCombinations_getGestureMetadata(m_gc, part, index);
+        if (dmo == IntPtr.Zero) {
+            return null;
+        }
+        int size = GestureRecognition.GestureRecognition_getDefaultMetadataSize(dmo);
+        if (size <= 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(new string(' ', size));
+        int ret = GestureRecognition.GestureRecognition_getDefaultMetadataData(dmo, sb, sb.Capacity);
+        if (ret < 0) {
+            return null;
+        }
+        return sb.ToString(0, ret);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/      getGestureEnabled()
+    /// <summary>
+    /// Get whether a registered gesture is enabled or disabled.
+    /// A disabled gesture is not used in training and identification,
+    /// but will retain its recorded samples.
+    /// </summary>
+    /// <param name="part">The sub-gesture index to query.</param>
+    /// <param name="index">ID of the gesture to query.</param>
+    /// <returns>
+    /// True if the gesture is being used, false if it is disabled and being ignored.
+    /// </returns>
+    public bool getGestureEnabled(int part, int index)
+    {
+        return GestureCombinations_getGestureEnabled(m_gc, part, index) != 0;
     }
     //                                                          ________________________________
     //_________________________________________________________/   getGestureNumberOfSamples()
@@ -1489,6 +1604,51 @@ public class GestureCombinations
         return GestureCombinations_setGestureName(m_gc, part, index, name);
     }
     //                                                          ________________________________
+    //_________________________________________________________/  setGestureMetadataAsString()
+    /// <summary>
+    /// Set the metadata associated with a gesture, as a string.
+    /// </summary>
+    /// <param name="part">The sub-gesture index to query.</param>
+    /// <param name="index">ID of the gesture whose metadata to set.</param>
+    /// <param name="str">The new string for the gesture metadata.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setGestureMetadataAsString(int part, int index, string str)
+    {
+        int ret;
+        IntPtr dmo = GestureCombinations_getGestureMetadata(m_gc, part, index);
+        if (dmo == IntPtr.Zero) {
+            dmo = GestureRecognition.GestureRecognition_createDefaultMetadata();
+            ret = GestureCombinations_setGestureMetadata(m_gc, part, index, dmo);
+            if (ret != 0) {
+                GestureRecognition.GestureRecognition_deleteDefaultMetadata(dmo);
+                return ret;
+            }
+        }
+        // IntPtr strPtr = Marshal.StringToCoTaskMemUni(str); // .StringToHGlobalUni(str); // 
+        // ret = GestureRecognition.GestureRecognition_setDefaultMetadataData(dmo, strPtr, str.Length);
+        // Marshal.FreeCoTaskMem(strPtr); // .FreeHGlobal(strPtr); // 
+        ret = GestureRecognition.GestureRecognition_setDefaultMetadataData(dmo, str, str.Length);
+        return ret;
+    }
+
+    //                                                          ________________________________
+    //_________________________________________________________/  setGestureMetadataAsString()
+    /// <summary>
+    /// Set the metadata associated with a gesture, as a string.
+    /// </summary>
+    /// <param name="part">The sub-gesture index to query.</param>
+    /// <param name="index">ID of the gesture whose metadata to set.</param>
+    /// <param name="enabled">Whether the gesture is supposed to be enabled (default) or disabled.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setGestureEnabled(int part, int index, bool enabled)
+    {
+        return GestureCombinations_setGestureEnabled(m_gc, part, index, enabled ? 1 : 0);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      saveToFile()
     /// <summary>
     /// Save the current artificial intelligence to a file.
@@ -1512,7 +1672,8 @@ public class GestureCombinations
     /// </returns>
     public int loadFromFile(string path)
     {
-        return GestureCombinations_loadFromFile(m_gc, path, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_loadFromFile(m_gc, path, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadFromBuffer()
@@ -1525,7 +1686,8 @@ public class GestureCombinations
     /// </returns>
     public int loadFromBuffer(byte[] buffer)
     {
-        return GestureCombinations_loadFromBuffer(m_gc, buffer, buffer.Length, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_loadFromBuffer(m_gc, buffer, buffer.Length, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/    importFromFile()
@@ -1538,7 +1700,8 @@ public class GestureCombinations
     /// </returns>
     public int importFromFile(string path)
     {
-        return GestureCombinations_importFromFile(m_gc, path, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_importFromFile(m_gc, path, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/    importFromBuffer()
@@ -1551,7 +1714,8 @@ public class GestureCombinations
     /// </returns>
     public int importFromBuffer(byte[] buffer)
     {
-        return GestureCombinations_importFromBuffer(m_gc, buffer, buffer.Length, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_importFromBuffer(m_gc, buffer, buffer.Length, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/      saveGestureToFile()
@@ -1579,7 +1743,8 @@ public class GestureCombinations
     /// </returns>
     public int loadGestureFromFile(int part, string path)
     {
-        return GestureCombinations_loadGestureFromFile(m_gc, part, path, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_loadGestureFromFile(m_gc, part, path, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadGestureFromBuffer()
@@ -1593,7 +1758,8 @@ public class GestureCombinations
     /// </returns>
     public int loadGestureFromBuffer(int part, byte[] buffer)
     {
-        return GestureCombinations_loadGestureFromBuffer(m_gc, part, buffer, buffer.Length, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_loadGestureFromBuffer(m_gc, part, buffer, buffer.Length, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/    saveToFileAsync()
@@ -1699,7 +1865,8 @@ public class GestureCombinations
     /// </returns>
     public int loadFromFileAsync(string path)
     {
-        return GestureCombinations_loadFromFileAsync(m_gc, path, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_loadFromFileAsync(m_gc, path, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadFromBufferAsync()
@@ -1714,7 +1881,8 @@ public class GestureCombinations
     /// </returns>
     public int loadFromBufferAsync(byte[] buffer)
     {
-        return GestureCombinations_loadFromBufferAsync(m_gc, buffer, buffer.Length, null);
+        GestureRecognition.MetadataCreatorFunction mcf = GestureRecognition.GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureCombinations_loadFromBufferAsync(m_gc, buffer, buffer.Length, mcf);
     }
     //                                                      ____________________________________
     //_____________________________________________________/ setLoadingUpdateCallbackFunction()
@@ -1869,6 +2037,30 @@ public class GestureCombinations
         GestureCombinations_setMaxTrainingTime(m_gc, t);
     }
     //                                                          ________________________________
+    //_________________________________________________________/     getMaxTrainingThreads()
+    /// <summary>
+    /// Get the number of maximum parallel training threads.
+    /// Zero or a negative number are interpreted as an unlimited number of parallel threads.
+    /// </summary>
+    /// <returns>
+    /// The number of maximum parallel training threads.
+    /// </returns>
+    public int getMaxTrainingThreads()
+    {
+        return GestureCombinations_getMaxTrainingThreads(m_gc);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     setMaxTrainingThreads()
+    /// <summary>
+    /// Set the number of maximum parallel training threads.
+    /// Zero or a negative number are interpreted as an unlimited number of parallel threads.
+    /// </summary>
+    /// <param name="n">The number of maximum parallel training threads.</param>
+    public void setMaxTrainingThreads(int n)
+    {
+        GestureCombinations_setMaxTrainingThreads(m_gc, n);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/   setTrainingUpdateCallback()
     /// <summary>
     /// Set a function to be called during the training process.
@@ -1919,6 +2111,86 @@ public class GestureCombinations
         GestureCombinations_setTrainingFinishCallbackMetadata(m_gc, metadata);
     }
     //                                                          ________________________________
+    //_________________________________________________________/  getMetadataAsString()
+    /// <summary>
+    /// Get the metadata assigned to this GestureCombinations object, assuming it's a string. 
+    /// </summary>
+    /// <returns>
+    /// Metadata assigned to this GestureCombinations as string. Null on failure or if no metadata was set.
+    /// </returns>
+    public string getMetadataAsString()
+    {
+        IntPtr dmo = GestureCombinations_getMetadata(m_gc);
+        if (dmo == IntPtr.Zero) {
+            return null;
+        }
+        int size = GestureRecognition.GestureRecognition_getDefaultMetadataSize(dmo);
+        if (size <= 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(new string(' ', size));
+        int ret = GestureRecognition.GestureRecognition_getDefaultMetadataData(dmo, sb, sb.Capacity);
+        if (ret < 0) {
+            return null;
+        }
+        return sb.ToString(0, ret);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  setMetadataAsString()
+    /// <summary>
+    /// Set the metadata associated with this GestureCombinations object, as a string.
+    /// </summary>
+    /// <param name="str">The new string for the GestureCombinations metadata.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setMetadataAsString(string str)
+    {
+        int ret;
+        IntPtr dmo = GestureCombinations_getMetadata(m_gc);
+        if (dmo == IntPtr.Zero) {
+            dmo = GestureRecognition.GestureRecognition_createDefaultMetadata();
+            ret = GestureCombinations_setMetadata(m_gc, dmo);
+            if (ret != 0) {
+                GestureRecognition.GestureRecognition_deleteDefaultMetadata(dmo);
+                return ret;
+            }
+        }
+        ret = GestureRecognition.GestureRecognition_setDefaultMetadataData(dmo, str, str.Length);
+        return ret;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    setMetadataAsString()
+    /// <summary>
+    /// Change the current policy on whether the AI should consider changes in head position during the gesturing.
+    /// This will change whether the data provided via calls to "updateHeadPosition" functions will be used,
+    /// so you also need to provide the changing head position via "updateHeadPosition" for this to have any effect.
+    /// The data provided via "updateHeadPosition" is stored regardless of the policy, but is only used if the policy
+    /// set by this function requires it.
+    /// </summary>
+    /// <param name="part">The sub-gesture index (or side).</param>
+    /// <param name="p">The policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setUpdateHeadPositionPolicy(int part, GestureRecognition.UpdateHeadPositionPolicy p)
+    {
+        return GestureCombinations_setUpdateHeadPositionPolicy(m_gc, part, (int)p);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    setMetadataAsString()
+    /// <summary>
+    /// Query the current policy on whether the AI should consider changes in head position during the gesturing.
+    /// </summary>
+    /// <param name="part">The sub-gesture index (or side).</param>
+    /// <returns>
+    /// The current policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+    /// </returns>
+    public GestureRecognition.UpdateHeadPositionPolicy getUpdateHeadPositionPolicy(int part)
+    {
+        return (GestureRecognition.UpdateHeadPositionPolicy)GestureCombinations_getUpdateHeadPositionPolicy(m_gc, part);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      getVersionString()
     /// <summary>
     /// Get the version of MiVRy as a human-readable string. 
@@ -1943,8 +2215,6 @@ public class GestureCombinations
     // Internal wrapper functions to the plug-in
     // ----------------------------------------------------------------------------------------------------------
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate IntPtr MetadataCreatorFunction();
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void TrainingCallbackFunction(double performace, IntPtr metadata);
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void LoadingCallbackFunction(int result, IntPtr metadata);
@@ -1961,6 +2231,10 @@ public class GestureCombinations
     public static extern int GestureCombinations_activateLicense(IntPtr gco, string license_name, string license_key);
     [DllImport(libfile, EntryPoint = "GestureCombinations_numberOfParts", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_numberOfParts(IntPtr gco);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getPartEnabled", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getPartEnabled(IntPtr gco, int part);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setPartEnabled", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setPartEnabled(IntPtr gco, int part, int enabled);
     [DllImport(libfile, EntryPoint = "GestureCombinations_startStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_startStroke(IntPtr gco, int part, double[] hmd_p, double[] hmd_q, int record_as_sample); //!< Start new stroke.
     [DllImport(libfile, EntryPoint = "GestureCombinations_startStrokeM", CallingConvention = CallingConvention.Cdecl)]
@@ -2019,6 +2293,8 @@ public class GestureCombinations
     public static extern int GestureCombinations_copyGestureName(IntPtr gco, int part, int index, StringBuilder buf, int buflen); //!< Copy the name of a registered gesture to a buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureMetadata", CallingConvention = CallingConvention.Cdecl)]
     public static extern IntPtr GestureCombinations_getGestureMetadata(IntPtr gco, int part, int index); //!< Get the command of a registered gesture.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureEnabled", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getGestureEnabled(IntPtr gco, int part, int index);
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureNumberOfSamples", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getGestureNumberOfSamples(IntPtr gco, int part, int index); //!< Get the number of recorded samples of a registered gesture.
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureSampleLength", CallingConvention = CallingConvention.Cdecl)]
@@ -2037,22 +2313,24 @@ public class GestureCombinations
     public static extern int GestureCombinations_setGestureName(IntPtr gco, int part, int index, string name); //!< Set the name of a registered gesture.
     [DllImport(libfile, EntryPoint = "GestureCombinations_setGestureMetadata", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_setGestureMetadata(IntPtr gco, int part, int index, IntPtr metadata); //!< Set the command of a registered gesture.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setGestureEnabled", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setGestureEnabled(IntPtr gco, int part, int index, int enabled); //!< Enable/disable a registered gesture.
     [DllImport(libfile, EntryPoint = "GestureCombinations_saveToFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_saveToFile(IntPtr gco, string path); //!< Save the artificial intelligence and recorded training data to file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromFile", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadFromFile(IntPtr gco, string path, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
+    public static extern int GestureCombinations_loadFromFile(IntPtr gco, string path, GestureRecognition.MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadFromBuffer(IntPtr gco, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
+    public static extern int GestureCombinations_loadFromBuffer(IntPtr gco, byte[] buffer, int buffer_size, GestureRecognition.MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_importFromFile", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_importFromFile(IntPtr gco, string path, MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition file.
+    public static extern int GestureCombinations_importFromFile(IntPtr gco, string path, GestureRecognition.MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_importFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_importFromBuffer(IntPtr gco, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition data buffer.
+    public static extern int GestureCombinations_importFromBuffer(IntPtr gco, byte[] buffer, int buffer_size, GestureRecognition.MetadataCreatorFunction createMetadata); //!< Import gestures from GestureRecognition data buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_saveGestureToFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_saveGestureToFile(IntPtr gco, int part, string path); //!< Save the artificial intelligence and recorded training data to file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadGestureFromFile", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadGestureFromFile(IntPtr gco, int part, string path, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
+    public static extern int GestureCombinations_loadGestureFromFile(IntPtr gco, int part, string path, GestureRecognition.MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data from file.
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadGestureFromBuffer", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadGestureFromBuffer(IntPtr gco, int part, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
+    public static extern int GestureCombinations_loadGestureFromBuffer(IntPtr gco, int part, byte[] buffer, int buffer_size, GestureRecognition.MetadataCreatorFunction createMetadata); //!< Load the artificial intelligence and recorded training data buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_saveToFileAsync", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_saveToFileAsync(IntPtr gro, string path);
     [DllImport(libfile, EntryPoint = "GestureCombinations_setSavingUpdateCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
@@ -2068,9 +2346,9 @@ public class GestureCombinations
     [DllImport(libfile, EntryPoint = "GestureCombinations_cancelSaving", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_cancelSaving(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromFileAsync", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadFromFileAsync(IntPtr gro, string path, MetadataCreatorFunction createMetadata);
+    public static extern int GestureCombinations_loadFromFileAsync(IntPtr gro, string path, GestureRecognition.MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureCombinations_loadFromBufferAsync", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_loadFromBufferAsync(IntPtr gro, byte[] buffer, int buffer_size, MetadataCreatorFunction createMetadata);
+    public static extern int GestureCombinations_loadFromBufferAsync(IntPtr gro, byte[] buffer, int buffer_size, GestureRecognition.MetadataCreatorFunction createMetadata);
     [DllImport(libfile, EntryPoint = "GestureCombinations_setLoadingUpdateCallbackFunction", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_setLoadingUpdateCallbackFunction(IntPtr gro, LoadingCallbackFunction cbf);
     [DllImport(libfile, EntryPoint = "GestureCombinations_setLoadingUpdateCallbackMetadata", CallingConvention = CallingConvention.Cdecl)]
@@ -2103,6 +2381,10 @@ public class GestureCombinations
     public static extern int GestureCombinations_copyGestureCombinationName(IntPtr gco, int index, StringBuilder buf, int buflen); //!< Copy the name of a registered multi-gesture to a buffer.
     [DllImport(libfile, EntryPoint = "GestureCombinations_setGestureCombinationName", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_setGestureCombinationName(IntPtr gco, int index, string name); //!< Set the name of a registered multi-gesture.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureCombinationMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr GestureCombinations_getGestureCombinationMetadata(IntPtr gco, int index);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setGestureCombinationMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setGestureCombinationMetadata(IntPtr gco, int index, IntPtr metadata);
     [DllImport(libfile, EntryPoint = "GestureCombinations_startTraining", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_startTraining(IntPtr gco); //!< Start train the artificial intelligence based on the the currently collected data.
     [DllImport(libfile, EntryPoint = "GestureCombinations_isTraining", CallingConvention = CallingConvention.Cdecl)]
@@ -2115,6 +2397,10 @@ public class GestureCombinations
     public static extern int GestureCombinations_getMaxTrainingTime(IntPtr gco); //!< Get maximum training time in seconds.
     [DllImport(libfile, EntryPoint = "GestureCombinations_setMaxTrainingTime", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureCombinations_setMaxTrainingTime(IntPtr gco, int t); //!< Set maximum training time in seconds.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getMaxTrainingThreads", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getMaxTrainingThreads(IntPtr gco); //!< Get the number of maximum parallel training threads.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setMaxTrainingThreads", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureCombinations_setMaxTrainingThreads(IntPtr gco, int n); //!< Set the number of maximum parallel training threads.
     [DllImport(libfile, EntryPoint = "GestureCombinations_setTrainingUpdateCallback", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureCombinations_setTrainingUpdateCallback(IntPtr gco, TrainingCallbackFunction cbf); //!< Set callback function to be called during training.
     [DllImport(libfile, EntryPoint = "GestureCombinations_setTrainingFinishCallback", CallingConvention = CallingConvention.Cdecl)]
@@ -2151,6 +2437,14 @@ public class GestureCombinations
     public static extern int GestureCombinations_getRotationalFrameOfReferenceRotationOrder(IntPtr gco);
     [DllImport(libfile, EntryPoint = "GestureCombinations_setRotationalFrameOfReferenceRotationOrder", CallingConvention = CallingConvention.Cdecl)]
     public static extern void GestureCombinations_setRotationalFrameOfReferenceRotationOrder(IntPtr gco, int rotOrd);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setMetadata(IntPtr gco, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr GestureCombinations_getMetadata(IntPtr gco);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setUpdateHeadPositionPolicy", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setUpdateHeadPositionPolicy(IntPtr gco, int part, int p);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getUpdateHeadPositionPolicy", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getUpdateHeadPositionPolicy(IntPtr gco, int part);
     // [DllImport(libfile, EntryPoint = "GestureCombinations_getVersionString", CallingConvention = CallingConvention.Cdecl)]
     // public static extern string GestureCombinations_getVersionString();
     [DllImport(libfile, EntryPoint = "GestureCombinations_getVersionStringLength", CallingConvention = CallingConvention.Cdecl)]

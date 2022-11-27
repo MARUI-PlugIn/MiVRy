@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -63,8 +63,12 @@ public class GestureManager : MonoBehaviour
                     gr.setTrainingUpdateCallbackMetadata((IntPtr)me);
                     gr.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
                     gr.setTrainingFinishCallbackMetadata((IntPtr)me);
+                    gr.setLoadingUpdateCallbackFunction(GestureManager.loadingSavingUpdateCallback);
+                    gr.setLoadingUpdateCallbackMetadata((IntPtr)me);
                     gr.setLoadingFinishCallbackFunction(GestureManager.loadingFinishCallback);
                     gr.setLoadingFinishCallbackMetadata((IntPtr)me);
+                    gr.setSavingUpdateCallbackFunction(GestureManager.loadingSavingUpdateCallback);
+                    gr.setSavingUpdateCallbackMetadata((IntPtr)me);
                     gr.setSavingFinishCallbackFunction(GestureManager.savingFinishCallback);
                     gr.setSavingFinishCallbackMetadata((IntPtr)me);
                     if (ConsoleText != null)
@@ -83,8 +87,12 @@ public class GestureManager : MonoBehaviour
                     gc.setTrainingUpdateCallbackMetadata((IntPtr)me);
                     gc.setTrainingFinishCallback(GestureManager.trainingFinishCallback);
                     gc.setTrainingFinishCallbackMetadata((IntPtr)me);
+                    gc.setLoadingUpdateCallbackFunction(GestureManager.loadingSavingUpdateCallback);
+                    gc.setLoadingUpdateCallbackMetadata((IntPtr)me);
                     gc.setLoadingFinishCallbackFunction(GestureManager.loadingFinishCallback);
                     gc.setLoadingFinishCallbackMetadata((IntPtr)me);
+                    gc.setSavingUpdateCallbackFunction(GestureManager.loadingSavingUpdateCallback);
+                    gc.setSavingUpdateCallbackMetadata((IntPtr)me);
                     gc.setSavingFinishCallbackFunction(GestureManager.savingFinishCallback);
                     gc.setSavingFinishCallbackMetadata((IntPtr)me);
                     if (ConsoleText != null)
@@ -295,13 +303,14 @@ public class GestureManager : MonoBehaviour
         }
     }
 
-    public string[] file_imports = {
+    [System.NonSerialized] public string[] file_imports = {
         "Samples/Sample_Continuous_Gestures.dat",
         "Samples/Sample_Military_Gestures.dat",
         "Samples/Sample_OneHanded_Gestures.dat",
         "Samples/Sample_Pixie_Gestures.dat",
         "Samples/Sample_TwoHanded_Gestures.dat",
     };
+    [System.NonSerialized] private bool file_importing_completed = false;
 
     public string file_load_combinations = "Samples/Sample_TwoHanded_Gestures.dat";
     public string file_import_combinations = "Samples/Sample_Military_Gestures.dat";
@@ -351,6 +360,9 @@ public class GestureManager : MonoBehaviour
     // 0 = 0% correctly recognized, 1 = 100% correctly recognized.
     [System.NonSerialized] public double last_performance_report = 0;
 
+    // Last reported loading/saving progress.
+    [System.NonSerialized] public int loading_saving_progress = 0;
+
     // Whether the loading process is was recently started.
     [System.NonSerialized] public bool loading_started = false;
 
@@ -386,7 +398,30 @@ public class GestureManager : MonoBehaviour
     [System.NonSerialized] public bool gesture_started = false;
 
     // Whether or not to update (and thus compensate for) the head position during gesturing.
-    public bool compensate_head_motion = false;
+    public bool compensate_head_motion {
+        get
+        {
+            if (gr != null) {
+                return gr.getUpdateHeadPositionPolicy() == GestureRecognition.UpdateHeadPositionPolicy.UseLatest;
+            }
+            if (gc != null) {
+                return gc.getUpdateHeadPositionPolicy(0) == GestureRecognition.UpdateHeadPositionPolicy.UseLatest;
+            }
+            return false;
+        }
+        set
+        {
+            GestureRecognition.UpdateHeadPositionPolicy p = value ? GestureRecognition.UpdateHeadPositionPolicy.UseLatest : GestureRecognition.UpdateHeadPositionPolicy.UseInitial;
+            if (gr != null) {
+                gr.setUpdateHeadPositionPolicy(p);
+            }
+            if (gc != null) {
+                for (int part=gc.numberOfParts()-1; part>=0; part--) {
+                    gc.setUpdateHeadPositionPolicy(part, p);
+                }
+            }
+        }
+    }
 
     // File/folder suggestions for the load files button
     [System.NonSerialized] public int file_suggestion = 0;
@@ -488,53 +523,49 @@ public class GestureManager : MonoBehaviour
         foreach (var device in devices) {
             DeviceConnected(device);
         }
-
-        for (int i=this.file_imports.Length-1; i>=0; i--) {
-            this.importFromStreamingAssets(this.file_imports[i]);
-        }
     }
 
 
     // Update:
-    void Update()
+    public void Update()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current.escapeKey.wasPressedThisFrame)
-        {
+        if (Keyboard.current.escapeKey.wasPressedThisFrame) {
             Application.Quit();
         }
 #else
         float escape = Input.GetAxis("escape");
-        if (escape > 0.0f)
-        {
+        if (escape > 0.0f) {
             Application.Quit();
         }
 #endif
-        if (this.gr == null && this.gc == null)
-        {
+        if (!this.file_importing_completed) {
+            for (int i = this.file_imports.Length - 1; i >= 0; i--) {
+                this.importFromStreamingAssets(this.file_imports[i]);
+            }
+            this.file_importing_completed = true;
+        }
+
+        if (this.gr == null && this.gc == null) {
             consoleText = "Welcome to MiVRy Gesture Manager!\n"
                              + "(" + GestureRecognition.getVersionString() + ")\n"
                              + "This manager allows you to\ncreate and record gestures,\n"
                              + "and organize gesture files.";
             return;
         }
-        if (training_started)
-        {
-            if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
-            {
+        if (training_started) {
+            if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining())) {
                 consoleText = "Currently training...\n"
                                  + "Current recognition performance: " + (this.last_performance_report * 100).ToString("0.00") + "%.\n";
                 GestureManagerVR.refresh();
                 return;
-            } else
-            {
+            } else {
                 training_started = false;
                 consoleText = "Training finished!\n"
                                  + "Final recognition performance: " + (this.last_performance_report * 100).ToString("0.00") + "%.\n";
                 GestureManagerVR.refresh();
             }
-        } else if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining()))
-        {
+        } else if ((this.gr != null && this.gr.isTraining()) || (this.gc != null && this.gc.isTraining())) {
             training_started = true;
             consoleText = "Currently training...\n"
                              + "Current recognition performance: " + (this.last_performance_report * 100).ToString("0.00") + "%.\n";
@@ -542,62 +573,48 @@ public class GestureManager : MonoBehaviour
             return;
         }
 
-        if (loading_started)
-        {
-            if ((this.gr != null && this.gr.isLoading()) || (this.gc != null && this.gc.isLoading()))
-            {
-                consoleText = "Currently loading...\n";
+        if (loading_started) {
+            if ((this.gr != null && this.gr.isLoading()) || (this.gc != null && this.gc.isLoading())) {
+                consoleText = $"Currently loading... ({this.loading_saving_progress}%)";
                 return;
-            } else
-            {
+            } else {
                 loading_started = false;
                 consoleText = "Loading Finished!\n"
                                  + "Result: " + GestureRecognition.getErrorMessage(this.loading_result) + "\n";
                 GestureManagerVR.refresh();
             }
-        } else if ((this.gr != null && this.gr.isLoading()) || (this.gc != null && this.gc.isLoading()))
-        {
+        } else if ((this.gr != null && this.gr.isLoading()) || (this.gc != null && this.gc.isLoading())) {
             loading_started = true;
             consoleText = "Currently loading...\n";
             GestureManagerVR.refresh();
             return;
         }
 
-        if (saving_started)
-        {
-            if ((this.gr != null && this.gr.isSaving()) || (this.gc != null && this.gc.isSaving()))
-            {
-                consoleText = "Currently saving...\n";
+        if (saving_started) {
+            if ((this.gr != null && this.gr.isSaving()) || (this.gc != null && this.gc.isSaving())) {
+                consoleText = $"Currently saving... ({this.loading_saving_progress}%)";
                 return;
-            }
-            else
-            {
+            } else {
                 saving_started = false;
-                if (this.saving_result == 0)
-                {
+                if (this.saving_result == 0) {
                     consoleText = "Saving Finished!\n"
                         + "File Location : " + this.saving_path;
-                } else if (this.saving_result == -3)
-                {
+                } else if (this.saving_result == -3) {
                     consoleText = $"Saving Failed!\nThe path {this.saving_path} is not writable.";
-                } else
-                {
+                } else {
                     consoleText = "Saving Failed!\n"
                         + GestureRecognition.getErrorMessage(this.saving_result);
                 }
                 GestureManagerVR.refresh();
             }
-        }
-        else if ((this.gr != null && this.gr.isSaving()) || (this.gc != null && this.gc.isSaving()))
-        {
+        } else if ((this.gr != null && this.gr.isSaving()) || (this.gc != null && this.gc.isSaving())) {
             saving_started = true;
             consoleText = "Currently saving...\n";
             GestureManagerVR.refresh();
             return;
         }
 
-        if (!this.gesturing_enabled)
-        {
+        if (!this.gesturing_enabled) {
             return;
         }
 
@@ -615,26 +632,19 @@ public class GestureManager : MonoBehaviour
         Mivry.convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
 
         // Single Gesture recognition / 1-handed operation
-        if (this.gr != null)
-        {
+        if (this.gr != null) {
             // If the user is not yet dragging (pressing the trigger) on either controller, he hasn't started a gesture yet.
-            if (active_controller == null)
-            {
+            if (active_controller == null) {
                 // If the user presses either controller's trigger, we start a new gesture.
-                if (trigger_right > 0.85)
-                {
+                if (trigger_right > 0.85) {
                     // Right controller trigger pressed.
                     active_controller = GameObject.Find("Right Hand");
                     active_controller_pointer = GameObject.FindGameObjectWithTag("Right Pointer");
-                }
-                else if (trigger_left > 0.85)
-                {
+                } else if (trigger_left > 0.85) {
                     // Left controller trigger pressed.
                     active_controller = GameObject.Find("Left Hand");
                     active_controller_pointer = GameObject.FindGameObjectWithTag("Left Pointer");
-                }
-                else
-                {
+                } else {
                     // If we arrive here, the user is pressing neither controller's trigger:
                     // nothing to do.
                     return;
@@ -647,13 +657,9 @@ public class GestureManager : MonoBehaviour
 
             // If we arrive here, the user is currently dragging with one of the controllers.
             // Check if the user is still dragging or if he let go of the trigger button.
-            if (trigger_left > 0.85 || trigger_right > 0.85)
-            {
+            if (trigger_left > 0.85 || trigger_right > 0.85) {
                 // The user is still dragging with the controller: continue the gesture.
-                if (this.compensate_head_motion)
-                {
-                    gr.updateHeadPosition(hmd_p, hmd_q);
-                }
+                gr.updateHeadPosition(hmd_p, hmd_q);
                 Vector3 p = active_controller.transform.position;
                 Quaternion q = active_controller.transform.rotation;
                 Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
@@ -665,8 +671,7 @@ public class GestureManager : MonoBehaviour
             active_controller = null;
 
             // Delete the objectes that we used to display the gesture.
-            foreach (string star in stroke)
-            {
+            foreach (string star in stroke) {
                 Destroy(GameObject.Find(star));
                 stroke_index = 0;
             }
@@ -691,13 +696,10 @@ public class GestureManager : MonoBehaviour
             }
             // else: if we arrive here, we're not recording new samples,
             // but instead have identified a gesture.
-            if (gesture_id < 0)
-            {
+            if (gesture_id < 0) {
                 // Error trying to identify any gesture
                 consoleText = "Failed to identify gesture: " + GestureRecognition.getErrorMessage(gesture_id);
-            }
-            else
-            {
+            } else {
                 string gesture_name = gr.getGestureName(gesture_id);
                 consoleText = "Identified gesture " + gesture_name + "(" + gesture_id + ")\n(Similarity: " + similarity.ToString("0.000") + ")";
             }
@@ -705,54 +707,41 @@ public class GestureManager : MonoBehaviour
         }
 
         // GestureCombination recognition / 2-handed operation
-        if (this.gc != null)
-        {
+        if (this.gc != null) {
             // If the user presses either controller's trigger, we start a new gesture.
-            if (trigger_pressed_left == false && trigger_left > 0.9)
-            {
+            if (trigger_pressed_left == false && trigger_left > 0.9) {
                 // Controller trigger pressed.
                 trigger_pressed_left = true;
                 int gesture_id = -1;
-                if (record_combination_id >= 0)
-                {
+                if (record_combination_id >= 0) {
                     gesture_id = gc.getCombinationPartGesture(record_combination_id, lefthand_combination_part);
                 }
                 gc.startStroke(lefthand_combination_part, hmd_p, hmd_q, gesture_id);
                 gesture_started = true;
             }
-            if (trigger_pressed_right == false && trigger_right > 0.9)
-            {
+            if (trigger_pressed_right == false && trigger_right > 0.9) {
                 // Controller trigger pressed.
                 trigger_pressed_right = true;
                 int gesture_id = -1;
-                if (record_combination_id >= 0)
-                {
+                if (record_combination_id >= 0) {
                     gesture_id = gc.getCombinationPartGesture(record_combination_id, righthand_combination_part);
                 }
                 gc.startStroke(righthand_combination_part, hmd_p, hmd_q, gesture_id);
                 gesture_started = true;
             }
-            if (gesture_started == false)
-            {
+            if (gesture_started == false) {
                 // nothing to do.
                 return;
             }
 
             // If we arrive here, the user is currently dragging with one of the controllers.
-            if (this.compensate_head_motion)
-            {
-                gc.updateHeadPosition(hmd_p, hmd_q);
-            }
-            if (trigger_pressed_left == true)
-            {
-                if (trigger_left < 0.85)
-                {
+            gc.updateHeadPosition(hmd_p, hmd_q);
+            if (trigger_pressed_left == true) {
+                if (trigger_left < 0.85) {
                     // User let go of a trigger and held controller still
                     gc.endStroke(lefthand_combination_part);
                     trigger_pressed_left = false;
-                }
-                else
-                {
+                } else {
                     // User still dragging or still moving after trigger pressed
                     GameObject left_hand = GameObject.Find("Left Hand");
                     Vector3 p = left_hand.transform.position;
@@ -765,16 +754,12 @@ public class GestureManager : MonoBehaviour
                 }
             }
 
-            if (trigger_pressed_right == true)
-            {
-                if (trigger_right < 0.85)
-                {
+            if (trigger_pressed_right == true) {
+                if (trigger_right < 0.85) {
                     // User let go of a trigger and held controller still
                     gc.endStroke(righthand_combination_part);
                     trigger_pressed_right = false;
-                }
-                else
-                {
+                } else {
                     // User still dragging or still moving after trigger pressed
                     GameObject right_hand = GameObject.Find("Right Hand");
                     Vector3 p = right_hand.transform.position;
@@ -787,8 +772,7 @@ public class GestureManager : MonoBehaviour
                 }
             }
 
-            if (trigger_pressed_left || trigger_pressed_right)
-            {
+            if (trigger_pressed_left || trigger_pressed_right) {
                 // User still dragging with either hand - nothing left to do
                 return;
             }
@@ -796,18 +780,13 @@ public class GestureManager : MonoBehaviour
             gesture_started = false;
 
             // Delete the objectes that we used to display the gesture.
-            foreach (string star in stroke)
-            {
+            foreach (string star in stroke) {
                 Destroy(GameObject.Find(star));
                 stroke_index = 0;
             }
 
-            double similarity = 0; // This will receive a similarity value (0~1).
-            int recognized_combination_id = gc.identifyGestureCombination(ref similarity);
-
             // If we are currently recording samples for a custom gesture, check if we have recorded enough samples yet.
-            if (record_combination_id >= 0)
-            {
+            if (record_combination_id >= 0) {
                 // Currently recording samples for a custom gesture - check how many we have recorded so far.
                 int connected_gesture_id_left = gc.getCombinationPartGesture(record_combination_id, lefthand_combination_part);
                 int connected_gesture_id_right = gc.getCombinationPartGesture(record_combination_id, righthand_combination_part);
@@ -819,16 +798,15 @@ public class GestureManager : MonoBehaviour
                 GestureManagerVR.refresh();
                 return;
             }
-            // else: if we arrive here, we're not recording new samples for custom gestures,
-            // but instead have identified a new gesture.
+            // else: if we arrive here, we're not recording new samples for a gesture,
+            // but instead are trying to identify a gesture motion.
+            double similarity = 0; // This will receive a similarity value (0~1).
+            int recognized_combination_id = gc.identifyGestureCombination(ref similarity);
             // Perform the action associated with that gesture.
-            if (recognized_combination_id < 0)
-            {
+            if (recognized_combination_id < 0) {
                 // Error trying to identify any gesture
                 consoleText = "Failed to identify gesture: " + GestureRecognition.getErrorMessage(recognized_combination_id);
-            }
-            else
-            {
+            } else {
                 string combination_name = gc.getGestureCombinationName(recognized_combination_id);
                 consoleText = "Identified gesture combination '"+ combination_name+"' ("+ recognized_combination_id + ")\n(Similarity: " + similarity.ToString("0.000") + ")";
             }
@@ -839,8 +817,7 @@ public class GestureManager : MonoBehaviour
     [MonoPInvokeCallback(typeof(GestureRecognition.TrainingCallbackFunction))]
     public static void trainingUpdateCallback(double performance, IntPtr ptr)
     {
-        if (ptr.ToInt32() == 0)
-        {
+        if (ptr.ToInt32() == 0) {
             return;
         }
         // Get the script/scene object back from metadata.
@@ -854,8 +831,7 @@ public class GestureManager : MonoBehaviour
     [MonoPInvokeCallback(typeof(GestureRecognition.TrainingCallbackFunction))]
     public static void trainingFinishCallback(double performance, IntPtr ptr)
     {
-        if (ptr.ToInt32() == 0)
-        {
+        if (ptr.ToInt32() == 0) {
             return;
         }
         // Get the script/scene object back from metadata.
@@ -865,12 +841,24 @@ public class GestureManager : MonoBehaviour
         me.last_performance_report = performance;
     }
 
+    // Callback function to be called by the gesture recognition plug-in during loading and saving.
+    [MonoPInvokeCallback(typeof(GestureRecognition.LoadingCallbackFunction))]
+    public static void loadingSavingUpdateCallback(int progress, IntPtr ptr)
+    {
+        if (ptr.ToInt32() == 0) {
+            return;
+        }
+        // Get the script/scene object back from metadata.
+        GCHandle obj = (GCHandle)ptr;
+        GestureManager me = (obj.Target as GestureManager);
+        me.loading_saving_progress = progress;
+    }
+
     // Callback function to be called by the gesture recognition plug-in when the loading process was finished.
     [MonoPInvokeCallback(typeof(GestureRecognition.LoadingCallbackFunction))]
     public static void loadingFinishCallback(int result, IntPtr ptr)
     {
-        if (ptr.ToInt32() == 0)
-        {
+        if (ptr.ToInt32() == 0) {
             return;
         }
         // Get the script/scene object back from metadata.
@@ -883,8 +871,7 @@ public class GestureManager : MonoBehaviour
     [MonoPInvokeCallback(typeof(GestureRecognition.SavingCallbackFunction))]
     public static void savingFinishCallback(int result, IntPtr ptr)
     {
-        if (ptr.ToInt32() == 0)
-        {
+        if (ptr.ToInt32() == 0) {
             return;
         }
         // Get the script/scene object back from metadata.
@@ -906,8 +893,7 @@ public class GestureManager : MonoBehaviour
         //star.transform.rotation.Normalize();
         float star_scale = (float)random.NextDouble() + 0.3f;
         star.transform.localScale = new Vector3(star_scale, star_scale, star_scale);
-        if (this.compensate_head_motion)
-        {
+        if (this.compensate_head_motion) {
             star.transform.SetParent(Camera.main.gameObject.transform);
         }
         stroke.Add(star.name);
@@ -1002,6 +988,7 @@ public class GestureManager : MonoBehaviour
                 }
             }
             this.loading_started = true;
+            this.loading_saving_progress = 0;
             return true;
         }
         else if (this.gc != null)
@@ -1025,6 +1012,7 @@ public class GestureManager : MonoBehaviour
                 }
             }
             this.loading_started = true;
+            this.loading_saving_progress = 0;
             return true;
         }
         this.consoleText = "[ERROR] No Gesture Recognition object\nto load gestures into.";
@@ -1078,6 +1066,7 @@ public class GestureManager : MonoBehaviour
             {
                 this.consoleText = "Started saving file at\n" + this.saving_path;
                 this.saving_started = true;
+                this.loading_saving_progress = 0;
                 return true;
             }
             else
@@ -1094,6 +1083,7 @@ public class GestureManager : MonoBehaviour
             {
                 this.consoleText = "Started saving file at\n" + this.saving_path;
                 this.saving_started = true;
+                this.loading_saving_progress = 0;
                 return true;
             }
             else

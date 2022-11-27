@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -150,6 +150,7 @@ public class GestureManagerHandle : MonoBehaviour
         if (hoverHandle != this)
             return;
         hoverHandle = null;
+        GestureManagerVR.gesturingEnabled = true;
         this.GetComponent<Renderer>().material = inactiveHandleMaterial;
     }
 }

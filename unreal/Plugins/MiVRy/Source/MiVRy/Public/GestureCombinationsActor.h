@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -90,6 +90,23 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Activate License"))
 	int activateLicense(const FString& license_name, const FString& license_key);
+
+	/**
+    * Get whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
+    * @param  part              The sub-gesture index (or side).
+    * @return                   True if the part is used/enabled, false if it was disabled.
+    */
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Part Enabled"))
+    bool getPartEnabled(int part);
+
+    /**
+    * Set whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
+    * @param  part              The sub-gesture index (or side).
+    * @param  enabled           Whether the sub-gesture part (or side) should be used or disabled.
+    * @return                   Zero on success, a negative error code on failure.
+    */
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Part Enabled"))
+    int setPartEnabled(int part, bool enabled);
 
 	/**
 	* Start new gesture motion.
@@ -355,6 +372,36 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Name"))
 	FString getGestureName(int part, int index);
+	
+	/**
+	* Get the current metadata of a registered gesture.
+	* @param    part        The combination part or hand side ID from which to query a gesture name.
+	* @param    index       The gesture ID of the gesture whose metadata to get.
+	* @param    metadata    The metadata registered for this IGestureRecognition object.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Metadata"))
+	int getGestureMetadata(int part, int index, TArray<uint8>& metadata);
+
+	/**
+	* Get the current metadata of a registered gesture, assuming it's a text string.
+	* @param    part        The combination part or hand side ID from which to query a gesture name.
+	* @param    index       The gesture ID of the gesture whose metadata to get.
+	* @param    metadata    The metadata registered for this GestureRecognition object as a string.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Metadata as String"))
+	int getGestureMetadataAsString(int part, int index, FString& metadata);
+
+	/**
+	* Get whether a registered gesture is enabled or disabled.
+	* A disabled gesture is not used in training and identification, but will retain its recorded samples.
+	* @param    part        The combination part or hand side ID from which to query a gesture name.
+	* @param    index       The gesture ID of the gesture whose status to get.
+	* @return               True if the gesture is enabled, false if disabled.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Enabled"))
+	bool getGestureEnabled(int part, int index);
 
 	/**
 	* Get the number of recorded samples of a registered gesture.
@@ -445,6 +492,37 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Name"))
 	int setGestureName(int part, int index, const FString& name);
+
+	/**
+	* Set a Metadata object of a registered gesture.
+	* @param    part        The combination part or hand side index.
+	* @param    index       The gesture ID of the gesture whose metadata to get.
+	* @param    metadata    The new metadata data.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Metadata"))
+	int setGestureMetadata(int part, int index, const TArray<uint8>& metadata);
+
+	/**
+	* Set a Metadata object of a registered gesture to a text string.
+	* @param    part        The combination part or hand side index.
+	* @param    index       The gesture ID of the gesture whose metadata to get.
+	* @param    metadata    The new metadata string.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Metadata as String"))
+	int setGestureMetadataAsString(int part, int index, const FString& metadata);
+
+	/**
+	* Enable/disable a registered gesture.
+	* A disabled gesture is not used in training and identification, but will retain its recorded samples.
+	* @param    part        The combination part or hand side index.
+	* @param    index       The gesture ID of the gesture whose status to set.
+	* @param    enabled     Whether the gesture is supposed to be enabled (default) or disabled.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Enabled"))
+	int setGestureEnabled(int part, int index, bool enabled);
 
 	/**
 	* Save the neural network and recorded training data to file.
@@ -553,6 +631,74 @@ public:
 	int setGestureCombinationName(int index, const FString& name);
 
 	/**
+	* Get the Metadata of a registered multi-gesture combination.
+	* @param	index       The gesture combination ID whose Metadata to get.
+	* @param    metadata    The Metadata registered with the multi-gesture combination.
+	* @return				Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Combination Metadata"))
+	int getGestureCombinationMetadata(int index, TArray<uint8>& metadata);
+
+	/**
+	* Get the Metadata of a registered multi-gesture combination, assuming it's a text string.
+	* @param    index       The gesture combination ID whose Metadata to get.
+	* @param    metadata	The Metadata registered with the multi-gesture combination.
+	* @return				Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Combination Metadata as String"))
+	int getGestureCombinationMetadataAsString(int index, FString& metadata);
+
+	/**
+	* Set the Metadata of a registered multi-gesture combination.
+	* @param    index       The gesture combination ID whose metadata to set.
+	* @param    metadata    The new Metadata for the multi-gesture combination.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Combination Metadata"))
+	int setGestureCombinationMetadata(int index, const TArray<uint8>& metadata);
+
+	/**
+	* Set the Metadata of a registered multi-gesture combination as a text string.
+	* @param    index       The gesture combination ID whose metadata to set.
+	* @param    metadata    The new Metadata for the multi-gesture combination.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Combination Metadata as String"))
+	int setGestureCombinationMetadataAsString(int index, const FString& metadata);
+
+	/**
+	* Set Metadata for this GestureCombinations object.
+	* @param    metadata    The new Metadata.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Metadata"))
+	int setMetadata(const TArray<uint8>& metadata);
+
+	/**
+	* Set Metadata for this GestureCombinations object as a text string.
+	* @param    metadata    The new Metadata.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Metadata as String"))
+	int setMetadataAsString(const FString& metadata);
+
+	/**
+	* Get the current metadata of this GestureCombinations object.
+	* @param    metadata	The metadata registered for this GestureCombinations.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Metadata"))
+	int getMetadata(TArray<uint8>& metadata);
+
+	/**
+	* Get the current metadata of this GestureCombinations object, assuming it's a text string.
+	* @param    metadata	The metadata registered for this GestureCombinations as string.
+	* @return               Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Metadata as String"))
+	int getMetadataAsString(FString& metadata);
+
+	/**
 	* Save the neural network and recorded training data to file, asynchronously.
 	* The function will return immediately, while the saving process will continue in the background.
 	* Use 'isSaving' to check if the saving process is still ongoing.
@@ -585,7 +731,7 @@ public:
 	* @param path Path to the gesture database file to load.
 	* @return Zero on success, a negative error code on failure. Note that this only relates to *starting* the loading process.
 	*/
-	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Load GestureDatabase File Async"))
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Load GestureDatabase File Async"))
 	int loadFromFileAsync(const FFilePath& path);
 
 	/**
@@ -596,21 +742,21 @@ public:
 	* @param buffer The gesture database to load.
 	* @return Zero on success, a negative error code on failure. Note that this only relates to *starting* the loading process.
 	*/
-	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Load GestureDatabase Buffer Async"))
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Load GestureDatabase Buffer Async"))
 	int loadFromBufferAsync(const TArray<uint8>& buffer);
 
 	/**
 	* Whether the Neural Network is currently loading from a file or buffer.
 	* @return True if the AI is currently loading, false if not.
 	*/
-	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Is Loading"))
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Is Loading"))
 	bool isLoading();
 
 	/**
 	* Cancel a currently running loading process.
 	* @return Zero on success, a negative error code on failure.
 	*/
-	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Cancel Loading"))
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Cancel Loading"))
 	int cancelLoading();
 
 	/**
@@ -653,6 +799,43 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Max Training Time"))
 	void setMaxTrainingTime(int t);
+
+    /**
+    * Get the number of maximum parallel training threads.
+    * Zero or a negative number are interpreted as an unlimited number of parallel threads.
+    * @return                   The number of maximum parallel training threads.
+    */
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Max Training Threads"))
+    int getMaxTrainingThreads();
+
+    /**
+    * Set the number of maximum parallel training threads.
+    * Zero or a negative number are interpreted as an unlimited number of parallel threads.
+    * @param    n               The number of maximum parallel training threads.
+    */
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Max Training Threads"))
+    void setMaxTrainingThreads(int n);
+
+	/**
+	* Change the current policy on whether the AI should consider changes in head position during the gesturing.
+	* This will change whether the data provided via calls to "updateHeadPosition" functions will be used,
+	* so you also need to provide the changing head position via "updateHeadPosition" for this to have any effect.
+	* The data provided via "updateHeadPosition" is stored regardless of the policy, but is only used if the policy
+	* set by this function requires it.
+	* @param  part  The sub-gesture index (or side).
+	* @param  p     The policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+	* @return       Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Update Head Position Policy"))
+	int setUpdateHeadPositionPolicy(int part, GestureRecognition_UpdateHeadPositionPolicy p);
+
+	/**
+	* Query the current policy on whether the AI should consider changes in head position during the gesturing.
+	* @param   part The sub-gesture index (or side).
+	* @return       The current policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Update Head Position Policy"))
+	GestureRecognition_UpdateHeadPositionPolicy getUpdateHeadPositionPolicy(int part);
 
 	/**
 	* Get whether the tilting rotation of the users head (also called "roll" or "bank",

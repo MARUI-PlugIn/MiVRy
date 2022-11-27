@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -245,10 +245,7 @@ public class GestureManagerVR : MonoBehaviour
         if (me == null || me.inputFocus == null)
             return;
         me.inputFocus.keyboardInput(key);
-        if (me.inputFocus.target == EditableTextField.Target.LoadFile)
-        {
-            me.submenuFileSuggestions.GetComponent<SubmenuFileSuggestions>().refresh();
-        }
+        GestureManagerVR.refresh();
     }
 
     public static void setInputFocus(EditableTextField editableTextField)
@@ -272,13 +269,11 @@ public class GestureManagerVR : MonoBehaviour
                 meshRenderer.material = me.inputFocusOnMaterial;
             }
         }
-        if (me.keyboard != null)
-        {
-            if (me.inputFocus == null)
-            {
+        if (me.keyboard != null) {
+            if (me.inputFocus == null) {
                 me.keyboard.SetActive(false);
-            } else
-            {
+                KeyboardKey.activeKeyboardKey = null;
+            } else {
                 me.keyboard.SetActive(true);
                 if (GestureManagerHandle.draggingHandle == null || GestureManagerHandle.draggingHandle.target != GestureManagerHandle.Target.Keyboard) {
                     if ((me.inputFocus.gameObject.transform.position - me.keyboard.transform.position).magnitude > 0.4) {
@@ -322,8 +317,7 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuCoordinateSystem.GetComponent<SubmenuCoordinateSystem>().refresh();
             me.submenuFrameOfReference.SetActive(false);
             me.submenuTraining.SetActive(false);
-        } else if (me.gestureManager.numberOfParts == 1)
-        {
+        } else if (me.gestureManager.numberOfParts == 1) {
             me.submenuNumberOfParts.SetActive(true);
             me.submenuFiles.SetActive(true);
             me.submenuFiles.GetComponent<SubmenuFiles>().refresh();
@@ -344,8 +338,7 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuCoordinateSystem.transform.localPosition = Vector3.forward * 0.135f;
             me.submenuFrameOfReference.transform.localPosition = Vector3.forward * 0.135f;
             me.submenuTraining.transform.localPosition = Vector3.forward * 0.135f;
-        } else
-        {
+        } else {
             me.submenuNumberOfParts.SetActive(true);
             me.submenuFiles.SetActive(true);
             me.submenuFiles.GetComponent<SubmenuFiles>().refresh();
@@ -548,6 +541,13 @@ public class GestureManagerVR : MonoBehaviour
         }
     }
 
+    public static int getSubmenuGesture()
+    {
+        if (me == null || me.submenuGesture == null)
+            return -1;
+        return GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().CurrentGesture;
+    }
+
     public static bool setSubmenuGesture(int gesture_id)
     {
         if (me == null || me.submenuGesture == null)
@@ -555,6 +555,13 @@ public class GestureManagerVR : MonoBehaviour
         GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().CurrentGesture = gesture_id;
         GestureManagerVR.me.submenuGesture.GetComponent<SubmenuGesture>().refresh();
         return true;
+    }
+
+    public static int getSubmenuCombination()
+    {
+        if (me == null || me.submenuCombination == null || me.gestureManager == null || me.gestureManager.gc == null)
+            return -1;
+        return GestureManagerVR.me.submenuCombination.GetComponent<SubmenuCombination>().CurrentCombination;
     }
 
     public static bool setSubmenuCombination(int combination_id, int part=-1, int gesture_id=-1)

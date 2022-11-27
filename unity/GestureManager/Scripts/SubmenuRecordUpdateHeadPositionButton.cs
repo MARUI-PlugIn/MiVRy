@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -31,8 +31,7 @@ public class SubmenuRecordUpdateHeadPositionButton : MonoBehaviour, GestureManag
     void Start()
     {
         GestureManager gm = GestureManagerVR.me?.gestureManager;
-        if (gm != null && updateHeadPositionDisplay != null)
-        {
+        if (gm != null && updateHeadPositionDisplay != null) {
             updateHeadPositionDisplay.text = gm.compensate_head_motion ? "Yes" : "No";
         }
     }
@@ -49,8 +48,7 @@ public class SubmenuRecordUpdateHeadPositionButton : MonoBehaviour, GestureManag
         GestureManagerVR.activeButton = this;
         this.GetComponent<Renderer>().material = activeButtonMaterial;
         gm.compensate_head_motion = !gm.compensate_head_motion;
-        if (updateHeadPositionDisplay != null)
-        {
+        if (updateHeadPositionDisplay != null) {
             updateHeadPositionDisplay.text = gm.compensate_head_motion ? "Yes" : "No";
         }
         GestureManagerVR.setInputFocus(null);

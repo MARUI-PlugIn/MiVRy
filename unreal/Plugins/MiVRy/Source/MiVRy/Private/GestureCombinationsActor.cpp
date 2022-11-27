@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -111,6 +111,22 @@ int AGestureCombinationsActor::activateLicense(const FString& license_name, cons
 	auto license_name_str = StringCast<ANSICHAR>(*license_name);
 	auto license_key_str = StringCast<ANSICHAR>(*license_key);
 	return this->gco->activateLicense(license_name_str.Get(), license_key_str.Get());
+}
+
+bool AGestureCombinationsActor::getPartEnabled(int part)
+{
+	if (this->gco == nullptr) {
+		return false;
+	}
+	return this->gco->getPartEnabled(part);
+}
+
+int AGestureCombinationsActor::setPartEnabled(int part, bool enabled)
+{
+	if (this->gco == nullptr) {
+		return -99;
+	}
+	return this->gco->setPartEnabled(part, enabled);
 }
 
 int AGestureCombinationsActor::startStroke(int part, const FVector& HMD_Position, const FRotator& HMD_Rotation, int record_as_sample)
@@ -422,6 +438,58 @@ FString AGestureCombinationsActor::getGestureName(int part, int index)
 	return this->gco->getGestureName(part, index);
 }
 
+int AGestureCombinationsActor::getGestureMetadata(int part, int index, TArray<uint8>& metadata)
+{
+	metadata.SetNum(0);
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureMetadata(part, index);
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return size;
+	}
+	metadata.SetNum(size);
+	return dmo->getData(metadata.GetData(), size);
+}
+
+int AGestureCombinationsActor::getGestureMetadataAsString(int part, int index, FString& metadata)
+{
+	metadata = "";
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureMetadata(part, index);
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return 0;
+	}
+	char* buf = new char[size + 1];
+	int ret = dmo->getData(buf, size);
+	if (ret < 0) {
+		delete[] buf;
+		return ret;
+	}
+	buf[size] = '\n';
+	metadata = FString(buf);
+	delete[] buf;
+	return ret;
+}
+
+bool AGestureCombinationsActor::getGestureEnabled(int part, int index)
+{
+	if (!this->gco) {
+		return false;
+	}
+	return this->gco->getGestureEnabled(part, index);
+}
+
 int AGestureCombinationsActor::getGestureNumberOfSamples(int part, int index)
 {
 	if (!this->gco)
@@ -567,6 +635,40 @@ int AGestureCombinationsActor::setGestureName(int part, int index, const FString
 	return this->gco->setGestureName(part, index, TCHAR_TO_ANSI(*name));
 }
 
+int AGestureCombinationsActor::setGestureMetadata(int part, int index, const TArray<uint8>& metadata)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureMetadata(part, index);
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gco->setGestureMetadata(part, index, dmo);
+	}
+	return dmo->setData(metadata.GetData(), metadata.Num());
+}
+
+int AGestureCombinationsActor::setGestureMetadataAsString(int part, int index, const FString& metadata)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureMetadata(part, index);
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gco->setGestureMetadata(part, index, dmo);
+	}
+	return dmo->setData(TCHAR_TO_ANSI(*metadata), metadata.Len());
+}
+
+int AGestureCombinationsActor::setGestureEnabled(int part, int index, bool enabled)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	return this->gco->setGestureEnabled(part, index, enabled);
+}
+
 int AGestureCombinationsActor::saveToFile(const FFilePath& path)
 {
 	if (!this->gco)
@@ -682,6 +784,155 @@ int AGestureCombinationsActor::setGestureCombinationName(int index, const FStrin
 	if (!this->gco)
 		return -99;
 	return this->gco->setGestureCombinationName(index, TCHAR_TO_ANSI(*name));
+}
+
+int AGestureCombinationsActor::getGestureCombinationMetadata(int index, TArray<uint8>& metadata)
+{
+	metadata.SetNum(0);
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureCombinationMetadata(index);
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return size;
+	}
+	metadata.SetNum(size);
+	return dmo->getData(metadata.GetData(), size);
+}
+
+int AGestureCombinationsActor::getGestureCombinationMetadataAsString(int index, FString& metadata)
+{
+	metadata = "";
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureCombinationMetadata(index);
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return size;
+	}
+	char* buf = new char[size + 1];
+	int ret = dmo->getData(buf, size);
+	if (ret < 0) {
+		delete[] buf;
+		return ret;
+	}
+	buf[size] = '\n';
+	metadata = FString(buf);
+	delete[] buf;
+	return ret;
+}
+
+int AGestureCombinationsActor::setGestureCombinationMetadata(int index, const TArray<uint8>& metadata)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureCombinationMetadata(index);
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		int ret = this->gco->setGestureCombinationMetadata(index, dmo);
+		if (ret != 0) {
+			delete dmo;
+			return ret;
+		}
+	}
+	return dmo->setData(metadata.GetData(), metadata.Num());
+}
+
+int AGestureCombinationsActor::setGestureCombinationMetadataAsString(int index, const FString& metadata)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getGestureCombinationMetadata(index);
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		int ret = this->gco->setGestureCombinationMetadata(index, dmo);
+		if (ret != 0) {
+			delete dmo;
+			return ret;
+		}
+	}
+	return dmo->setData(TCHAR_TO_ANSI(*metadata), metadata.Len());
+}
+
+
+int AGestureCombinationsActor::setMetadata(const TArray<uint8>& metadata)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getMetadata();
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gco->setMetadata(dmo);
+	}
+	return dmo->setData(metadata.GetData(), metadata.Num());
+}
+
+int AGestureCombinationsActor::setMetadataAsString(const FString& metadata)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getMetadata();
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gco->setMetadata(dmo);
+	}
+	return dmo->setData(TCHAR_TO_ANSI(*metadata), metadata.Len());
+}
+
+int AGestureCombinationsActor::getMetadata(TArray<uint8>& metadata)
+{
+	metadata.SetNum(0);
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getMetadata();
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return size;
+	}
+	metadata.SetNum(size);
+	return dmo->getData(metadata.GetData(), size);
+}
+
+int AGestureCombinationsActor::getMetadataAsString(FString& metadata)
+{
+	metadata = "";
+	if (!this->gco) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gco->getMetadata();
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return 0;
+	}
+	char* buf = new char[size + 1];
+	int ret = dmo->getData(buf, size);
+	if (ret < 0) {
+		delete[] buf;
+		return ret;
+	}
+	buf[size] = '\n';
+	metadata = FString(buf);
+	delete[] buf;
+	return ret;
 }
 
 int AGestureCombinationsActor::saveToFileAsync(const FFilePath& path)
@@ -833,6 +1084,36 @@ void AGestureCombinationsActor::setMaxTrainingTime(int t)
 	if (!this->gco)
 		return;
 	this->gco->setMaxTrainingTime((unsigned long)t);
+}
+
+int AGestureCombinationsActor::getMaxTrainingThreads()
+{
+	if (!this->gco)
+		return -99;
+	return (int)this->gco->getMaxTrainingThreads();
+}
+
+void AGestureCombinationsActor::setMaxTrainingThreads(int n)
+{
+	if (!this->gco)
+		return;
+	this->gco->setMaxTrainingThreads(n);
+}
+
+int AGestureCombinationsActor::setUpdateHeadPositionPolicy(int part, GestureRecognition_UpdateHeadPositionPolicy p)
+{
+	if (!this->gco) {
+		return -99;
+	}
+	return this->gco->setUpdateHeadPositionPolicy(part, (IGestureRecognition::UpdateHeadPositionPolicy)p);
+}
+
+GestureRecognition_UpdateHeadPositionPolicy AGestureCombinationsActor::getUpdateHeadPositionPolicy(int part)
+{
+	if (!this->gco) {
+		return (GestureRecognition_UpdateHeadPositionPolicy)-99;
+	}
+	return (GestureRecognition_UpdateHeadPositionPolicy)this->gco->getUpdateHeadPositionPolicy(part);
 }
 
 GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFrameOfReferenceRoll()

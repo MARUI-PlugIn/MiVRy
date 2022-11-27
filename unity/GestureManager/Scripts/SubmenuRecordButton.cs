@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -41,31 +41,33 @@ public class SubmenuRecordButton : MonoBehaviour, GestureManagerButton
             return;
         GestureManagerVR.activeButton = this;
         this.GetComponent<Renderer>().material = activeButtonMaterial;
-        if (gm.gr != null)
-        {
-            int num_gestures = gm.gr.numberOfGestures();
-            if (this.forward)
-            {
-                gm.record_gesture_id = (gm.record_gesture_id + 1 >= num_gestures) ? -1 : gm.record_gesture_id + 1;
-            } else
-            {
-                gm.record_gesture_id = (gm.record_gesture_id - 1 < -1) ? num_gestures - 1 : gm.record_gesture_id - 1;
+        if (gm.gr != null) {
+            // int num_gestures = gm.gr.numberOfGestures();
+            // if (this.forward) {
+            //     gm.record_gesture_id = (gm.record_gesture_id + 1 >= num_gestures) ? -1 : gm.record_gesture_id + 1;
+            // } else {
+            //     gm.record_gesture_id = (gm.record_gesture_id - 1 < -1) ? num_gestures - 1 : gm.record_gesture_id - 1;
+            // }
+            // GestureManagerVR.setSubmenuGesture(gm.record_gesture_id);
+            if (gm.record_gesture_id < 0) {
+                gm.record_gesture_id = GestureManagerVR.getSubmenuGesture();
+            } else {
+                gm.record_gesture_id = -1;
             }
-            GestureManagerVR.setSubmenuGesture(gm.record_gesture_id);
             this.submenuRecord.refresh();
-        }
-        else if (gm.gc != null)
-        {
-            int num_combinations = gm.gc.numberOfGestureCombinations();
-            if (this.forward)
-            {
-                gm.record_combination_id = (gm.record_combination_id + 1 >= num_combinations) ? -1 : gm.record_combination_id + 1;
+        } else if (gm.gc != null) {
+            // int num_combinations = gm.gc.numberOfGestureCombinations();
+            // if (this.forward) {
+            //     gm.record_combination_id = (gm.record_combination_id + 1 >= num_combinations) ? -1 : gm.record_combination_id + 1;
+            // } else {
+            //     gm.record_combination_id = (gm.record_combination_id - 1 < -1) ? num_combinations - 1 : gm.record_combination_id - 1;
+            // }
+            // GestureManagerVR.setSubmenuCombination(gm.record_combination_id);
+            if (gm.record_combination_id < 0) {
+                gm.record_combination_id = GestureManagerVR.getSubmenuCombination();
+            } else {
+                gm.record_combination_id = -1;
             }
-            else
-            {
-                gm.record_combination_id = (gm.record_combination_id - 1 < -1) ? num_combinations - 1 : gm.record_combination_id - 1;
-            }
-            GestureManagerVR.setSubmenuCombination(gm.record_combination_id);
             this.submenuRecord.refresh();
         }
         GestureManagerVR.setInputFocus(null);

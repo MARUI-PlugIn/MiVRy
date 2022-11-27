@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -60,6 +60,17 @@ enum class GestureRecognition_FrameOfReference : uint8
 {
     Headset = 0 UMETA(DisplayName = "Head"),
     World = 1 UMETA(DisplayName = "World"),
+};
+
+/**
+* Whether to update the hmd (frame of reference) position/rotation during the gesturing motion.
+*/
+UENUM(BlueprintType)
+enum class GestureRecognition_UpdateHeadPositionPolicy : uint8 
+{
+    UpdateHeadPositionPolicy_UseLatest = 0 UMETA(DisplayName = "Use Latest")//!< Use the hmd position most recently submitted as current head position.
+    ,
+    UpdateHeadPositionPolicy_UseInitial = 1 UMETA(DisplayName = "Use Initial") //!< Use the initial head position, don't use later head positional updates.
 };
 
 /**

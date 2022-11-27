@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -56,19 +56,22 @@ public class SubmenuRecord : MonoBehaviour
         GestureManager gm = GestureManagerVR.me?.gestureManager;
         if (gm == null)
             return;
-        if (gm.gr != null)
-        {
+        if (gm.gr != null) {
             int num_gestures = gm.gr.numberOfGestures();
             if (gm.record_gesture_id >= num_gestures) {
                 gm.record_gesture_id = num_gestures - 1;
             }
             if (gm.record_gesture_id < 0) {
-                this.SubmenuRecordValue.text = "[Testing, not recording]";
+                this.SubmenuRecordValue.text = "Identifying, not recording";
                 this.SubmenuRecordSampleDisplayValue.text = "[off]";
                 GestureManagerVR.sampleDisplay.sampleId = -1;
-            } else
-            {
-                SubmenuRecordValue.text = gm.gr.getGestureName(gm.record_gesture_id);
+            } else {
+                string gestureName = gm.gr.getGestureName(gm.record_gesture_id);
+                if (gestureName.Length > 8) {
+                    gestureName = gestureName.Substring(0, 8);
+                }
+                this.SubmenuRecordValue.text = $"Recording '{gestureName}' samples";
+
                 int numSamples = gm.gr.getGestureNumberOfSamples(gm.record_gesture_id);
                 if (GestureManagerVR.sampleDisplay.sampleId >= numSamples)
                 {
@@ -87,14 +90,16 @@ public class SubmenuRecord : MonoBehaviour
             int num_combinations = gm.gc.numberOfGestureCombinations();
             if (gm.record_combination_id >= num_combinations)
                 gm.record_combination_id = num_combinations - 1;
-            if (gm.record_combination_id < 0)
-            {
-                this.SubmenuRecordValue.text = "[Testing, not recording]";
+            if (gm.record_combination_id < 0) {
+                this.SubmenuRecordValue.text = "Identifying, not recording";
                 this.SubmenuRecordSampleDisplayValue.text = "[off]";
                 GestureManagerVR.sampleDisplay.sampleId = -1;
-            } else
-            {
-                this.SubmenuRecordValue.text = gm.gc.getGestureCombinationName(gm.record_combination_id);
+            } else {
+                string combinationName = gm.gc.getGestureCombinationName(gm.record_combination_id);
+                if (combinationName.Length > 8) {
+                    combinationName = combinationName.Substring(0, 8);
+                }
+                this.SubmenuRecordValue.text = $"Recording '{combinationName}' samples"; 
                 int numSamples = 0;
                 for (int part = gm.gc.numberOfParts() - 1; part >=0; part--)
                 {
@@ -118,9 +123,8 @@ public class SubmenuRecord : MonoBehaviour
                     this.SubmenuRecordSampleDisplayValue.text = "[off]";
                 }
             }
-        } else
-        {
-            this.SubmenuRecordValue.text = "[Testing, not recording]";
+        } else {
+            this.SubmenuRecordValue.text = "Identifying, not recording";
             this.SubmenuRecordSampleDisplayValue.text = "[off]";
             GestureManagerVR.sampleDisplay.sampleId = -1;
         }

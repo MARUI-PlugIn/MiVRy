@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -67,6 +67,9 @@ public class SubmenuGestureButton : MonoBehaviour, GestureManagerButton
                     (gm.gr != null) ? gm.gr.createGesture("New Gesture") :
                     (gm.gc != null) ? gm.gc.createGesture(this.submenuGesture.CurrentPart, "New Gesture") :
                     -1;
+                if (gm.record_gesture_id >= 0) {
+                    gm.record_gesture_id = this.submenuGesture.CurrentGesture;
+                }
                 break;
             case Operation.DeleteGesture:
                 if (this.submenuGesture.CurrentGesture >= 0)
@@ -74,28 +77,26 @@ public class SubmenuGestureButton : MonoBehaviour, GestureManagerButton
                     if (gm.gr != null) gm.gr.deleteGesture(this.submenuGesture.CurrentGesture);
                     if (gm.gc != null) gm.gc.deleteGesture(this.submenuGesture.CurrentPart, this.submenuGesture.CurrentGesture);
                     this.submenuGesture.CurrentGesture--;
-                    GestureManagerVR.refresh();
+                    if (gm.record_gesture_id >= 0) {
+                        gm.record_gesture_id = this.submenuGesture.CurrentGesture;
+                    }
                 }
                 break;
             case Operation.DeleteLastSample:
-                if (this.submenuGesture.CurrentGesture >= 0)
-                {
+                if (this.submenuGesture.CurrentGesture >= 0) {
                     if (gm.gr != null) {
                         int numSamples = gm.gr.getGestureNumberOfSamples(this.submenuGesture.CurrentGesture);
                         if (numSamples > 0)
                             gm.gr.deleteGestureSample(this.submenuGesture.CurrentGesture, numSamples - 1);
-                    } else if (gm.gc != null)
-                    {
+                    } else if (gm.gc != null) {
                         int numSamples = gm.gc.getGestureNumberOfSamples(this.submenuGesture.CurrentPart, this.submenuGesture.CurrentGesture);
                         if (numSamples > 0)
                             gm.gc.deleteGestureSample(this.submenuGesture.CurrentPart, this.submenuGesture.CurrentGesture, numSamples - 1);
-
                     }
                 }
                 break;
             case Operation.DeleteAllSamples:
-                if (this.submenuGesture.CurrentGesture >= 0)
-                {
+                if (this.submenuGesture.CurrentGesture >= 0) {
                     if (gm.gr != null)
                         gm.gr.deleteAllGestureSamples(this.submenuGesture.CurrentGesture);
                     else if (gm.gc != null)
@@ -108,17 +109,16 @@ public class SubmenuGestureButton : MonoBehaviour, GestureManagerButton
                         (gm.gr != null) ? gm.gr.numberOfGestures() : 
                         (gm.gc != null) ? gm.gc.numberOfGestures(this.submenuGesture.CurrentPart) : 
                         -1;
-                    if (numGestures == 0)
-                    {
+                    if (numGestures == 0) {
                         this.submenuGesture.CurrentGesture = -1;
-                    } else if (this.submenuGesture.CurrentGesture + 1 >= numGestures)
-                    {
+                    } else if (this.submenuGesture.CurrentGesture + 1 >= numGestures) {
                         this.submenuGesture.CurrentGesture = 0;
-                    } else
-                    {
+                    } else {
                         this.submenuGesture.CurrentGesture++;
                     }
-                    
+                    if (gm.record_gesture_id >= 0) {
+                        gm.record_gesture_id = this.submenuGesture.CurrentGesture;
+                    }
                 }
                 break;
             case Operation.PreviousGesture:
@@ -127,19 +127,16 @@ public class SubmenuGestureButton : MonoBehaviour, GestureManagerButton
                         (gm.gr != null) ? gm.gr.numberOfGestures() :
                         (gm.gc != null) ? gm.gc.numberOfGestures(this.submenuGesture.CurrentPart) :
                         -1;
-                    if (numGestures == 0)
-                    {
+                    if (numGestures == 0) {
                         this.submenuGesture.CurrentGesture = -1;
-                    }
-                    else if (this.submenuGesture.CurrentGesture - 1 < 0)
-                    {
+                    } else if (this.submenuGesture.CurrentGesture - 1 < 0) {
                         this.submenuGesture.CurrentGesture = numGestures - 1;
-                    }
-                    else
-                    {
+                    } else {
                         this.submenuGesture.CurrentGesture--;
                     }
-
+                    if (gm.record_gesture_id >= 0) {
+                        gm.record_gesture_id = this.submenuGesture.CurrentGesture;
+                    }
                 }
                 break;
             case Operation.NextPart:
@@ -170,7 +167,7 @@ public class SubmenuGestureButton : MonoBehaviour, GestureManagerButton
                 break;
         }
         GestureManagerVR.setInputFocus(null);
-        this.submenuGesture.refresh();
+        GestureManagerVR.refresh();
     }
 
     private void OnTriggerExit(Collider other)

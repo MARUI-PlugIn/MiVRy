@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -31,6 +31,7 @@ public class KeyboardKey : MonoBehaviour
 
     public static bool shiftActive = false;
     public static bool altActive = false;
+    public static KeyboardKey activeKeyboardKey = null;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -40,24 +41,27 @@ public class KeyboardKey : MonoBehaviour
             return;
         if (GestureManagerVR.activeButton != null)
             return;
+        if (KeyboardKey.activeKeyboardKey != null && this.key != "Escape")
+            return;
+        KeyboardKey.activeKeyboardKey = this;
         this.GetComponent<Renderer>().material = activeButtonMaterial;
-        if (this.key == "Shift")
-        {
+        if (this.key == "Shift") {
+            KeyboardKey.activeKeyboardKey = null;
             shiftActive = true;
             return;
         }
-        if (this.key == "Alt")
-        {
+        if (this.key == "Alt") {
+            KeyboardKey.activeKeyboardKey = null;
             altActive = true;
             return;
         }
-        if (this.key == "CapsLock")
-        {
+        if (this.key == "CapsLock") {
+            KeyboardKey.activeKeyboardKey = null;
             shiftActive = !shiftActive;
             return;
         }
-        if (this.key == "Escape" || this.key == "Enter")
-        {
+        if (this.key == "Escape" || this.key == "Enter") {
+            KeyboardKey.activeKeyboardKey = null;
             GestureManagerVR.setInputFocus(null);
             return;
         }
@@ -68,6 +72,8 @@ public class KeyboardKey : MonoBehaviour
     {
         if (!other.name.EndsWith("pointer"))
             return;
+        if (KeyboardKey.activeKeyboardKey == this)
+            KeyboardKey.activeKeyboardKey = null;
         this.GetComponent<Renderer>().material = inactiveButtonMaterial;
         if (GestureManagerVR.isGesturing)
             return;

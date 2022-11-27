@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -61,81 +61,69 @@ public class SubmenuCombinationButton : MonoBehaviour, GestureManagerButton
         {
             case Operation.CreateCombination:
                 this.submenuCombination.CurrentCombination = gm.gc.createGestureCombination("New Combination");
+                if (gm.record_combination_id >= 0) {
+                    gm.record_combination_id = this.submenuCombination.CurrentCombination;
+                }
                 break;
             case Operation.DeleteCombination:
-                if (this.submenuCombination.CurrentCombination >= 0)
-                {
+                if (this.submenuCombination.CurrentCombination >= 0) {
                     gm.gc.deleteGestureCombination(this.submenuCombination.CurrentCombination);
                     this.submenuCombination.CurrentCombination--;
-                    GestureManagerVR.refresh();
+                    if (gm.record_combination_id >= 0) {
+                        gm.record_combination_id = this.submenuCombination.CurrentCombination;
+                    }
                 }
                 break;
             case Operation.NextCombination:
                 {
                     int numCombinations = gm.gc.numberOfGestureCombinations();
-                    if (numCombinations == 0)
-                    {
+                    if (numCombinations == 0) {
                         this.submenuCombination.CurrentCombination = -1;
-                    }
-                    else if (this.submenuCombination.CurrentCombination + 1 >= numCombinations)
-                    {
+                    } else if (this.submenuCombination.CurrentCombination + 1 >= numCombinations) {
                         this.submenuCombination.CurrentCombination = 0;
-                    }
-                    else
-                    {
+                    } else {
                         this.submenuCombination.CurrentCombination++;
                     }
-
+                    if (gm.record_combination_id >= 0) {
+                        gm.record_combination_id = this.submenuCombination.CurrentCombination;
+                    }
                 }
                 break;
             case Operation.PreviousCombination:
                 {
                     int numCombinations = gm.gc.numberOfGestureCombinations();
-                    if (numCombinations == 0)
-                    {
+                    if (numCombinations == 0) {
                         this.submenuCombination.CurrentCombination = -1;
-                    }
-                    else if (this.submenuCombination.CurrentCombination - 1 < 0)
-                    {
+                    } else if (this.submenuCombination.CurrentCombination - 1 < 0) {
                         this.submenuCombination.CurrentCombination = numCombinations - 1;
-                    }
-                    else
-                    {
+                    } else {
                         this.submenuCombination.CurrentCombination--;
+                    }
+                    if (gm.record_combination_id >= 0) {
+                        gm.record_combination_id = this.submenuCombination.CurrentCombination;
                     }
                 }
                 break;
             case Operation.NextPart:
                 {
                     int numParts = gm.gc.numberOfParts();
-                    if (numParts == 0)
-                    {
+                    if (numParts == 0) {
                         this.submenuCombination.CurrentPart = -1;
-                    }
-                    else if (this.submenuCombination.CurrentPart + 1 >= numParts)
-                    {
+                    } else if (this.submenuCombination.CurrentPart + 1 >= numParts) {
                         this.submenuCombination.CurrentPart = 0;
-                    }
-                    else
-                    {
+                    } else {
                         this.submenuCombination.CurrentPart++;
                     }
-
                 }
                 break;
             case Operation.PreviousPart:
                 {
                     int numParts = gm.gc.numberOfParts();
-                    if (numParts == 0)
-                    {
+                    if (numParts == 0) {
                         this.submenuCombination.CurrentPart = -1;
-                    }
-                    else if (this.submenuCombination.CurrentPart - 1 < 0)
-                    {
+                    } else if (this.submenuCombination.CurrentPart - 1 < 0) {
                         this.submenuCombination.CurrentPart = numParts - 1;
-                    }
-                    else
-                    {
+                    } else {
                         this.submenuCombination.CurrentPart--;
                     }
                 }
@@ -143,14 +131,11 @@ public class SubmenuCombinationButton : MonoBehaviour, GestureManagerButton
             case Operation.NextGesture:
                 {
                     int numGestures = gm.gc.numberOfGestures(this.submenuCombination.CurrentPart);
-                    if (numGestures == 0)
-                    {
+                    if (numGestures == 0) {
                         this.submenuCombination.CurrentGesture = -1; // -1 = [NONE]
-                    } else if (this.submenuCombination.CurrentGesture + 1 >= numGestures)
-                    {
+                    } else if (this.submenuCombination.CurrentGesture + 1 >= numGestures) {
                         this.submenuCombination.CurrentGesture = -1; // -1 = [NONE]
-                    } else
-                    {
+                    } else {
                         this.submenuCombination.CurrentGesture++;
                     }
                 }
@@ -158,23 +143,18 @@ public class SubmenuCombinationButton : MonoBehaviour, GestureManagerButton
             case Operation.PreviousGesture:
                 {
                     int numGestures = gm.gc.numberOfGestures(this.submenuCombination.CurrentPart);
-                    if (numGestures == 0)
-                    {
+                    if (numGestures == 0) {
                         this.submenuCombination.CurrentGesture = -1; // -1 = [NONE]
-                    }
-                    else if (this.submenuCombination.CurrentGesture - 1 < -1) // -1 = [NONE]
-                    {
+                    } else if (this.submenuCombination.CurrentGesture - 1 < -1) { // -1 = [NONE]
                         this.submenuCombination.CurrentGesture = numGestures - 1;
-                    }
-                    else
-                    {
+                    } else {
                         this.submenuCombination.CurrentGesture--;
                     }
                 }
                 break;
         }
         GestureManagerVR.setInputFocus(null);
-        this.submenuCombination.refresh();
+        GestureManagerVR.refresh();
     }
 
     private void OnTriggerExit(Collider other)

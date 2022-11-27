@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -133,6 +133,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_delete(void* gco); //!< Delete instance.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_activateLicense(void* gco, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_numberOfParts(void* gco); //!< Get the number of subgestures / parts / hands used by this multi-gesture object.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getPartEnabled(void* gco, int part); //!< Get whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setPartEnabled(void* gco, int part, int enabled); //!< Set whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
 
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStroke(void* gco, int part, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStrokeM(void* gco, int part, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
@@ -168,6 +170,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_copyGestureName(void* gco, int part, int index, char* buf, int buflen); //!< Copy the name of a registered gesture to a buffer.
 
     GESTURERECOGNITION_LIBEXPORT void*       GestureCombinations_getGestureMetadata(void* gco, int part, int index); //!< Get the command of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureEnabled(void* gco, int part, int index); //!< Get whether a registered gesture is enabled or disabled.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureNumberOfSamples(void* gco, int part, int index); //!< Get the number of recorded samples of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleLength(void* gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleStroke(void* gco, int part, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]); //!< Retrieve a sample stroke.
@@ -178,6 +181,7 @@ extern "C" {
 
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setGestureName(void* gco, int part, int index, const char* name); //!< Set the name of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setGestureMetadata(void* gco, int part, int index, void* metadata); //!< Set the command of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setGestureEnabled(void* gco, int part, int index, int enabled); //!< Enable/disable a registered gesture.
 
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_saveToFile(void* gco, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_loadFromFile(void* gco, const char* path, MetadataCreatorFunction* createMetadata); //!< Load the neural network and recorded training data from file.
@@ -214,6 +218,9 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_copyGestureCombinationName(void* gco, int index, char* buf, int buflen); //!< Copy the name of a registered multi-gesture to a buffer.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_setGestureCombinationName(void* gco, int index, const char* name); //!< Set the name of a registered multi-gesture.
 
+    GESTURERECOGNITION_LIBEXPORT void* GestureCombinations_getGestureCombinationMetadata(void* gco, int index); //!< Get the Metadata of a registered multi-gesture combination.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setGestureCombinationMetadata(void* gco, int index, void* metadata); //!< Set the Metadata of a registered multi-gesture combination.
+
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setCombinationPartGesture(void* gco, int multigesture_index, int part, int gesture_index); //!< Set which gesture this multi-gesture expects for step i.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_getCombinationPartGesture(void* gco, int multigesture_index, int part); //!< Get which gesture this multi-gesture expects for step i.
 
@@ -225,6 +232,9 @@ extern "C" {
 
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getMaxTrainingTime(void* gco); //!< Get maximum training time in seconds.
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_setMaxTrainingTime(void* gco, int t); //!< Set maximum training time in seconds.
+
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getMaxTrainingThreads(void* gco); //!< Get the number of maximum parallel training threads.
+    GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setMaxTrainingThreads(void* gco, int n); //!< Set the number of maximum parallel training threads.
 
     GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setTrainingUpdateCallback(void* gco, TrainingCallbackFunction* cbf); //!< Set callback function to be called during training.
     GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setTrainingFinishCallback(void* gco, TrainingCallbackFunction* cbf); //!< Set callback function to be called when training is finished.
@@ -247,6 +257,12 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceZ(void* gco, int i); //!< Set wether gestures are interpreted as seen by the user or relative to the world, regarding their z-axis rotation (commonly: roll, tilting the head).
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getRotationalFrameOfReferenceRotationOrder(void* gco); //!< Get the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
     GESTURERECOGNITION_LIBEXPORT void GestureCombinations_setRotationalFrameOfReferenceRotationOrder(void* gco, int rotOrd); //!< Set the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
+
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setUpdateHeadPositionPolicy(void* gco, int part, int p); //!< Change the current policy on whether the AI should consider changes in head position during the gesturing.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_getUpdateHeadPositionPolicy(void* gco, int part); //!< Query the current policy on whether the AI should consider changes in head position during the gesturing.
+
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setMetadata(void* gco, void* metadata); //!< Set a Metadata object of this IGestureCombinations object.
+    GESTURERECOGNITION_LIBEXPORT void* GestureCombinations_getMetadata(void* gco); //!< Get the current metadata object of this IGestureCombinations object.
 
     GESTURERECOGNITION_LIBEXPORT const char* GestureCombinations_getVersionString(); //!< Get the version of this library as human-readable string.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getVersionStringLength(); //!< Get the length of the version string.
@@ -281,6 +297,21 @@ public:
     * \return   The number of parts/sub-gestures that this object is set to handle.
     */
     virtual int numberOfParts()=0;
+
+    /**
+    * Get whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
+    * \param  part              The sub-gesture index (or side).
+    * \return                   True if the part is used/enabled, false if it was disabled.
+    */
+    virtual bool getPartEnabled(int part)=0;
+
+    /**
+    * Set whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
+    * \param  part              The sub-gesture index (or side).
+    * \param  enabled           Whether the sub-gesture part (or side) should be used or disabled.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int setPartEnabled(int part, bool enabled)=0;
 
     /**
     * Start new stroke (gesture motion).
@@ -542,9 +573,18 @@ public:
     * Get the metadata of a registered gesture.
     * \param    part            The sub-gesture index (or side).
     * \param    index           The gesture ID of the gesture whose metadata to get.
-    * \return                   The metadata registered with the gesture, null on failure.
+    * \return                   The metadata registered with the gesture, null on failure or if no Metadata object was registered.
     */
     virtual IGestureRecognition::Metadata* getGestureMetadata(int part, int index)=0;
+
+    /**
+    * Get whether a registered gesture is enabled or disabled.
+    * A disabled gesture is not used in training and identification, but will retain its recorded samples.
+    * \param    part            The sub-gesture index (or side).
+    * \param    index           The gesture ID of the gesture whose status to get.
+    * \return                   True if the gesture is enabled, false if disabled.
+    */
+    virtual bool getGestureEnabled(int part, int index)=0;
 
     /**
     * Get the number of recorded samples of a registered gesture.
@@ -631,10 +671,21 @@ public:
     /**
     * Set the metadata of a registered gesture.
     * \param    part            The sub-gesture index (or side).
-    * \param    metadata        The new metadata to be stored with the gesture.
+    * \param    index           The gesture ID of the gesture whose metadata to set.
+    * \param    metadata        The new metadata to be stored with the gesture, null to deregister the current Metadata object.
     * \return                   Zero on success, a negative error code on failure.
     */
     virtual int setGestureMetadata(int part, int index, IGestureRecognition::Metadata* metadata)=0;
+    
+    /**
+    * Enable/disable a registered gesture.
+    * A disabled gesture is not used in training and identification, but will retain its recorded samples.
+    * \param    part            The sub-gesture index (or side).
+    * \param    index           The gesture ID of the gesture whose status to set.
+    * \param    enabled         Whether the gesture is supposed to be enabled (default) or disabled.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int setGestureEnabled(int part, int index, bool enabled)=0;
 
     /**
     * Save the neural network and recorded training data to file.
@@ -909,6 +960,21 @@ public:
     virtual int setGestureCombinationName(int index, const char* name)=0;
 
     /**
+    * Get the Metadata of a registered multi-gesture combination.
+    * \param    index           The gesture combination ID whose Metadata to get.
+    * \return                   The Metadata object registered with the multi-gesture combination, null if none was registered.
+    */
+    virtual IGestureRecognition::Metadata* getGestureCombinationMetadata(int index)=0;
+    
+    /**
+    * Set the Metadata of a registered multi-gesture combination.
+    * \param    index           The gesture combination ID whose metadata to set.
+    * \param    metadata        The new Metadata for the multi-gesture combination, null to deregister the current Metadata object.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int setGestureCombinationMetadata(int index, IGestureRecognition::Metadata* metadata)=0;
+
+    /**
     * Start train the Neural Network based on the the currently collected data.
     * \return                   Zero on success, a negative error code on failure.
     */
@@ -979,9 +1045,55 @@ public:
     virtual void setMaxTrainingTime(unsigned long t)=0;
 
     /**
+    * Get the number of maximum parallel training threads.
+    * Zero or a negative number are interpreted as an unlimited number of parallel threads.
+    * \return                   The number of maximum parallel training threads.
+    */
+    virtual int getMaxTrainingThreads()=0;
+
+    /**
+    * Set the number of maximum parallel training threads.
+    * Zero or a negative number are interpreted as an unlimited number of parallel threads.
+    * \param    n               The number of maximum parallel training threads.
+    */
+    virtual void setMaxTrainingThreads(int n)=0;
+
+    /**
     * Whether the rotation of the users head should be considered when recording and performing gestures.
     */
     IGestureRecognition::RotationalFrameOfReference rotationalFrameOfReference;
+    
+    /**
+    * Change the current policy on whether the AI should consider changes in head position during the gesturing.
+    * This will change whether the data provided via calls to "updateHeadPosition" functions will be used,
+    * so you also need to provide the changing head position via "updateHeadPosition" for this to have any effect.
+    * The data provided via "updateHeadPosition" is stored regardless of the policy, but is only used if the policy
+    * set by this function requires it.
+    * \param  part  The sub-gesture index (or side).
+    * \param  p     The policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+    * \return       Zero on success, a negative error code on failure.
+    */
+    virtual int setUpdateHeadPositionPolicy(int part, IGestureRecognition::UpdateHeadPositionPolicy p)=0;
+
+    /**
+    * Query the current policy on whether the AI should consider changes in head position during the gesturing.
+    * \param   part The sub-gesture index (or side).
+    * \return       The current policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+    */
+    virtual IGestureRecognition::UpdateHeadPositionPolicy getUpdateHeadPositionPolicy(int part)=0;
+
+    /**
+    * Set a Metadata object of this IGestureCombinations object.
+    * \param    metadata        The new Metadata object.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int setMetadata(IGestureRecognition::Metadata* metadata)=0;
+
+    /**
+    * Get the current metadata object of this IGestureCombinations object.
+    * \return                   The metadata registered for this IGestureCombinations, null if no Metadata object was set.
+    */
+    virtual IGestureRecognition::Metadata* getMetadata()=0;
 
     /**
     * Run internal tests to check for code correctness and data consistency.

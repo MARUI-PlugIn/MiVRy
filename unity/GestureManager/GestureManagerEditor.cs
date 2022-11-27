@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -32,6 +32,9 @@ public class GestureManagerEditor : UnityEditor.Editor
     {
         // DrawDefaultInspector();
 
+        GestureManager gm = (GestureManager)target;
+        gm.Update();
+
         serializedObject.Update();
         var license_id_prop = serializedObject.FindProperty("license_id");
         var license_key_prop = serializedObject.FindProperty("license_key");
@@ -57,9 +60,6 @@ public class GestureManagerEditor : UnityEditor.Editor
         var copy_gesture_to_id_prop = serializedObject.FindProperty("copy_gesture_to_id");
         var copy_gesture_mirror_prop = serializedObject.FindProperty("copy_gesture_mirror");
         var copy_gesture_rotate_prop = serializedObject.FindProperty("copy_gesture_rotate");
-        var compensate_head_motion_prop = serializedObject.FindProperty("compensate_head_motion");
-
-        GestureManager gm = (GestureManager)target;
 
         EditorGUILayout.BeginVertical(GUI.skin.box);
         EditorGUILayout.LabelField("NUMBER OF GESTURE PARTS:");
@@ -465,7 +465,7 @@ public class GestureManagerEditor : UnityEditor.Editor
             }
             record_combination_id_prop.intValue = EditorGUILayout.Popup(record_combination_id_prop.intValue + 1, combination_names) - 1;
         }
-        compensate_head_motion_prop.boolValue = EditorGUILayout.Toggle("Compensate head motion during gesture", compensate_head_motion_prop.boolValue);
+        gm.compensate_head_motion = EditorGUILayout.Toggle("Compensate head motion during gesture", gm.compensate_head_motion);
         EditorGUILayout.LabelField("COORDINATE SYSTEM CONVERSION:", "");
         unityXrPlugin_prop.intValue = EditorGUILayout.Popup("Unity XR Plug-in", unityXrPlugin_prop.intValue, unityXrPlugins);
         mivryCoordinateSystem_prop.intValue = EditorGUILayout.Popup("MiVRy Coordinate System", mivryCoordinateSystem_prop.intValue, mivryCoordinateSystems);

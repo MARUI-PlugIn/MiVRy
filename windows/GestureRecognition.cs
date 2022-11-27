@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -975,7 +975,7 @@ public class GestureRecognition
     /// </summary>
     /// <param name="p">List of probability estimate values, where 1.0 is the highest and 0.0 is the lowest.</param>
     /// <returns>
-    /// Zero on success, a negative error code on failure.
+    /// The gesture ID of the identified gesture, or a negative error code on failure.
     /// </returns>
     public int endStrokeAndGetAllProbabilities(ref double[] p)
     {
@@ -998,7 +998,7 @@ public class GestureRecognition
     /// <param name="p">List of probability estimate values, where 1.0 is the highest and 0.0 is the lowest.</param>
     /// <param name="s">List of similarity values, where 1.0 is perfect similarity and 0.0 no similarity at all.</param>
     /// <returns>
-    /// Zero on success, a negative error code on failure.
+    /// The gesture ID of the identified gesture, or a negative error code on failure.
     /// </returns>
     public int endStrokeAndGetAllProbabilitiesAndSimilarities(ref double[] p, ref double[] s)
     {
@@ -1067,7 +1067,7 @@ public class GestureRecognition
     /// <param name="hmd_q">Quaternion(x, y, z, w) of the current headset rotation.</param>
     /// <param name="p">Array to which to write the probability values (each 0~1).</param>
     /// <param name="s">Array to which to write the similarity values (each 0~1).</param>
-    /// <returns>The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).</returns>
+    /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
     public int contdIdentifyAndGetAllProbabilitiesAndSimilarities(Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
@@ -1225,6 +1225,32 @@ public class GestureRecognition
         StringBuilder sb = new StringBuilder(strlen + 1);
         GestureRecognition_copyGestureName(m_gro, index, sb, sb.Capacity);
         return sb.ToString();
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  getGestureMetadataAsString()
+    /// <summary>
+    /// Get the metadata associated to a gesture, assuming it's a string. 
+    /// </summary>
+    /// <param name="index">ID of the gesture to query.</param>
+    /// <returns>
+    /// Metadata of the gesture as string. Null on failure or if no metadata was set.
+    /// </returns>
+    public string getGestureMetadataAsString(int index)
+    {
+        IntPtr dmo = GestureRecognition_getGestureMetadata(m_gro, index);
+        if (dmo == IntPtr.Zero) {
+            return null;
+        }
+        int size = GestureRecognition_getDefaultMetadataSize(dmo);
+        if (size <= 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(new string(' ', size));
+        int ret = GestureRecognition_getDefaultMetadataData(dmo, sb, sb.Capacity);
+        if (ret < 0) {
+            return null;
+        }
+        return sb.ToString(0, ret);
     }
     //                                                          ________________________________
     //_________________________________________________________/   getGestureNumberOfSamples()
@@ -1412,6 +1438,107 @@ public class GestureRecognition
         return GestureRecognition_setGestureName(m_gro, index, name);
     }
     //                                                          ________________________________
+    //_________________________________________________________/  setGestureMetadataAsString()
+    /// <summary>
+    /// Set the metadata associated with a gesture, as a string.
+    /// </summary>
+    /// <param name="index">ID of the gesture whose metadata to set.</param>
+    /// <param name="str">The new string for the gesture metadata.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setGestureMetadataAsString(int index, string str)
+    {
+        int ret;
+        IntPtr dmo = GestureRecognition_getGestureMetadata(m_gro, index);
+        if (dmo == IntPtr.Zero) {
+            dmo = GestureRecognition_createDefaultMetadata();
+            ret = GestureRecognition_setGestureMetadata(m_gro, index, dmo);
+            if (ret != 0) {
+                GestureRecognition_deleteDefaultMetadata(dmo);
+                return ret;
+            }
+        }
+        // IntPtr strPtr = Marshal.StringToCoTaskMemUni(str); // .StringToHGlobalUni(str); // 
+        // ret = GestureRecognition_setDefaultMetadataData(dmo, strPtr, str.Length);
+        // Marshal.FreeCoTaskMem(strPtr); // .FreeHGlobal(strPtr); // 
+        ret = GestureRecognition_setDefaultMetadataData(dmo, str, str.Length);
+        return ret;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     getGestureEnabled()
+    /// <summary>
+    /// Get whether a registered gesture is enabled or disabled.
+    /// A disabled gesture is not used in training and identification,
+    /// but will retain its recorded samples.
+    /// </summary>
+    /// <param name="index">ID of the gesture whose status to set.</param>
+    /// <returns>
+    /// True if the gesture is used, false if it is disabled and being ignored.
+    /// </returns>
+    public bool getGestureEnabled(int index)
+    {
+        return GestureRecognition_getGestureEnabled(m_gro, index) != 0;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     setGestureEnabled()
+    /// <summary>
+    /// Enable/disable a registered gesture.
+    /// A disabled gesture is not used in training and identification,
+    /// but will retain its recorded samples.
+    /// </summary>
+    /// <param name="index">ID of the gesture whose status to set.</param>
+    /// <param name="enabled">Whether the gesture is supposed to be enabled (default) or disabled.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setGestureEnabled(int index, bool enabled)
+    {
+        return GestureRecognition_setGestureEnabled(m_gro, index, enabled ? 1 : 0);
+    }
+
+    //                                                               ___________________________
+    //______________________________________________________________/ UpdateHeadPositionPolicy
+    /// <summary>
+    /// Whether to update the hmd (frame of reference) position/rotation during the gesturing motion.
+    /// </summary>
+    public enum UpdateHeadPositionPolicy
+    {
+        UseLatest = 0 //!< Use the hmd position most recently submitted as current head position.
+        ,
+        UseInitial = 1 //!< Use the initial head position, don't use later head positional updates.
+    }
+
+    //                                                          ________________________________
+    //_________________________________________________________/  setUpdateHeadPositionPolicy()
+    /// <summary>
+    /// Change the current policy on whether the AI should consider changes in head position during the gesturing.
+    /// This will change whether the data provided via calls to "updateHeadPosition" functions will be used,
+    /// so you also need to provide the changing head position via "updateHeadPosition" for this to have any effect.
+    /// The data provided via "updateHeadPosition" is stored regardless of the policy, but is only used if the policy
+    /// set by this function requires it.
+    /// </summary>
+    /// <param name="p">The policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setUpdateHeadPositionPolicy(GestureRecognition.UpdateHeadPositionPolicy p)
+    {
+        return GestureRecognition_setUpdateHeadPositionPolicy(m_gro, (int)p);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  getUpdateHeadPositionPolicy()
+    /// <summary>
+    /// Query the current policy on whether the AI should consider changes in head position during the gesturing.
+    /// </summary>
+    /// <returns>
+    /// The current policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+    /// </returns>
+    public GestureRecognition.UpdateHeadPositionPolicy getUpdateHeadPositionPolicy()
+    {
+        return (GestureRecognition.UpdateHeadPositionPolicy)GestureRecognition_getUpdateHeadPositionPolicy(m_gro);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      saveToFile()
     /// <summary>
     /// Save the current artificial intelligence to a file.
@@ -1435,7 +1562,8 @@ public class GestureRecognition
     /// </returns>
     public int loadFromFile(string path)
     {
-        return GestureRecognition_loadFromFile(m_gro, path, null);
+        MetadataCreatorFunction mcf = GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureRecognition_loadFromFile(m_gro, path, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadFromBuffer()
@@ -1448,7 +1576,8 @@ public class GestureRecognition
     /// </returns>
     public int loadFromBuffer(byte[] buffer)
     {
-        return GestureRecognition_loadFromBuffer(m_gro, buffer, buffer.Length, null);
+        MetadataCreatorFunction mcf = GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureRecognition_loadFromBuffer(m_gro, buffer, buffer.Length, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/    importFromFile()
@@ -1461,7 +1590,8 @@ public class GestureRecognition
     /// </returns>
     public int importFromFile(string path)
     {
-        return GestureRecognition_importFromFile(m_gro, path, null);
+        MetadataCreatorFunction mcf = GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureRecognition_importFromFile(m_gro, path, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/     importFromBuffer()
@@ -1474,7 +1604,8 @@ public class GestureRecognition
     /// </returns>
     public int importFromBuffer(byte[] buffer)
     {
-        return GestureRecognition_importFromBuffer(m_gro, buffer, buffer.Length, null);
+        MetadataCreatorFunction mcf = GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureRecognition_importFromBuffer(m_gro, buffer, buffer.Length, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/     importGestureSamples()
@@ -1530,7 +1661,7 @@ public class GestureRecognition
     /// <returns>
     /// Zero on success, a negative error code on failure.
     /// </returns>
-    public int setSavingCallbackUpdateFunction(SavingCallbackFunction callback_function)
+    public int setSavingUpdateCallbackFunction(SavingCallbackFunction callback_function)
     {
         return GestureRecognition_setSavingUpdateCallbackFunction(m_gro, callback_function);
     }
@@ -1610,7 +1741,8 @@ public class GestureRecognition
     /// </returns>
     public int loadFromFileAsync(string path)
     {
-        return GestureRecognition_loadFromFileAsync(m_gro, path, null);
+        MetadataCreatorFunction mcf = GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureRecognition_loadFromFileAsync(m_gro, path, mcf);
     }
     //                                                          ________________________________
     //_________________________________________________________/     loadFromBufferAsync()
@@ -1625,7 +1757,8 @@ public class GestureRecognition
     /// </returns>
     public int loadFromBufferAsync(byte[] buffer)
     {
-        return GestureRecognition_loadFromBufferAsync(m_gro, buffer, buffer.Length, null);
+        MetadataCreatorFunction mcf = GestureRecognition_getDefaultMetadataCreatorFunction();
+        return GestureRecognition_loadFromBufferAsync(m_gro, buffer, buffer.Length, mcf);
     }
     //                                                      ____________________________________
     //_____________________________________________________/ setLoadingUpdateCallbackFunction()
@@ -1637,7 +1770,7 @@ public class GestureRecognition
     /// <returns>
     /// Zero on success, a negative error code on failure.
     /// </returns>
-    public int setLoadingCallbackUpdateFunction(LoadingCallbackFunction callback_function)
+    public int setLoadingUpdateCallbackFunction(LoadingCallbackFunction callback_function)
     {
         return GestureRecognition_setLoadingUpdateCallbackFunction(m_gro, callback_function);
     }
@@ -1820,6 +1953,55 @@ public class GestureRecognition
         GestureRecognition_setTrainingFinishCallbackMetadata(m_gro, metadata);
     }
     //                                                          ________________________________
+    //_________________________________________________________/  getMetadataAsString()
+    /// <summary>
+    /// Get the metadata assigned to this GestureRecognition object, assuming it's a string. 
+    /// </summary>
+    /// <returns>
+    /// Metadata assigned to this GestureRecognition object as string. Null on failure or if no metadata was set.
+    /// </returns>
+    public string getMetadataAsString()
+    {
+        IntPtr dmo = GestureRecognition_getMetadata(m_gro);
+        if (dmo == IntPtr.Zero) {
+            return null;
+        }
+        int size = GestureRecognition.GestureRecognition_getDefaultMetadataSize(dmo);
+        if (size <= 0) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(new string(' ', size));
+        int ret = GestureRecognition.GestureRecognition_getDefaultMetadataData(dmo, sb, sb.Capacity);
+        if (ret < 0) {
+            return null;
+        }
+        return sb.ToString(0, ret);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/  setMetadataAsString()
+    /// <summary>
+    /// Set the metadata associated with this GestureRecognition object, as a string.
+    /// </summary>
+    /// <param name="str">The new string for the GestureRecognition metadata.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setMetadataAsString(string str)
+    {
+        int ret;
+        IntPtr dmo = GestureRecognition_getMetadata(m_gro);
+        if (dmo == IntPtr.Zero) {
+            dmo = GestureRecognition_createDefaultMetadata();
+            ret = GestureRecognition_setMetadata(m_gro, dmo);
+            if (ret != 0) {
+                GestureRecognition_deleteDefaultMetadata(dmo);
+                return ret;
+            }
+        }
+        ret = GestureRecognition_setDefaultMetadataData(dmo, str, str.Length);
+        return ret;
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      getVersionString()
     /// <summary>
     /// Get the version of MiVRy as a human-readable string. 
@@ -1838,7 +2020,6 @@ public class GestureRecognition
         GestureRecognition_copyVersionString(sb, sb.Capacity);
         return sb.ToString();
     }
-
 
     // ----------------------------------------------------------------------------------------------------------
     // Internal wrapper functions to the plug-in
@@ -1938,6 +2119,14 @@ public class GestureRecognition
     public static extern int GestureRecognition_setGestureName(IntPtr gro, int index, string name);
     [DllImport(libfile, EntryPoint = "GestureRecognition_setGestureMetadata", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_setGestureMetadata(IntPtr gro, int index, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureEnabled", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getGestureEnabled(IntPtr gro, int index);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setGestureEnabled", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setGestureEnabled(IntPtr gro, int index, int enabled);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setUpdateHeadPositionPolicy", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setUpdateHeadPositionPolicy(IntPtr gro, int p);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getUpdateHeadPositionPolicy", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getUpdateHeadPositionPolicy(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_saveToFile", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_saveToFile(IntPtr gro, string path);
     [DllImport(libfile, EntryPoint = "GestureRecognition_loadFromFile", CallingConvention = CallingConvention.Cdecl)]
@@ -2034,6 +2223,28 @@ public class GestureRecognition
     public static extern int GestureRecognition_getVersionStringLength();
     [DllImport(libfile, EntryPoint = "GestureRecognition_copyVersionString", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_copyVersionString(StringBuilder buf, int buflen);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setMetadata(IntPtr gro, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr GestureRecognition_getMetadata(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_createDefaultMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr GestureRecognition_createDefaultMetadata();
+    [DllImport(libfile, EntryPoint = "GestureRecognition_deleteDefaultMetadata", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void GestureRecognition_deleteDefaultMetadata(IntPtr dmo);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getDefaultMetadataSize", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getDefaultMetadataSize(IntPtr dmo);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getDefaultMetadataData", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getDefaultMetadataData(IntPtr dmo, IntPtr data, int size);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getDefaultMetadataData", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getDefaultMetadataData(IntPtr dmo, StringBuilder sb, int sbLen);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setDefaultMetadataData", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setDefaultMetadataData(IntPtr dmo, IntPtr data, int size);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setDefaultMetadataData", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setDefaultMetadataData(IntPtr dmo, string str, int strLen);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_defaultMetadataCreatorFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern IntPtr GestureRecognition_defaultMetadataCreatorFunction();
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getDefaultMetadataCreatorFunction", CallingConvention = CallingConvention.Cdecl)]
+    public static extern MetadataCreatorFunction GestureRecognition_getDefaultMetadataCreatorFunction();
 
     private IntPtr m_gro;
 }

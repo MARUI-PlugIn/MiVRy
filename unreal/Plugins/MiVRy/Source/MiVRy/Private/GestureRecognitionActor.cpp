@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.5
+ * Version 2.6
  * Copyright (c) 2022 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -510,6 +510,92 @@ int AGestureRecognitionActor::setGestureName(int index, const FString& name)
 	return this->gro->setGestureName(index, TCHAR_TO_ANSI(*name));
 }
 
+int AGestureRecognitionActor::setGestureMetadata(int index, const TArray<uint8>& metadata)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getGestureMetadata(index);
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gro->setGestureMetadata(index, dmo);
+	}
+	return dmo->setData(metadata.GetData(), metadata.Num());
+}
+
+int AGestureRecognitionActor::setGestureMetadataAsString(int index, const FString& metadata)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getGestureMetadata(index);
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gro->setGestureMetadata(index, dmo);
+	}
+	return dmo->setData(TCHAR_TO_ANSI(*metadata), metadata.Len());
+}
+
+int AGestureRecognitionActor::getGestureMetadata(int index, TArray<uint8>& metadata)
+{
+	metadata.SetNum(0);
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getGestureMetadata(index);
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return size;
+	}
+	metadata.SetNum(size);
+	return dmo->getData(metadata.GetData(), size);
+}
+
+int AGestureRecognitionActor::getGestureMetadataAsString(int index, FString& metadata)
+{
+	metadata = "";
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getGestureMetadata(index);
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return 0;
+	}
+	char* buf = new char[size + 1];
+	int ret = dmo->getData(buf, size);
+	if (ret < 0) {
+		delete[] buf;
+		return ret;
+	}
+	buf[size] = '\n';
+	metadata = FString(buf);
+	delete[] buf;
+	return ret;
+}
+
+bool AGestureRecognitionActor::getGestureEnabled(int index)
+{
+	if (!this->gro) {
+		return false;
+	}
+	return this->gro->getGestureEnabled(index);
+}
+
+int AGestureRecognitionActor::setGestureEnabled(int index, bool enabled)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	return this->gro->setGestureEnabled(index, enabled);
+}
+
 int AGestureRecognitionActor::getGestureNumberOfSamples(int index)
 {
 	if (!this->gro) {
@@ -654,6 +740,76 @@ int AGestureRecognitionActor::deleteAllGestureSamples(int gesture_index)
 		return -99;
 	}
 	return this->gro->deleteAllGestureSamples(gesture_index);
+}
+
+int AGestureRecognitionActor::setMetadata(const TArray<uint8>& metadata)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getMetadata();
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gro->setMetadata(dmo);
+	}
+	return dmo->setData(metadata.GetData(), metadata.Num());
+}
+
+int AGestureRecognitionActor::setMetadataAsString(const FString& metadata)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getMetadata();
+	if (dmo == nullptr) {
+		dmo = IGestureRecognition::defaultMetadataCreatorFunction();
+		this->gro->setMetadata(dmo);
+	}
+	return dmo->setData(TCHAR_TO_ANSI(*metadata), metadata.Len());
+}
+
+int AGestureRecognitionActor::getMetadata(TArray<uint8>& metadata)
+{
+	metadata.SetNum(0);
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getMetadata();
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return size;
+	}
+	metadata.SetNum(size);
+	return dmo->getData(metadata.GetData(), size);
+}
+
+int AGestureRecognitionActor::getMetadataAsString(FString& metadata)
+{
+	metadata = "";
+	if (!this->gro) {
+		return -99;
+	}
+	IGestureRecognition::DefaultMetadata* dmo = (IGestureRecognition::DefaultMetadata*)this->gro->getMetadata();
+	if (dmo == nullptr) {
+		return 0;
+	}
+	const int size = dmo->getSize();
+	if (size < 0) {
+		return 0;
+	}
+	char* buf = new char[size + 1];
+	int ret = dmo->getData(buf, size);
+	if (ret < 0) {
+		delete[] buf;
+		return ret;
+	}
+	buf[size] = '\n';
+	metadata = FString(buf);
+	delete[] buf;
+	return ret;
 }
 
 int AGestureRecognitionActor::saveToFile(const FFilePath& path)
@@ -869,6 +1025,22 @@ void AGestureRecognitionActor::setMaxTrainingTime(int t)
 		return;
 	}
 	this->gro->maxTrainingTime = (unsigned long)t;
+}
+
+int AGestureRecognitionActor::setUpdateHeadPositionPolicy(GestureRecognition_UpdateHeadPositionPolicy p)
+{
+	if (!this->gro) {
+		return -99;
+	}
+	return this->gro->setUpdateHeadPositionPolicy((IGestureRecognition::UpdateHeadPositionPolicy)p);
+}
+
+GestureRecognition_UpdateHeadPositionPolicy AGestureRecognitionActor::getUpdateHeadPositionPolicy()
+{
+	if (!this->gro) {
+		return (GestureRecognition_UpdateHeadPositionPolicy)-99;
+	}
+	return (GestureRecognition_UpdateHeadPositionPolicy)this->gro->getUpdateHeadPositionPolicy();
 }
 
 GestureRecognition_FrameOfReference AGestureRecognitionActor::getRotationalFrameOfReferenceRoll()
