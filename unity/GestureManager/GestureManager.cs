@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -55,9 +55,16 @@ public class GestureManager : MonoBehaviour
                 if (gr == null)
                 {
                     gr = new GestureRecognition();
-                    if (this.license_id != null && this.license_key != null && this.license_id != "")
-                    {
-                        gr.activateLicense(license_id, license_key);
+                    if (this.license_id != null && this.license_key != null && this.license_id != "") {
+                        int ret = gr.activateLicense(license_id, license_key);
+                        if (ret != 0) {
+                            Debug.LogError("[MiVRy.GestureManager] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+                        }
+                    } else if (this.license_file_path != null && this.license_file_path != "") {
+                        int ret = gr.activateLicenseFile(this.license_file_path);
+                        if (ret != 0) {
+                            Debug.LogError("[MiVRy.GestureManager] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+                        }
                     }
                     gr.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
                     gr.setTrainingUpdateCallbackMetadata((IntPtr)me);
@@ -79,9 +86,16 @@ public class GestureManager : MonoBehaviour
                 gr = null;
                 if (gc == null || gc.numberOfParts() != value) {
                     gc = new GestureCombinations(value);
-                    if (this.license_id != null && this.license_key != null && this.license_id != "")
-                    {
-                        gc.activateLicense(license_id, license_key);
+                    if (this.license_id != null && this.license_key != null && this.license_id != "") {
+                        int ret = gc.activateLicense(license_id, license_key);
+                        if (ret != 0) {
+                            Debug.LogError("[MiVRy.GestureManager] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+                        }
+                    } else if (this.license_file_path != null && this.license_file_path != "") {
+                        int ret = gc.activateLicenseFile(this.license_file_path);
+                        if (ret != 0) {
+                            Debug.LogError("[MiVRy.GestureManager] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+                        }
                     }
                     gc.setTrainingUpdateCallback(GestureManager.trainingUpdateCallback);
                     gc.setTrainingUpdateCallbackMetadata((IntPtr)me);
@@ -103,8 +117,57 @@ public class GestureManager : MonoBehaviour
         }
     }
 
-    public string license_id = "";
-    public string license_key = "";
+    [SerializeField] private string license_id = "";
+    public string licenseId {
+        get {
+            return this.license_id;
+        }
+        set
+        {
+            this.license_id = value;
+            int ret = new GestureRecognition().activateLicense(this.license_id, this.license_key);
+            this.license_activated = (0 == ret);
+        }
+    }
+    [SerializeField] private string license_key = "";
+    public string licenseKey
+    {
+        get
+        {
+            return this.license_key;
+        }
+        set
+        {
+            this.license_key = value;
+            if (this.license_id.Length != 0 && this.license_key.Length != 0) {
+                this.license_activated = (0 == new GestureRecognition().activateLicense(this.license_id, this.license_key));
+            }
+        }
+    }
+    [SerializeField] private string license_file_path = "";
+    public string licenseFilePath
+    {
+        get
+        {
+            return this.license_file_path;
+        }
+        set
+        {
+            this.license_file_path = value;
+            if (this.license_file_path.Length != 0) {
+                this.license_activated = (0 == new GestureRecognition().activateLicenseFile(this.license_file_path));
+            }
+        }
+    }
+    private bool license_activated = false;
+    public bool licenseActivated
+    {
+        get
+        {
+            return license_activated;
+        }
+    }
+
     public Mivry.UnityXrPlugin unityXrPlugin = Mivry.UnityXrPlugin.OpenXR;
     public Mivry.MivryCoordinateSystem mivryCoordinateSystem = Mivry.MivryCoordinateSystem.OpenXR;
 
@@ -460,7 +523,7 @@ public class GestureManager : MonoBehaviour
         {
             controller_index.SetActive(true);
         }
-        else if (type.Contains("Vive")) // "HTC Vive Controller OpenXR"
+        else if (type.ToLower().Contains("vive")) // "HTC Vive Controller OpenXR" or "OpenVR Controller(VIVE Controller Pro MV)"
         {
             controller_vive.SetActive(true);
         }
@@ -488,10 +551,12 @@ public class GestureManager : MonoBehaviour
     {
         // Set the welcome message.
         ConsoleText = GameObject.Find("ConsoleText").GetComponent<Text>();
-        consoleText = "Welcome to MiVRy Gesture Manager!\n"
+        if (ConsoleText != null) {
+            ConsoleText.text = "Welcome to MiVRy Gesture Manager!\n"
                     + "(" + GestureRecognition.getVersionString() + ")\n"
                     + "This manager allows you to\ncreate and record gestures,\n"
                     + "and organize gesture files.";
+        }
 
         me = GCHandle.Alloc(this);
 
@@ -547,10 +612,12 @@ public class GestureManager : MonoBehaviour
         }
 
         if (this.gr == null && this.gc == null) {
-            consoleText = "Welcome to MiVRy Gesture Manager!\n"
+            if (ConsoleText != null) {
+                ConsoleText.text = "Welcome to MiVRy Gesture Manager!\n"
                              + "(" + GestureRecognition.getVersionString() + ")\n"
                              + "This manager allows you to\ncreate and record gestures,\n"
                              + "and organize gesture files.";
+            }
             return;
         }
         if (training_started) {

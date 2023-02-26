@@ -1,7 +1,7 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.5
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -97,6 +97,8 @@
 
 #include <iostream>
 #include <vector>
+#include <cstring>
+#include <algorithm>
 
 #define GESTURERECOGNITION_RESULT_SUCCESS                  0   //!< Return code for: function executed successfully.
 #define GESTURERECOGNITION_RESULT_NOGESTURE                -1  //!< Return code for: No gesture (or combination) matches.
@@ -120,6 +122,9 @@
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
+
+#define GESTURERECOGNITION_UPDATEHEADPOSITIONPOLICY_USELATEST  0 //!< Identifier for "Use the hmd position most recently submitted as current head position".
+#define GESTURERECOGNITION_UPDATEHEADPOSITIONPOLICY_USEINITIAL 1 //!< Identifier for "Use the initial head position, don't use later head positional updates".
 
 #define GESTURERECOGNITION_FRAMEOFREFERENCE_HEAD    0   //!< Identifier for interpreting gestures as seen from the headset/HMD (user point of view). 
 #define GESTURERECOGNITION_FRAMEOFREFERENCE_WORLD   1   //!< Identifier for interpreting gestures as seen from world origin (global coordinates).
@@ -149,6 +154,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_create(); //!< Create new instance.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_delete(void* gro); //!< Delete instance.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_activateLicense(void* gro, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_activateLicenseFile(void* gro, const char* license_file_path); //!< Provide a license file to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStroke(void* gro, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStrokeM(void* gro, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_updateHeadPositionM(void* gro, const double hmd[4][4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
@@ -196,6 +202,12 @@ extern "C" {
 
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setGestureName(void* gro, int index, const char* name); //!< Set the name of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setGestureMetadata(void* gro, int index, void* metadata); //!< Set the command of a registered gesture.
+
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_getGestureEnabled(void* gro, int index); //!< Get whether a registered gesture is enabled or disabled.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setGestureEnabled(void* gro, int index, int enabled); //!< Enable/disable a registered gesture.
+
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_setUpdateHeadPositionPolicy(void* gro, int p); //!< Change the current policy on whether the AI should consider changes in head position during the gesturing.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_getUpdateHeadPositionPolicy(void* gro); //!< Query the current policy on whether the AI should consider changes in head position during the gesturing.
 
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_saveToFile(void* gro, const char* path); //!< Save the neural network and recorded training data to file.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_saveToStream(void* gro, void* stream); //!< Save the neural network and recorded training data to std::ofstream.
@@ -255,6 +267,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getRotationalFrameOfReferenceRotationOrder(void* gro); //!< Get the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
     GESTURERECOGNITION_LIBEXPORT void GestureRecognition_setRotationalFrameOfReferenceRotationOrder(void* gro, int rotOrd); //!< Set the ID of the order of rotation used when interpreting the rotational frame of reference (eg. Y->X->Z order of rotations).
 
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_setMetadata(void* gro, void* metadata); //!< Set a Metadata object of this IGestureRecognition object.
+    GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_getMetadata(void* gro); //!< Get the current metadata object of this IGestureRecognition object.
 
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugCallbackFunction(DebugCallbackFunction* dbf); //!< Set callback function to receive debugging information.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_setDebugCallbackMetadata(void* metadata); //!< Set metadata to receive with debugging output callback function.
@@ -262,6 +276,14 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT const char* GestureRecognition_getVersionString(); //!< Get the version of this library as human-readable string.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getVersionStringLength(); //!< Get the length of the version string.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_copyVersionString(char* buf, int buflen); //!< Copy the version string into a buffer.
+
+    GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_createDefaultMetadata(); //!< Create DefaultMetadata object.
+    GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_deleteDefaultMetadata(void* dmo); //!< Delete DefaultMetadata object.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getDefaultMetadataSize(void* dmo); //!< Get DefaultMetadata data size (bytes).
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getDefaultMetadataData(void* dmo, void* data, int size); //!< Retrieve a copy of current DefaultMetadata data.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_setDefaultMetadataData(void* dmo, const void* data, int size); //!< Update DefaultMetadata current data.
+    GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_defaultMetadataCreatorFunction(); //!< Global function to create DefaultMetadata objects.
+    GESTURERECOGNITION_LIBEXPORT MetadataCreatorFunction* GestureRecognition_getDefaultMetadataCreatorFunction(); //!< Global function to retrieve a pointer to the createDefaultMetadataCreatorFunction.
 #ifdef __cplusplus
 }
 
@@ -327,6 +349,13 @@ public:
     virtual int activateLicense(const char* license_name, const char* license_key)=0;
 
     /**
+    * Provide a license file to enable additional functionality.
+    * \param license_file_path  The file path to the license file.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int activateLicenseFile(const char* license_file_path)=0;
+
+    /**
     * Interface for metadata objects to attach to a gesture.
     */
     struct Metadata
@@ -334,6 +363,111 @@ public:
         virtual ~Metadata() {};
         virtual bool writeToStream(std::ostream* stream)=0;
         virtual bool readFromStream(std::istream* stream)=0;
+    };
+
+    /**
+    * Default implementation of a metadata object to attach to a gesture.
+    */
+    struct DefaultMetadata : public Metadata
+    {
+    private:
+        void* m_data = nullptr;
+        int m_size = 0;
+    public:
+        virtual ~DefaultMetadata() {
+            if (this->m_data) {
+                free(this->m_data);
+            }
+        };
+        virtual bool writeToStream(std::ostream* stream) override {
+            char size_str[32];
+            snprintf(size_str, sizeof(size_str), "%i ", this->m_size);
+            stream->write(size_str, std::strlen(size_str)); // without null-terminator
+            stream->write((const char*)this->m_data, this->m_size);
+            return (stream->fail() || stream->bad()) ? false : true;
+        };
+        virtual bool readFromStream(std::istream* stream) override {
+            if (this->m_data) {
+                free(this->m_data);
+                this->m_data = 0;
+            }
+            this->m_size = 0;
+            for (int i = 0; i < 32; i++) {
+                char size_str[32];
+                size_str[i] = (char)stream->get();
+                if (size_str[i] == ' ') {
+                    size_str[i] = 0;
+                    this->m_size = atoi(size_str);
+                    if (this->m_size <= 0) {
+                        return false;
+                    }
+                    this->m_data = malloc(this->m_size);
+                    if (this->m_data == 0) {
+                        this->m_size = 0;
+                        return false;
+                    }
+                    stream->read((char*)this->m_data, this->m_size);
+                    if (stream->eof() || stream->fail() || stream->bad() || stream->gcount() != this->m_size) {
+                        free(this->m_data);
+                        this->m_data = 0;
+                        this->m_size = 0;
+                        return false;
+                    }
+                    return true;
+                }
+            }
+            return false;
+        };
+        /**
+        * Set the data of this Metadata object. The provided data chunk will be copied.
+        * \param    data    Memory location from where to copy.
+        * \param    size    Size of memory chunk to copy (in byte).
+        * \return           Zero on success, a negative error code on failure.
+        */
+        int setData(const void* data, int size) {
+            if (data == 0 || size == 0) {
+                if (this->m_data) {
+                    free(this->m_data);
+                    this->m_data = 0;
+                }
+                this->m_size = 0;
+                return IGestureRecognition::Success;
+            }
+            if (size != this->m_size) {
+                if (this->m_data) {
+                    free(this->m_data);
+                }
+                this->m_data = malloc(size);
+                if (this->m_data == 0) {
+                    this->m_size = 0;
+                    return IGestureRecognition::Error_InternallyCorrupted;
+                }
+                this->m_size = size;
+            }
+            memcpy(this->m_data, data, this->m_size);
+            return IGestureRecognition::Success;
+        };
+        /**
+        * Get the data of this Metadata object. The provided data chunk will be copied.
+        * \param    data    Memory location to copy to.
+        * \param    size    Size of memory chunk that can be written (in byte).
+        * \return           The number of bytes actually written.
+        */
+        int getData(void* data, int size) {
+            if (this->m_data == nullptr || this->m_size == 0) {
+                return 0;
+            }
+            const int s = std::min(size, this->m_size);
+            memcpy(data, this->m_data, s);
+            return s;
+        };
+        /**
+        * Get the size of the data chunk of this Metadata object.
+        * \return           Memory size in bytes.
+        */
+        int getSize() {
+            return this->m_size;
+        };
     };
 
     /**
@@ -385,10 +519,38 @@ public:
     virtual int startStroke(const double hmd_p[3], const double hmd_q[4], int record_as_sample=-1)=0;
 
     /**
+    * Whether to update the hmd (frame of reference) position/rotation during the gesturing motion.
+    */
+    enum UpdateHeadPositionPolicy {
+        UpdateHeadPositionPolicy_UseLatest  = GESTURERECOGNITION_UPDATEHEADPOSITIONPOLICY_USELATEST //!< Use the hmd position most recently submitted as current head position.
+        ,
+        UpdateHeadPositionPolicy_UseInitial = GESTURERECOGNITION_UPDATEHEADPOSITIONPOLICY_USEINITIAL //!< Use the initial head position, don't use later head positional updates.
+        ,
+        UpdateHeadPositionPolicies = 2 //!< Number of head position update policies.
+    };
+
+    /**
+    * Change the current policy on whether the AI should consider changes in head position during the gesturing.
+    * This will change whether the data provided via calls to "updateHeadPosition" functions will be used,
+    * so you also need to provide the changing head position via "updateHeadPosition" for this to have any effect.
+    * The data provided via "updateHeadPosition" is stored regardless of the policy, but is only used if the policy
+    * set by this function requires it.
+    * \param  p     The policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+    * \return       Zero on success, a negative error code on failure.
+    */
+    virtual int setUpdateHeadPositionPolicy(UpdateHeadPositionPolicy p)=0;
+
+    /**
+    * Query the current policy on whether the AI should consider changes in head position during the gesturing.
+    * \return       The current policy on whether to use (and how to use) the data provided by "updateHeadPosition" during a gesture motion.
+    */
+    virtual UpdateHeadPositionPolicy getUpdateHeadPositionPolicy()=0;
+
+    /**
      * Update the current position of the HMD/headset during a gesture performance (stroke).
     * \param  hmd               Transformation matrix (4x4) of the current headset position and rotation.
     * \return                   Zero on success, a negative error code on failure.
-     */
+    */
     virtual int updateHeadPositionM(const double hmd[4][4])=0;
 
     /**
@@ -396,7 +558,7 @@ public:
     * \param  hmd_p             Vector (x,y,z) of the current headset position.
     * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
     * \return                   Zero on success, a negative error code on failure.
-     */
+    */
     virtual int updateHeadPositionQ(const double hmd_p[3], const double hmd_q[4])=0;
 
     /**
@@ -449,7 +611,7 @@ public:
     * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
     * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
     * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
-    * \return                   Zero on success, a negative error code on failure.
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
     */
     virtual int endStrokeAndGetAllProbabilities(double p[], int* n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
 
@@ -475,7 +637,7 @@ public:
     * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
     * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
     * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
-    * \return                   Zero on success, a negative error code on failure.
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
     */
     virtual int endStrokeAndGetAllProbabilitiesAndSimilarities(double p[], double s[], int* n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
 
@@ -515,7 +677,7 @@ public:
     * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
     * \param    s               [OUT] Array of length n to which to write the similarity values (each 0~1).
     * \param    n               [IN/OUT] The length of the arrays p and s. Will be overwritten with the number of probability values actually written into the p and s arrays.
-    * \return  The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
     */
     virtual int contdIdentifyAndGetAllProbabilitiesAndSimilarities(const double hmd_p[3], const double hmd_q[4], double p[], double s[], int* n)=0;
 
@@ -525,7 +687,7 @@ public:
     * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
     * \param    s               [OUT] Array of length n to which to write the similarity values (each 0~1).
     * \param    n               [IN/OUT] The length of the arrays p and s. Will be overwritten with the number of probability values actually written into the p and s arrays.
-    * \return  The number of probability / similarity values actually written into the p and s arrays, 0 on failure or when a stroke was recorded (recording mode).
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
     */
     virtual int contdIdentifyAndGetAllProbabilitiesAndSimilaritiesM(const double hmd[4][4], double p[], double s[], int* n)=0;
 
@@ -617,9 +779,17 @@ public:
     /**
     * Get the metadata of a registered gesture.
     * \param    index           The gesture ID of the gesture whose metadata to get.
-    * \return                   The metadata registered with the gesture, null on failure.
+    * \return                   The metadata registered with the gesture, null on failure or if none was registered.
     */
     virtual Metadata* getGestureMetadata(int index)=0;
+
+    /**
+    * Get whether a registered gesture is enabled or disabled.
+    * A disabled gesture is not used in training and identification, but will retain its recorded samples.
+    * \param    index           The gesture ID of the gesture whose status to get.
+    * \return                   True if the gesture is enabled, false if disabled.
+    */
+    virtual bool getGestureEnabled(int index)=0;
 
     /**
     * Get the number of recorded samples of a registered gesture.
@@ -697,10 +867,19 @@ public:
     /**
     * Set the metadata of a registered gesture.
     * \param    index           The gesture ID of the gesture whose metadata to set.
-    * \param    metadata        The new metadata for the gesture.
+    * \param    metadata        The new metadata for the gesture, null to deregister the current Metadata object.
     * \return                   Zero on success, a negative error code on failure.
     */
     virtual int setGestureMetadata(int index, Metadata* metadata)=0;
+
+    /**
+    * Enable/disable a registered gesture.
+    * A disabled gesture is not used in training and identification, but will retain its recorded samples.
+    * \param    index           The gesture ID of the gesture whose status to set.
+    * \param    enabled         Whether the gesture is supposed to be enabled (default) or disabled.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int setGestureEnabled(int index, bool enabled)=0;
 
     /**
     * Save the neural network and recorded training data to file.
@@ -980,6 +1159,19 @@ public:
     } rotationalFrameOfReference; //!< Whether the rotation of the users head should be considered when recording and performing gestures.
 
     /**
+    * Set a Metadata object of this IGestureRecognition object.
+    * \param    metadata        The new metadata object.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int setMetadata(Metadata* metadata)=0;
+
+    /**
+    * Get the current metadata object of this IGestureRecognition object.
+    * \return                   The metadata registered for this IGestureRecognition object, null if no Metadata object was set.
+    */
+    virtual Metadata* getMetadata()=0;
+
+    /**
     * Run internal tests to check for code correctness and data consistency.
     */
     virtual int runTests()=0;
@@ -1013,6 +1205,18 @@ public:
     * \return                   The number of characters written to the buffer, zero on failure.
     */
     static int copyVersionString(char* buf, int buflen);
+
+    /**
+    * Global function to create DefaultMetadata objects.
+    * \return A DefaultMetadata object.
+    */
+    static DefaultMetadata* defaultMetadataCreatorFunction();
+
+    /**
+    * Global function to retrieve a pointer to the createDefaultMetadataCreatorFunction.
+    * \return A function pointer to the global createDefaultMetadataCreatorFunction.
+    */
+    static MetadataCreatorFunction* getDefaultMetadataCreatorFunction();
 };
 
 #endif // #ifdef __cplusplus

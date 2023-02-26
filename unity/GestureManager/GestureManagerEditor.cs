@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -38,6 +38,7 @@ public class GestureManagerEditor : UnityEditor.Editor
         serializedObject.Update();
         var license_id_prop = serializedObject.FindProperty("license_id");
         var license_key_prop = serializedObject.FindProperty("license_key");
+        var license_file_path_prop = serializedObject.FindProperty("license_file_path");
         var unityXrPlugin_prop = serializedObject.FindProperty("unityXrPlugin");
         var mivryCoordinateSystem_prop = serializedObject.FindProperty("mivryCoordinateSystem");
         var file_load_combinations_prop = serializedObject.FindProperty("file_load_combinations");
@@ -60,6 +61,15 @@ public class GestureManagerEditor : UnityEditor.Editor
         var copy_gesture_to_id_prop = serializedObject.FindProperty("copy_gesture_to_id");
         var copy_gesture_mirror_prop = serializedObject.FindProperty("copy_gesture_mirror");
         var copy_gesture_rotate_prop = serializedObject.FindProperty("copy_gesture_rotate");
+
+        string[] unityXrPlugins = { "OpenXR", "OculusVR", "SteamVR" };
+        string[] mivryCoordinateSystems = { "OpenXR", "OculusVR", "SteamVR", "UnrealEngine" };
+
+        EditorGUILayout.BeginVertical(GUI.skin.box);
+        EditorGUILayout.LabelField("COORDINATE SYSTEM CONVERSION:", "");
+        unityXrPlugin_prop.intValue = EditorGUILayout.Popup("Unity XR Plug-in", unityXrPlugin_prop.intValue, unityXrPlugins);
+        mivryCoordinateSystem_prop.intValue = EditorGUILayout.Popup("MiVRy Coordinate System", mivryCoordinateSystem_prop.intValue, mivryCoordinateSystems);
+        EditorGUILayout.EndVertical();
 
         EditorGUILayout.BeginVertical(GUI.skin.box);
         EditorGUILayout.LabelField("NUMBER OF GESTURE PARTS:");
@@ -89,15 +99,31 @@ public class GestureManagerEditor : UnityEditor.Editor
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
-        string[] unityXrPlugins = { "OpenXR", "OculusVR", "SteamVR" };
-        string[] mivryCoordinateSystems = { "OpenXR", "OculusVR", "SteamVR", "UnrealEngine" };
 
         if (gm.gr == null && gm.gc == null)
         {
             EditorGUILayout.BeginVertical(GUI.skin.box);
             EditorGUILayout.LabelField("LICENSE:", "(Leave empty for free version)");
-            license_id_prop.stringValue = gm.license_id = EditorGUILayout.TextField("Licence ID", license_id_prop.stringValue);
-            license_key_prop.stringValue = gm.license_key = EditorGUILayout.TextField("Licence Key", license_key_prop.stringValue);
+            license_id_prop.stringValue = gm.licenseId = EditorGUILayout.TextField(
+                new GUIContent(
+                    "Licence ID",
+                    "[OPTIONAL] License ID for extended functionality."),
+                license_id_prop.stringValue
+            );
+            license_key_prop.stringValue = gm.licenseKey = EditorGUILayout.TextField(
+                new GUIContent(
+                    "Licence Key",
+                    "[OPTIONAL] License Key for extended functionality."),
+                license_key_prop.stringValue
+            );
+            license_file_path_prop.stringValue = gm.licenseFilePath = EditorGUILayout.TextField(
+                new GUIContent(
+                    "License File Path",
+                    "[OPTIONAL] Path to a file with license ID and license key."),
+                license_file_path_prop.stringValue
+            );
+            EditorGUILayout.LabelField("License Status:", gm.licenseActivated ? "Extended Version" : "Free Version");
+
             EditorGUILayout.EndVertical();
             if (GUI.changed)
             {
@@ -466,9 +492,6 @@ public class GestureManagerEditor : UnityEditor.Editor
             record_combination_id_prop.intValue = EditorGUILayout.Popup(record_combination_id_prop.intValue + 1, combination_names) - 1;
         }
         gm.compensate_head_motion = EditorGUILayout.Toggle("Compensate head motion during gesture", gm.compensate_head_motion);
-        EditorGUILayout.LabelField("COORDINATE SYSTEM CONVERSION:", "");
-        unityXrPlugin_prop.intValue = EditorGUILayout.Popup("Unity XR Plug-in", unityXrPlugin_prop.intValue, unityXrPlugins);
-        mivryCoordinateSystem_prop.intValue = EditorGUILayout.Popup("MiVRy Coordinate System", mivryCoordinateSystem_prop.intValue, mivryCoordinateSystems);
         EditorGUILayout.EndVertical();
 
         EditorGUILayout.Space();
@@ -538,8 +561,25 @@ public class GestureManagerEditor : UnityEditor.Editor
 
         EditorGUILayout.BeginVertical(GUI.skin.box);
         EditorGUILayout.LabelField("LICENSE:", "(Leave empty for free version)");
-        license_id_prop.stringValue = gm.license_id = EditorGUILayout.TextField("Licence ID", license_id_prop.stringValue);
-        license_key_prop.stringValue = gm.license_key = EditorGUILayout.TextField("Licence Key", license_key_prop.stringValue);
+        license_id_prop.stringValue = gm.licenseId = EditorGUILayout.TextField(
+            new GUIContent(
+                "Licence ID",
+                "[OPTIONAL] License ID for extended functionality."),
+            license_id_prop.stringValue
+        );
+        license_key_prop.stringValue = gm.licenseKey = EditorGUILayout.TextField(
+            new GUIContent(
+                "Licence Key",
+                "[OPTIONAL] License Key for extended functionality."),
+            license_key_prop.stringValue
+        );
+        license_file_path_prop.stringValue = gm.licenseFilePath = EditorGUILayout.TextField(
+            new GUIContent(
+                "License File Path",
+                "[OPTIONAL] Path to a file with license ID and license key."),
+            license_file_path_prop.stringValue
+        );
+        EditorGUILayout.LabelField("License Status:", gm.licenseActivated ? "Extended Version" : "Free Version");
         EditorGUILayout.EndVertical();
         if (GUI.changed)
         {

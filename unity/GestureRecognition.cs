@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -461,6 +461,17 @@ public class GestureRecognition
     public int activateLicense(string license_name, string license_key)
     {
         return GestureRecognition_activateLicense(m_gro, license_name, license_key);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     activateLicenseFile()
+    /// <summary>
+    /// Provide a license file to enable additional functionality.
+    /// </summary>
+    /// <param name="license_file_path">The file path to the license file.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int activateLicenseFile(string license_file_path)
+    {
+        return GestureRecognition_activateLicenseFile(m_gro, license_file_path);
     }
     //                                                          ________________________________
     //_________________________________________________________/         startStroke()
@@ -2041,6 +2052,8 @@ public class GestureRecognition
     public static extern void GestureRecognition_delete(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_activateLicense", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_activateLicense(IntPtr gro, string license_name, string license_key);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_activateLicenseFile", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_activateLicenseFile(IntPtr gro, string license_file_path);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_startStroke(IntPtr gro, double[] hmd_p, double[] hmd_q, int record_as_sample);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startStrokeM", CallingConvention = CallingConvention.Cdecl)]

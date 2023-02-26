@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -107,13 +107,13 @@ public:
 		GestureRecognition_CoordinateSystem CoordinateSystem = GestureRecognition_CoordinateSystem::Unreal;
 
 	/**
-	* Motion controller to use as left hand. (Optinal).
+	* Actor component (eg. MotionControllerComponent) to use as left hand. (Optinal).
 	* Use either this or LeftHandActor to specify the source
 	* for the location/rotation of the left hand.
 	* If neither is set, XRSystem->GetMotionControllerData is used.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		UMotionControllerComponent* LeftMotionController = nullptr;
+		USceneComponent* LeftMotionController = nullptr;
 
 	/**
 	* Actor to use as left hand. (Optinal).
@@ -125,13 +125,13 @@ public:
 		AActor* LeftHandActor = nullptr;
 
 	/**
-	* Motion controller to use as right hand. (Optinal).
+	* Actor component (eg. MotionControllerComponent) to use as right hand. (Optinal).
 	* Use either this or RightHandActor to specify the source
 	* for the location/rotation of the right hand.
 	* If neither is set, XRSystem->GetMotionControllerData is used.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		UMotionControllerComponent* RightMotionController = nullptr;
+		USceneComponent* RightMotionController = nullptr;
 
 	/**
 	* Actor to use as right hand. (Optinal).
@@ -182,6 +182,14 @@ public:
 	*/
 	UPROPERTY(EditAnywhere, Category = "MiVRy")
 		FString LicenseKey;
+
+	/**
+	* Provide a license file to enable additional functionality.
+	* Alternative to specifying LicenseName and LicenseKey directly above.
+	* Leave emtpy for free version.
+	*/
+	UPROPERTY(EditAnywhere, Category = "MiVRy", meta = (RelativePath))
+		FFilePath LicenseFilePath;
 
 	/**
 	* Start a gesture motion.

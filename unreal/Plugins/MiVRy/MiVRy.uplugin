@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 26,
-	"VersionName": "2.6",
+	"Version": 27,
+	"VersionName": "2.7",
 	"FriendlyName": "MiVRy",
 	"Description": "MiVRy Gesture Recognition",
 	"Category": "Other",
@@ -10,6 +10,7 @@
 	"DocsURL": "https://www.marui-plugin.com/documentation-mivry-unreal/",
 	"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/ab5c386a17f04bd387c3f719a8577613",
 	"SupportURL": "mailto:support@marui-plugin.com",
+	"EngineVersion": "5.1.0",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
 	"IsExperimentalVersion": false,

@@ -1,7 +1,7 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -98,6 +98,7 @@
 #include <iostream>
 #include <vector>
 #include <cstring>
+#include <algorithm>
 
 #define GESTURERECOGNITION_RESULT_SUCCESS                  0   //!< Return code for: function executed successfully.
 #define GESTURERECOGNITION_RESULT_NOGESTURE                -1  //!< Return code for: No gesture (or combination) matches.
@@ -153,6 +154,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void* GestureRecognition_create(); //!< Create new instance.
     GESTURERECOGNITION_LIBEXPORT void  GestureRecognition_delete(void* gro); //!< Delete instance.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_activateLicense(void* gro, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_activateLicenseFile(void* gro, const char* license_file_path); //!< Provide a license file to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStroke(void* gro, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_startStrokeM(void* gro, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_updateHeadPositionM(void* gro, const double hmd[4][4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
@@ -345,6 +347,13 @@ public:
     * \return   Zero on success, a negative error code on failure.
     */
     virtual int activateLicense(const char* license_name, const char* license_key)=0;
+
+    /**
+    * Provide a license file to enable additional functionality.
+    * \param license_file_path  The file path to the license file.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int activateLicenseFile(const char* license_file_path)=0;
 
     /**
     * Interface for metadata objects to attach to a gesture.

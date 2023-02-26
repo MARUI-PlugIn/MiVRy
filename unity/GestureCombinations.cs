@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -438,6 +438,17 @@ public class GestureCombinations
     public int activateLicense(string license_name, string license_key)
     {
         return GestureCombinations_activateLicense(m_gc, license_name, license_key);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     activateLicenseFile()
+    /// <summary>
+    /// Provide a license file to enable additional functionality.
+    /// </summary>
+    /// <param name="license_file_path">The file path to the license file.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int activateLicenseFile(string license_file_path)
+    {
+        return GestureCombinations_activateLicenseFile(m_gc, license_file_path);
     }
     //                                                          ________________________________
     //_________________________________________________________/         startStroke()
@@ -2229,6 +2240,8 @@ public class GestureCombinations
     public static extern void GestureCombinations_delete(IntPtr gco); //!< Delete instance.
     [DllImport(libfile, EntryPoint = "GestureCombinations_activateLicense", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_activateLicense(IntPtr gco, string license_name, string license_key);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_activateLicenseFile", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_activateLicenseFile(IntPtr gco, string license_file_path);
     [DllImport(libfile, EntryPoint = "GestureCombinations_numberOfParts", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_numberOfParts(IntPtr gco);
     [DllImport(libfile, EntryPoint = "GestureCombinations_getPartEnabled", CallingConvention = CallingConvention.Cdecl)]

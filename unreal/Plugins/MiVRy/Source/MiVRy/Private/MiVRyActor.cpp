@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -135,6 +135,15 @@ void AMiVRyActor::BeginPlay()
 				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
 				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
 			}
+		} else if (this->LicenseFilePath.FilePath.IsEmpty() == false) {
+			auto license_file_path = StringCast<ANSICHAR>(*this->LicenseFilePath.FilePath);
+			ret = this->gro->activateLicenseFile(license_file_path.Get());
+			if (ret == 0) {
+				UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully activated license."));
+			} else {
+				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
+				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
+			}
 		}
 		return; // successfully loaded
 	} // else: failed to load
@@ -160,6 +169,15 @@ void AMiVRyActor::BeginPlay()
 				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
 				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
 			}
+		} else if (this->LicenseFilePath.FilePath.IsEmpty() == false) {
+			auto license_file_path = StringCast<ANSICHAR>(*this->LicenseFilePath.FilePath);
+			ret = this->gro->activateLicenseFile(license_file_path.Get());
+			if (ret == 0) {
+				UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] Successfully activated license."));
+			} else {
+				const FString errorString = UMiVRyUtil::errorCodeToString(ret);
+				UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to activate license: %s"), *errorString);
+			}
 		}
 		return; // successfully loaded
 	} // else: failed to load
@@ -174,7 +192,7 @@ void AMiVRyActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	UMotionControllerComponent* motion_controllers[2];
+	USceneComponent* motion_controllers[2];
 	motion_controllers[(uint8)GestureRecognition_Side::Left ] = this->LeftMotionController;
 	motion_controllers[(uint8)GestureRecognition_Side::Right] = this->RightMotionController;
 	AActor* hand_actors[2];
@@ -189,7 +207,7 @@ void AMiVRyActor::Tick(float DeltaTime)
 			continue;
 		FVector location;
 		FRotator rotation;
-		UMotionControllerComponent* motion_controller = motion_controllers[side];
+		USceneComponent* motion_controller = motion_controllers[side];
 		AActor* hand_actor = hand_actors[side];
 		if (motion_controller) {
 			// motion_controller->Activate(true);

@@ -1,7 +1,7 @@
 /*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -196,6 +196,13 @@ public class MivryQuestHands : MonoBehaviour
     public string LicenseKey = "";
 
     /// <summary>
+    /// Path to file with license ID and license key of the MiVRy license to use.
+    /// If left empty, MiVRy will not activate any license and will run as "free" version.
+    /// </summary>
+    [Tooltip("Path to file with License ID and License Key of your MiVRy license. Leave empty for free version.")]
+    public string LicenseFilePath = "";
+
+    /// <summary>
     /// The path to the gesture recognition database file to load.
     /// In the editor, this will be relative to the Assets/ folder.
     /// In stand-alone (build), this will be relative to the StreamingAssets/ folder.
@@ -370,6 +377,11 @@ public class MivryQuestHands : MonoBehaviour
         gc = new GestureCombinations(numberOfParts);
         if (this.LicenseName != null && this.LicenseKey != null && this.LicenseName != "") {
             ret = gc.activateLicense(this.LicenseName, this.LicenseKey);
+            if (ret != 0) {
+                Debug.LogError($"[MivryQuestHands] Failed to activate license: {GestureRecognition.getErrorMessage(ret)}");
+            }
+        } else if (this.LicenseFilePath != null && this.LicenseFilePath.Length > 0) {
+            ret = gc.activateLicenseFile(this.LicenseFilePath);
             if (ret != 0) {
                 Debug.LogError($"[MivryQuestHands] Failed to activate license: {GestureRecognition.getErrorMessage(ret)}");
             }

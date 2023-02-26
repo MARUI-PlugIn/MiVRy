@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -236,6 +236,13 @@ void UMiVRyUtil::readFileToBuffer(const FString& path, GestureRecognition_Result
 	result = GestureRecognition_Result::Error;
 }
 
+const FQuat RotateYp56(0.0f,  0.4717815f, 0.0f,       0.8817155f);
+const FQuat RotateYm56(0.0f, -0.4717815f, 0.0f,       0.8817155f);
+const FQuat RotateZp90(0.0f,  0.0f,       0.7071068f, 0.7071068f);
+const FQuat RotateZm90(0.0f,  0.0f,      -0.7071068f, 0.7071068f);
+const FQuat RotateXZY( 0.5f,  0.5f,       0.5f,       0.5f);
+const FQuat RotateXYZ(-0.5f, -0.5f,      -0.5f,       0.5f);
+
 void UMiVRyUtil::convertInput(const FVector& location, const FQuat& rotation, GestureRecognition_DeviceType device_type, GestureRecognition_CoordinateSystem coord_sys, double p[3], double q[4])
 {
 	if (coord_sys == GestureRecognition_CoordinateSystem::Unreal) {
@@ -248,19 +255,19 @@ void UMiVRyUtil::convertInput(const FVector& location, const FQuat& rotation, Ge
 		q[3] = rotation.W;
 		return;
 	}
-	FQuat quaternion = FQuat(-0.5f, -0.5f, -0.5f, 0.5f) * rotation;
+	FQuat quaternion = RotateXYZ * rotation;
 	switch (device_type) {
 	case GestureRecognition_DeviceType::Headset:
-		quaternion = quaternion * FQuat(0.5f, 0.5f, 0.5f, 0.5f);
+		quaternion = quaternion * RotateXZY;
 		break;
 	case GestureRecognition_DeviceType::Controller:
 		switch (coord_sys) {
 		case GestureRecognition_CoordinateSystem::UnityOpenXR:
 		case GestureRecognition_CoordinateSystem::UnitySteamVR:
-			quaternion = quaternion * FQuat(0, 0, 0.7071068f, 0.7071068f);
+			quaternion = quaternion * RotateYp56 * RotateZp90;
 			break;
 		case GestureRecognition_CoordinateSystem::UnityOculusVR:
-			quaternion = quaternion * FQuat(0.5f, 0.5f, 0.5f, 0.5f);
+			quaternion = quaternion * RotateYp56 * RotateXZY;
 			break;
 		}
 		break;
@@ -295,19 +302,19 @@ void UMiVRyUtil::convertOutput(GestureRecognition_CoordinateSystem coord_sys, co
 	rotation.Z = (float)q[2];
 	rotation.W = (float)q[3];
 	rotation.Normalize();
-	rotation = FQuat(0.5f, 0.5f, 0.5f, 0.5f) * rotation;
+	rotation = RotateXZY * rotation;
 	switch (device_type) {
 	case GestureRecognition_DeviceType::Headset:
-		rotation = rotation * FQuat(-0.5f, -0.5f, -0.5f, 0.5f);
+		rotation = rotation * RotateXYZ;
 		break;
 	case GestureRecognition_DeviceType::Controller:
 		switch (coord_sys) {
 		case GestureRecognition_CoordinateSystem::UnityOpenXR:
 		case GestureRecognition_CoordinateSystem::UnitySteamVR:
-			rotation = rotation * FQuat(0, 0, -0.7071068f, 0.7071068f);
+			rotation = rotation * RotateZm90 * RotateYm56;
 			break;
 		case GestureRecognition_CoordinateSystem::UnityOculusVR:
-			rotation = rotation * FQuat(-0.5f, -0.5f, -0.5f, 0.5f);
+			rotation = rotation * RotateXYZ * RotateYm56;
 			break;
 		}
 		break;

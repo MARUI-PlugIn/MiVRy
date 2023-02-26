@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -209,6 +209,13 @@ public class Mivry : MonoBehaviour
     /// </summary>
     [Tooltip("License Key of your MiVRy license. Leave empty for free version.")]
     public string LicenseKey = "";
+
+    /// <summary>
+    /// Path to file containing license ID and license key of the MiVRy license to use.
+    /// If left empty, MiVRy will not activate any license and will run as "free" version.
+    /// </summary>
+    [Tooltip("Path to file containing License ID and License Key of your MiVRy license. Leave empty for free version.")]
+    public string LicenseFilePath = "";
 
     /// <summary>
     /// The path to the gesture recognition database file to load.
@@ -574,8 +581,12 @@ public class Mivry : MonoBehaviour
         
         if (this.LicenseKey != null && this.LicenseName != null && this.LicenseName.Length > 0) {
             ret = this.gr.activateLicense(this.LicenseName, this.LicenseKey);
-            if (ret != 0)
-            {
+            if (ret != 0) {
+                Debug.LogError("[MiVRy] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+            }
+        } else if (this.LicenseFilePath != null && this.LicenseFilePath.Length > 0) {
+            ret = this.gr.activateLicenseFile(this.LicenseFilePath);
+            if (ret != 0) {
                 Debug.LogError("[MiVRy] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
             }
         }
@@ -604,11 +615,14 @@ public class Mivry : MonoBehaviour
 
         gc = new GestureCombinations(0);
 
-        if (this.LicenseKey != null && this.LicenseName != null && this.LicenseName.Length > 0)
-        {
+        if (this.LicenseKey != null && this.LicenseName != null && this.LicenseName.Length > 0) {
             ret = this.gc.activateLicense(this.LicenseName, this.LicenseKey);
-            if (ret != 0)
-            {
+            if (ret != 0) {
+                Debug.LogError("[MiVRy] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
+            }
+        } else if (this.LicenseFilePath != null && this.LicenseFilePath.Length > 0) {
+            ret = this.gc.activateLicenseFile(this.LicenseFilePath);
+            if (ret != 0) {
                 Debug.LogError("[MiVRy] Failed to activate license: " + GestureRecognition.getErrorMessage(ret));
             }
         }
@@ -952,6 +966,13 @@ public class Mivry : MonoBehaviour
         }
     }
 
+    private static readonly Quaternion RotateYp56 = new Quaternion(0.0f,  0.4717815f, 0.0f, 0.8817155f);
+    private static readonly Quaternion RotateYm56 = new Quaternion(0.0f, -0.4717815f, 0.0f, 0.8817155f);
+    private static readonly Quaternion RotateZp90 = new Quaternion(0.0f, 0.0f,  0.7071068f, 0.7071068f);
+    private static readonly Quaternion RotateZm90 = new Quaternion(0.0f, 0.0f, -0.7071068f, 0.7071068f);
+    private static readonly Quaternion RotateXZY  = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
+    private static readonly Quaternion RotateXYZ  = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
+
     /// <summary>
     /// Convert position and orientation of a VR controller based on the Unity XR plugin used
     /// to MiVRy's internal coordinate system, if it should differ from the one being used by the XR plugin.
@@ -972,7 +993,7 @@ public class Mivry : MonoBehaviour
                         q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
                         break;
                     case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(0, 0, -0.7071068f, 0.7071068f);
+                        q = RotateXZY * q * RotateZm90 * RotateYm56;
                         p = new Vector3(p.z, p.x, p.y) * 100.0f;
                         break;
                 }
@@ -985,7 +1006,7 @@ public class Mivry : MonoBehaviour
                         q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
                         break;
                     case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
+                        q = RotateXZY * q * RotateXYZ * RotateYm56;
                         p = new Vector3(p.z, p.x, p.y) * 100.0f;
                         break;
                 }
@@ -1006,7 +1027,7 @@ public class Mivry : MonoBehaviour
         if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
         {
             p = new Vector3(p.z, p.x, p.y) * 100.0f;
-            q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
+            q = RotateXZY * q * RotateXYZ;
         }
     }
 
@@ -1022,7 +1043,7 @@ public class Mivry : MonoBehaviour
         if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
         {
             p = new Vector3(p.y, p.z, p.x) * 0.01f;
-            q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q;
+            q = RotateXYZ * q;
         }
     }
 
@@ -1048,7 +1069,7 @@ public class Mivry : MonoBehaviour
                         q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
                         break;
                     case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0, 0, 0.7071068f, 0.7071068f);
+                        q = RotateXYZ * q * RotateYp56 * RotateZp90;
                         p = new Vector3(p.y, p.z, p.x) * 0.01f;
                         break;
                 }
@@ -1061,7 +1082,7 @@ public class Mivry : MonoBehaviour
                         q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
                         break;
                     case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
+                        q = RotateXYZ * q * RotateYp56 * RotateXZY;
                         p = new Vector3(p.y, p.z, p.x) * 0.01f;
                         break;
                 }
@@ -1082,7 +1103,7 @@ public class Mivry : MonoBehaviour
         if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
         {
             p = new Vector3(p.y, p.z, p.x) * 0.01f;
-            q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
+            q = RotateXYZ * q * RotateXZY;
         }
     }
 }

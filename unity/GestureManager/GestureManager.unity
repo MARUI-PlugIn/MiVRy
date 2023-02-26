@@ -1831,6 +1831,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   license_id: 
   license_key: 
+  license_file_path: 
   unityXrPlugin: 0
   mivryCoordinateSystem: 0
   file_load_combinations: Samples/Sample_TwoHanded_Gestures.dat

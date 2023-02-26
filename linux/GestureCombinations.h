@@ -1,7 +1,7 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.6
- * Copyright (c) 2022 MARUI-PlugIn (inc.)
+ * Version 2.7
+ * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -132,6 +132,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void* GestureCombinations_create(int number_of_parts); //!< Create new instance.
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_delete(void* gco); //!< Delete instance.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_activateLicense(void* gco, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_activateLicenseFile(void* gco, const char* license_file_path); //!< Provide a license file to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_numberOfParts(void* gco); //!< Get the number of subgestures / parts / hands used by this multi-gesture object.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getPartEnabled(void* gco, int part); //!< Get whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setPartEnabled(void* gco, int part, int enabled); //!< Set whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
@@ -291,6 +292,13 @@ public:
     * \return   Zero on success, a negative error code on failure.
     */
     virtual int activateLicense(const char* license_name, const char* license_key)=0;
+
+    /**
+    * Provide a license file to enable additional functionality.
+    * \param license_file_path  The file path to the license file.
+    * \return   Zero on success, a negative error code on failure.
+    */
+    virtual int activateLicenseFile(const char* license_file_path)=0;
 
     /**
     * Get the number of subgestures / parts / hands used by this multi-gesture object.
