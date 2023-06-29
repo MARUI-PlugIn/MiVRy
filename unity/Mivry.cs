@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -176,10 +176,12 @@ public class Mivry : MonoBehaviour
     [System.Serializable]
     public enum MivryCoordinateSystem
     {
-        OpenXR,
-        OculusVR,
-        SteamVR,
-        UnrealEngine
+        [InspectorName("Unity OpenXR")]    Unity_OpenXR,
+        [InspectorName("Unity OculusVR")]  Unity_OculusVR,
+        [InspectorName("Unity SteamVR")]   Unity_SteamVR,
+        [InspectorName("Unreal OpenXR")]   Unreal_OpenXR,
+        [InspectorName("Unreal OculusVR")] Unreal_OculusVR,
+        [InspectorName("Unreal SteamVR")]  Unreal_SteamVR,
     };
 
     /// <summary>
@@ -238,7 +240,7 @@ public class Mivry : MonoBehaviour
     /// The coordinate system MiVRy should use internally (or that the GestureDatabase file was created with).
     /// </summary>
     [Tooltip("The coordinate system MiVRy should use internally (or that the GestureDatabase file was created with).")]
-    public MivryCoordinateSystem mivryCoordinateSystem = MivryCoordinateSystem.OpenXR;
+    public MivryCoordinateSystem mivryCoordinateSystem = MivryCoordinateSystem.Unity_OpenXR;
 
     /// <summary>
     /// A game object that will be used as the position of the left hand.
@@ -322,9 +324,9 @@ public class Mivry : MonoBehaviour
     public int ContinuousGesturePeriod = 1000;
 
     /// <summary>
-    /// Time frame (in milliseconds) that continuous gestures are expected to be.
+    /// The number of samples to use for smoothing continuous gesture identification results.
     /// </summary>
-    [Tooltip("Time frame (in milliseconds) that continuous gestures are expected to be.")]
+    [Tooltip("The number of samples to use for smoothing continuous gesture identification results.")]
     public int ContinuousGestureSmoothing = 3;
 
     /// <summary>
@@ -479,7 +481,7 @@ public class Mivry : MonoBehaviour
     {
         InputControl control = InputSystem.FindControl(controlName); // eg: "<XRController>{RightHand}/trigger"
         if (control == null) {
-            Debug.LogError($"Mivry.getInputControlValue : Control '${controlName}' not found.");
+            Debug.LogError($"Mivry.getInputControlValue : Control '{controlName}' not found.");
             return 0.0f;
         }
         return getInputControlValue(control);
@@ -657,7 +659,7 @@ public class Mivry : MonoBehaviour
     void Update()
     {
 #if ENABLE_INPUT_SYSTEM
-        if (InputAction_LeftTriggerPressed)
+            if (InputAction_LeftTriggerPressed)
         {
             LeftTriggerValue = 1.0f;
         }
@@ -966,11 +968,13 @@ public class Mivry : MonoBehaviour
         }
     }
 
-    private static readonly Quaternion RotateYp56 = new Quaternion(0.0f,  0.4717815f, 0.0f, 0.8817155f);
-    private static readonly Quaternion RotateYm56 = new Quaternion(0.0f, -0.4717815f, 0.0f, 0.8817155f);
-    private static readonly Quaternion RotateZp90 = new Quaternion(0.0f, 0.0f,  0.7071068f, 0.7071068f);
-    private static readonly Quaternion RotateZm90 = new Quaternion(0.0f, 0.0f, -0.7071068f, 0.7071068f);
-    private static readonly Quaternion RotateXZY  = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
+    private static readonly Quaternion RotateXp55 = new Quaternion( 0.4617486f, 0, 0, 0.8870108f); // Controller rotation: OpenXR -> OculusVR
+    private static readonly Quaternion RotateXm55 = new Quaternion(-0.4617486f, 0, 0, 0.8870108f); // Controller rotation: OculusVR -> OpenXR
+    private static readonly Quaternion RotateXp25 = new Quaternion( 0.2164396f, 0, 0, 0.976296f); // Controller rotation: SteamVR -> OculusVR
+    private static readonly Quaternion RotateXm25 = new Quaternion(-0.2164396f, 0, 0, 0.976296f); // Controller rotation: OculusVR -> SteamVR
+    private static readonly Quaternion RotateXp20 = new Quaternion( 0.258819f, 0, 0, 0.9659258f); // Controller rotation: OpenXR -> SteamVR
+    private static readonly Quaternion RotateXm20 = new Quaternion(-0.258819f, 0, 0, 0.9659258f); // Controller rotation: SteamVR -> OpenXR
+    private static readonly Quaternion RotateXZY  = new Quaternion( 0.5f,  0.5f,  0.5f, 0.5f);
     private static readonly Quaternion RotateXYZ  = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
 
     /// <summary>
@@ -983,30 +987,69 @@ public class Mivry : MonoBehaviour
     /// <param name="q">The VR controller orientation.</param>
     public static void convertHandInput(UnityXrPlugin unityXrPlugin, MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
     {
-        switch (unityXrPlugin)
-        {
+        switch (unityXrPlugin) {
             case UnityXrPlugin.OpenXR:
-            case UnityXrPlugin.SteamVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OculusVR:
-                        q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
+                switch (mivryCoordinateSystem) {
+                    case MivryCoordinateSystem.Unity_OculusVR:
+                        q = q * RotateXp55;
                         break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = RotateXZY * q * RotateZm90 * RotateYm56;
+                    case MivryCoordinateSystem.Unity_SteamVR:
+                        q = q * RotateXp20;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OpenXR:
+                        q = RotateXZY * q * RotateXYZ;
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OculusVR:
+                        q = RotateXZY * q * RotateXp55 * RotateXYZ;
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_SteamVR:
+                        q = RotateXZY * q * RotateXp20 * RotateXYZ;
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                }
+                break;
+            case UnityXrPlugin.SteamVR:
+                switch (mivryCoordinateSystem) {
+                    case MivryCoordinateSystem.Unity_OculusVR:
+                        q = q * RotateXp25;
+                        break;
+                    case MivryCoordinateSystem.Unity_OpenXR:
+                        q = q * RotateXm20;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OpenXR:
+                        q = RotateXZY * q * RotateXm20 * RotateXYZ;
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OculusVR:
+                        q = RotateXZY * q * RotateXp25 * RotateXYZ;
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_SteamVR:
+                        q = RotateXZY * q * RotateXYZ;
                         p = new Vector3(p.z, p.x, p.y) * 100.0f;
                         break;
                 }
                 break;
             case UnityXrPlugin.OculusVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OpenXR:
-                    case MivryCoordinateSystem.SteamVR:
-                        q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
+                switch (mivryCoordinateSystem) {
+                    case MivryCoordinateSystem.Unity_OpenXR:
+                        q = q * RotateXm55;
                         break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = RotateXZY * q * RotateXYZ * RotateYm56;
+                    case MivryCoordinateSystem.Unity_SteamVR:
+                        q = q * RotateXm25;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OpenXR:
+                        q = RotateXZY * q * RotateXm55 * RotateXYZ;
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OculusVR:
+                        q = RotateXZY * q * RotateXYZ;
+                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_SteamVR:
+                        q = RotateXZY * q * RotateXm25 * RotateXYZ;
                         p = new Vector3(p.z, p.x, p.y) * 100.0f;
                         break;
                 }
@@ -1024,7 +1067,7 @@ public class Mivry : MonoBehaviour
     /// <param name="q">The VR headset orientation.</param>
     public static void convertHeadInput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
     {
-        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
+        if (mivryCoordinateSystem == MivryCoordinateSystem.Unreal_OpenXR)
         {
             p = new Vector3(p.z, p.x, p.y) * 100.0f;
             q = RotateXZY * q * RotateXYZ;
@@ -1040,7 +1083,7 @@ public class Mivry : MonoBehaviour
     /// <param name="q">The gesture orientation.</param>
     public static void convertOutput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
     {        
-        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
+        if (mivryCoordinateSystem == MivryCoordinateSystem.Unreal_OpenXR)
         {
             p = new Vector3(p.y, p.z, p.x) * 0.01f;
             q = RotateXYZ * q;
@@ -1062,29 +1105,70 @@ public class Mivry : MonoBehaviour
         switch (unityXrPlugin)
         {
             case UnityXrPlugin.OpenXR:
-            case UnityXrPlugin.SteamVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OculusVR:
-                        q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
+                switch (mivryCoordinateSystem) {
+                    case MivryCoordinateSystem.Unity_SteamVR:
+                        q = q * RotateXm20;
                         break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = RotateXYZ * q * RotateYp56 * RotateZp90;
+                    case MivryCoordinateSystem.Unity_OculusVR:
+                        q = q * RotateXm55;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OpenXR:
+                        q = RotateXYZ * q * RotateXZY;
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OculusVR:
+                        q = RotateXYZ * q * RotateXZY * RotateXm55;
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_SteamVR:
+                        q = RotateXYZ * q * RotateXZY * RotateXm20;
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                }
+                break;
+            case UnityXrPlugin.SteamVR:
+                switch (mivryCoordinateSystem) {
+                    case MivryCoordinateSystem.Unity_OpenXR:
+                        q = q * RotateXp20;
+                        break;
+                    case MivryCoordinateSystem.Unity_OculusVR:
+                        q = q * RotateXm25;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OpenXR:
+                        q = RotateXYZ * q * RotateXZY * RotateXp20;
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OculusVR:
+                        q = RotateXYZ * q * RotateXZY * RotateXm25;
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_SteamVR:
+                        q = RotateXYZ * q * RotateXZY;
                         p = new Vector3(p.y, p.z, p.x) * 0.01f;
                         break;
                 }
                 break;
             case UnityXrPlugin.OculusVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OpenXR:
-                    case MivryCoordinateSystem.SteamVR:
-                        q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
+                switch (mivryCoordinateSystem) {
+                    case MivryCoordinateSystem.Unity_OpenXR:
+                        q = q * RotateXp55;
                         break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = RotateXYZ * q * RotateYp56 * RotateXZY;
+                    case MivryCoordinateSystem.Unity_SteamVR:
+                        q = q * RotateXp25;
+                        break;
+                    case MivryCoordinateSystem.Unreal_OpenXR:
+                        q = RotateXYZ * q * RotateXZY * RotateXp55;
                         p = new Vector3(p.y, p.z, p.x) * 0.01f;
                         break;
+                    case MivryCoordinateSystem.Unreal_OculusVR:
+                        q = RotateXYZ * q * RotateXZY;
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+                    case MivryCoordinateSystem.Unreal_SteamVR:
+                        q = RotateXYZ * q * RotateXZY * RotateXp25;
+                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
+                        break;
+
                 }
                 break;
         }
@@ -1100,7 +1184,7 @@ public class Mivry : MonoBehaviour
     /// <param name="q">The VR headset orientation.</param>
     public static void convertBackHeadInput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
     {
-        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
+        if (mivryCoordinateSystem == MivryCoordinateSystem.Unreal_OpenXR)
         {
             p = new Vector3(p.y, p.z, p.x) * 0.01f;
             q = RotateXYZ * q * RotateXZY;

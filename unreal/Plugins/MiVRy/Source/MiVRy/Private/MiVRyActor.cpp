@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -234,7 +234,7 @@ void AMiVRyActor::Tick(float DeltaTime)
 
 		double p[3];
 		double q[4];
-		UMiVRyUtil::convertInput(location, quaternion, GestureRecognition_DeviceType::Controller, this->CoordinateSystem, p, q);
+		UMiVRyUtil::convertInput(location, quaternion, GestureRecognition_DeviceType::Controller, this->UnrealVRPlugin, this->MivryCoordinateSystem, p, q);
 		double hmd_p[3];
 		double hmd_q[4];
 		if (this->CompensateHeadMotion) {
@@ -246,7 +246,7 @@ void AMiVRyActor::Tick(float DeltaTime)
 			FVector hmd_location = camManager->GetCameraLocation();
 			FRotator hmd_rotation = camManager->GetCameraRotation();
 			FQuat hmd_quaternion = hmd_rotation.Quaternion();
-			UMiVRyUtil::convertInput(hmd_location, hmd_quaternion, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, hmd_p, hmd_q);
+			UMiVRyUtil::convertInput(hmd_location, hmd_quaternion, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, hmd_p, hmd_q);
 		}
 		int ret;
 		if (this->gro) {
@@ -290,7 +290,7 @@ void AMiVRyActor::startGesturing(GestureRecognition_Result& Result, int& ErrorCo
 	FQuat quaternion = rotation.Quaternion();
 	double p[3];
 	double q[4];
-	UMiVRyUtil::convertInput(location, quaternion, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, p, q);
+	UMiVRyUtil::convertInput(location, quaternion, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, p, q);
 	if (this->gro) {
 		ErrorCode = this->gro->startStroke(p, q, -1);
 		if (ErrorCode != 0) {
@@ -336,12 +336,15 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 		FMiVRyGesturePart& part = this->parts[0];
 		part.Side = side;
 		part.PartGestureID = this->gesture_id;
-		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+		FRotationMatrix rm(FRotator(0, 0, 0));
+		switch (this->MivryCoordinateSystem) {
+		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 			part.Position.X = float(position[2]) * 100.0f; // Unreal.X = front = Unity.Z
 			part.Position.Y = float(position[0]) * 100.0f; // Unreal.Y = right = Unity.X
 			part.Position.Z = float(position[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
 			part.Scale = float(scale) * 100.0f;
-			FRotationMatrix rm(FRotator(0, 0, 0));
 			rm.M[0][0] = (float)dir0[2]; // Unreal.X = front = Unity.Z
 			rm.M[0][1] = (float)dir0[0]; // Unreal.Y = right = Unity.X
 			rm.M[0][2] = (float)dir0[1]; // Unreal.Z = up    = Unity.Y
@@ -358,12 +361,15 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 			part.SecondaryDirection.X = float(dir1[2]);
 			part.SecondaryDirection.Y = float(dir1[0]);
 			part.SecondaryDirection.Z = float(dir1[1]);
-		} else {
+			break;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+		default:
 			part.Position.X = float(position[0]);
 			part.Position.Y = float(position[1]);
 			part.Position.Z = float(position[2]);
 			part.Scale = float(scale);
-			FRotationMatrix rm(FRotator(0, 0, 0));
 			rm.M[0][0] = (float)dir0[0];
 			rm.M[0][1] = (float)dir0[1];
 			rm.M[0][2] = (float)dir0[2];
@@ -407,12 +413,15 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 			part = &this->parts[i];
 			part->Side = side;
 		}
-		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+		FRotationMatrix rm(FRotator(0, 0, 0));
+		switch (this->MivryCoordinateSystem) {
+		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 			part->Position.X = float(position[2]) * 100.0f; // Unreal.X = front = Unity.Z
 			part->Position.Y = float(position[0]) * 100.0f; // Unreal.Y = right = Unity.X
 			part->Position.Z = float(position[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
 			part->Scale = float(scale) * 100.0f;
-			FRotationMatrix rm(FRotator(0, 0, 0));
 			rm.M[0][0] = (float)dir0[2]; // Unreal.X = front = Unity.Z
 			rm.M[0][1] = (float)dir0[0]; // Unreal.Y = right = Unity.X
 			rm.M[0][2] = (float)dir0[1]; // Unreal.Z = up    = Unity.Y
@@ -429,12 +438,15 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 			part->SecondaryDirection.X = float(dir1[2]);
 			part->SecondaryDirection.Y = float(dir1[0]);
 			part->SecondaryDirection.Z = float(dir1[1]);
-		} else {
+			break;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+		default:
 			part->Position.X = float(position[0]);
 			part->Position.Y = float(position[1]);
 			part->Position.Z = float(position[2]);
 			part->Scale = float(scale);
-			FRotationMatrix rm(FRotator(0, 0, 0));
 			rm.M[0][0] = (float)dir0[0];
 			rm.M[0][1] = (float)dir0[1];
 			rm.M[0][2] = (float)dir0[2];
@@ -524,10 +536,13 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 			return;
 		}
 		FQuat quat;
-		UMiVRyUtil::convertOutput(this->CoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, GestureLocation, quat);
+		UMiVRyUtil::convertOutput(this->UnrealVRPlugin, this->MivryCoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, GestureLocation, quat);
 		GestureRotation = quat.Rotator();
 		GestureScale = (float)scale;
-		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+		switch (this->MivryCoordinateSystem) {
+		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 			GestureScale *= 100.0f;
 		}
 		const int len = (ret < mean_len) ? ret : mean_len;
@@ -542,7 +557,10 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 			quat.Z = (float)q[4 * i + 2];
 			quat.W = (float)q[4 * i + 3];
 			quat.Normalize();
-			if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+			switch (this->MivryCoordinateSystem) {
+			case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+			case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+			case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 				const FVector xaxis = quat.GetAxisX();
 				const FVector yaxis = quat.GetAxisY();
 				const FVector zaxis = quat.GetAxisZ();
@@ -580,10 +598,13 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 			return;
 		}
 		FQuat quat;
-		UMiVRyUtil::convertOutput(this->CoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, GestureLocation, quat);
+		UMiVRyUtil::convertOutput(this->UnrealVRPlugin, this->MivryCoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, GestureLocation, quat);
 		GestureRotation = quat.Rotator();
 		GestureScale = (float)scale;
-		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+		switch (this->MivryCoordinateSystem) {
+		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 			GestureScale *= 100.0f;
 		}
 		const int len = (ret < mean_len) ? ret : mean_len;
@@ -598,7 +619,10 @@ void AMiVRyActor::getGesturePartAveragePath(const FMiVRyGesturePart& part, Gestu
 			quat.Z = (float)q[4 * i + 2];
 			quat.W = (float)q[4 * i + 3];
 			quat.Normalize();
-			if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+			switch (this->MivryCoordinateSystem) {
+			case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+			case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+			case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 				const FVector xaxis = quat.GetAxisX();
 				const FVector yaxis = quat.GetAxisY();
 				const FVector zaxis = quat.GetAxisZ();

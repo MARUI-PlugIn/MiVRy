@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -41,52 +41,59 @@ public class SubmenuCoordinateSystemButton : MonoBehaviour, GestureManagerButton
         this.GetComponent<Renderer>().material = activeButtonMaterial;
         switch (gm.mivryCoordinateSystem)
         {
-            case Mivry.MivryCoordinateSystem.UnrealEngine:
-                if (forward)
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.SteamVR;
-                    coordinateSystemDisplay.text = "SteamVR";
-                }
-                else
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.OpenXR;
-                    coordinateSystemDisplay.text = "OpenXR";
-                }
-                break;
-            case Mivry.MivryCoordinateSystem.OpenXR:
-                if (forward)
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.UnrealEngine;
-                    coordinateSystemDisplay.text = "Unreal";
-                } else
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.OculusVR;
+            case Mivry.MivryCoordinateSystem.Unity_OpenXR:
+                if (!forward) {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unreal_SteamVR;
+                    coordinateSystemDisplay.text = "UE SteamVR";
+                } else {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_OculusVR;
                     coordinateSystemDisplay.text = "OculusVR";
                 }
                 break;
-            case Mivry.MivryCoordinateSystem.OculusVR:
-                if (forward)
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.OpenXR;
+            case Mivry.MivryCoordinateSystem.Unity_OculusVR:
+                if (!forward) {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_OpenXR;
                     coordinateSystemDisplay.text = "OpenXR";
-                }
-                else
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.SteamVR;
+                } else {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_SteamVR;
                     coordinateSystemDisplay.text = "SteamVR";
                 }
                 break;
-            case Mivry.MivryCoordinateSystem.SteamVR:
+            case Mivry.MivryCoordinateSystem.Unity_SteamVR:
+                if (!forward) {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_OculusVR;
+                    coordinateSystemDisplay.text = "OculusVR";
+                } else {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unreal_OpenXR;
+                    coordinateSystemDisplay.text = "UE OpenXR";
+                }
+                break;
+            case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                if (!forward) {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_SteamVR;
+                    coordinateSystemDisplay.text = "SteamVR";
+                } else {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unreal_OculusVR;
+                    coordinateSystemDisplay.text = "UE OculusVR";
+                }
+                break;
+            case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                if (!forward) {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unreal_OpenXR;
+                    coordinateSystemDisplay.text = "UE OpenXR";
+                } else {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unreal_SteamVR;
+                    coordinateSystemDisplay.text = "UE SteamVR";
+                }
+                break;
+            case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
             default:
-                if (forward)
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.OculusVR;
-                    coordinateSystemDisplay.text = "OculusVR";
-                }
-                else
-                {
-                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.UnrealEngine;
-                    coordinateSystemDisplay.text = "Unreal";
+                if (!forward) {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unreal_OculusVR;
+                    coordinateSystemDisplay.text = "UE OculusVR";
+                } else {
+                    gm.mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_OpenXR;
+                    coordinateSystemDisplay.text = "OpenXR";
                 }
                 break;
         }

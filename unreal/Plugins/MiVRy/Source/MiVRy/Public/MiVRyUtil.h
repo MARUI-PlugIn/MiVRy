@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -87,7 +87,6 @@ enum class GestureRecognition_RotationOrder : uint8
     ZYX = 5 UMETA(DisplayName = "z->y->x"),
 };
 
-
 /**
 * Type of target VR device.
 */
@@ -100,17 +99,29 @@ enum class GestureRecognition_DeviceType : uint8
 };
 
 /**
-* Type of target VR device.
+* Type of coordinate system used by the MiVRy AI.
 */
 UENUM(BlueprintType)
 enum class GestureRecognition_CoordinateSystem : uint8
 {
-    Unreal = 0 UMETA(DisplayName = "Unreal"),
-    UnityOpenXR = 1 UMETA(DisplayName = "Unity OpenXR"),
-    UnityOculusVR = 2 UMETA(DisplayName = "Unity OculusVR"),
-    UnitySteamVR = 3 UMETA(DisplayName = "Unity SteamVR"),
+    Unreal_OpenXR = 0 UMETA(DisplayName = "Unreal OpenXR"),
+    Unreal_OculusVR = 4 UMETA(DisplayName = "Unreal4 OculusVR"),
+    Unreal_SteamVR = 5 UMETA(DisplayName = "Unreal4 SteamVR"),
+    Unity_OpenXR = 1 UMETA(DisplayName = "Unity OpenXR"),
+    Unity_OculusVR = 2 UMETA(DisplayName = "Unity OculusVR"),
+    Unity_SteamVR = 3 UMETA(DisplayName = "Unity SteamVR"),
 };
 
+/**
+* Type of coordinate system used by the MiVRy AI.
+*/
+UENUM(BlueprintType)
+enum class GestureRecognition_VRPlugin : uint8
+{
+    OpenXR = 0 UMETA(DisplayName = "OpenXR"),
+    SteamVR = 1 UMETA(DisplayName = "SteamVR"),
+    OculusVR = 2 UMETA(DisplayName = "OculusVR"),
+};
 
 /**
  * Utility function class for the MiVRy Gesture Recognition plug-in.
@@ -166,14 +177,16 @@ public:
     * @param location           The position in Unreal coordinates.
     * @param rotation           The rotation in Unreal coordinates.
     * @param device_type        Whether the device is a VR handheld controller, a headset, or neither.
+    * @param vr_plugin          The UE VR plugin used in this project.
     * @param coord_sys          The internal coordinate system used by MiVRy.
     * @param p                  [OUT] The translation in MiVRy's internal coordinates.
     * @param q                  [OUT] The rotation quaternion in MiVRy's internal coordinates.
     */
-    static void convertInput(const FVector& location, const FQuat& rotation, GestureRecognition_DeviceType device_type, GestureRecognition_CoordinateSystem coord_sys, double p[3], double q[4]);
+    static void convertInput(const FVector& location, const FQuat& rotation, GestureRecognition_DeviceType device_type, GestureRecognition_VRPlugin vr_plugin, GestureRecognition_CoordinateSystem coord_sys, double p[3], double q[4]);
 
     /**
     * Helper function to convert internal MiVRy coordinates to UnrealEngine coordinates (if they differ from Unreal coordinates).
+    * @param vr_plugin          The UE VR plugin used in this project.
     * @param coord_sys          The internal coordinate system used by MiVRy.
     * @param p                  The location in MiVRy's internal coordinate system.
     * @param q                  The orientation in MiVRy's internal coordinate system.
@@ -181,5 +194,5 @@ public:
     * @param location           [OUT] UnrealEngine coordinate location.
     * @param rotation           [OUT] UnrealEngine coordinate orientation.
     */
-    static void convertOutput(GestureRecognition_CoordinateSystem coord_sys, const double p[3], const double q[4], GestureRecognition_DeviceType device_type, FVector& location, FQuat& rotation);
+    static void convertOutput(GestureRecognition_VRPlugin vr_plugin, GestureRecognition_CoordinateSystem coord_sys, const double p[3], const double q[4], GestureRecognition_DeviceType device_type, FVector& location, FQuat& rotation);
 };

@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -169,58 +169,55 @@ public class GestureManager : MonoBehaviour
     }
 
     public Mivry.UnityXrPlugin unityXrPlugin = Mivry.UnityXrPlugin.OpenXR;
-    public Mivry.MivryCoordinateSystem mivryCoordinateSystem = Mivry.MivryCoordinateSystem.OpenXR;
+    public Mivry.MivryCoordinateSystem mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_OpenXR;
 
     
     public GestureRecognition.FrameOfReference frameOfReferenceYaw {
         get
         {
-            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
-            {
-                if (gr != null)
-                {
-                    return gr.frameOfReferenceZ;
-                }
-                if (gc != null)
-                {
-                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceZ;
-                }
-            } else
-            {
-                if (gr != null)
-                {
-                    return gr.frameOfReferenceY;
-                }
-                if (gc != null)
-                {
-                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceY;
-                }
+            switch (this.mivryCoordinateSystem) {
+                case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                    if (gr != null) {
+                        return gr.frameOfReferenceZ;
+                    }
+                    if (gc != null) {
+                        return (GestureRecognition.FrameOfReference)gc.frameOfReferenceZ;
+                    }
+                    break;
+                default:
+                    if (gr != null) {
+                        return gr.frameOfReferenceY;
+                    }
+                    if (gc != null) {
+                        return (GestureRecognition.FrameOfReference)gc.frameOfReferenceY;
+                    }
+                    break;
             }
             return GestureRecognition.FrameOfReference.Head;
         }
         set
         {
-            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
-            {
-                if (gr != null)
-                {
+            switch (this.mivryCoordinateSystem) {
+                case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                    if (gr != null) {
                     gr.frameOfReferenceZ = value;
-                }
-                if (gc != null)
-                {
-                    gc.frameOfReferenceZ = (GestureCombinations.FrameOfReference)value;
-                }
-            }
-            else
-            {
-                if (gr != null)
-                {
-                    gr.frameOfReferenceY = value;
-                }
-                if (gc != null)
-                {
-                    gc.frameOfReferenceY = (GestureCombinations.FrameOfReference)value;
-                }
+                    }
+                    if (gc != null) {
+                        gc.frameOfReferenceZ = (GestureCombinations.FrameOfReference)value;
+                    }
+                    break;
+                default:
+                    if (gr != null) {
+                        gr.frameOfReferenceY = value;
+                    }
+                    if (gc != null) {
+                        gc.frameOfReferenceY = (GestureCombinations.FrameOfReference)value;
+                    }
+                    break;
             }
             GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
         }
@@ -230,53 +227,49 @@ public class GestureManager : MonoBehaviour
     {
         get
         {
-            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
-            {
-                if (gr != null)
-                {
+            switch (this.mivryCoordinateSystem) {
+                case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                    if (gr != null) {
                     return gr.frameOfReferenceY;
-                }
-                if (gc != null)
-                {
-                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceY;
-                }
-            }
-            else
-            {
-                if (gr != null)
-                {
-                    return gr.frameOfReferenceX;
-                }
-                if (gc != null)
-                {
-                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceX;
-                }
+                    }
+                    if (gc != null) {
+                        return (GestureRecognition.FrameOfReference)gc.frameOfReferenceY;
+                    }
+                    break;
+                default:
+                    if (gr != null) {
+                        return gr.frameOfReferenceX;
+                    }
+                    if (gc != null) {
+                        return (GestureRecognition.FrameOfReference)gc.frameOfReferenceX;
+                    }
+                    break;
             }
             return GestureRecognition.FrameOfReference.Head;
         }
         set
         {
-            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
-            {
-                if (gr != null)
-                {
-                    gr.frameOfReferenceY = value;
-                }
-                if (gc != null)
-                {
-                    gc.frameOfReferenceY = (GestureCombinations.FrameOfReference)value;
-                }
-            }
-            else
-            {
-                if (gr != null)
-                {
-                    gr.frameOfReferenceX = value;
-                }
-                if (gc != null)
-                {
-                    gc.frameOfReferenceX = (GestureCombinations.FrameOfReference)value;
-                }
+            switch (this.mivryCoordinateSystem) {
+                case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                    if (gr != null) {
+                        gr.frameOfReferenceY = value;
+                    }
+                    if (gc != null) {
+                        gc.frameOfReferenceY = (GestureCombinations.FrameOfReference)value;
+                    }
+                    break;
+                default:
+                    if (gr != null) {
+                        gr.frameOfReferenceX = value;
+                    }
+                    if (gc != null) {
+                        gc.frameOfReferenceX = (GestureCombinations.FrameOfReference)value;
+                    }
+                    break;
             }
             GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
         }
@@ -286,53 +279,49 @@ public class GestureManager : MonoBehaviour
     {
         get
         {
-            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
-            {
-                if (gr != null)
-                {
+            switch (this.mivryCoordinateSystem) {
+                case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                    if (gr != null) {
                     return gr.frameOfReferenceX;
-                }
-                if (gc != null)
-                {
-                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceX;
-                }
-            }
-            else
-            {
-                if (gr != null)
-                {
-                    return gr.frameOfReferenceZ;
-                }
-                if (gc != null)
-                {
-                    return (GestureRecognition.FrameOfReference)gc.frameOfReferenceZ;
-                }
+                    }
+                    if (gc != null) {
+                        return (GestureRecognition.FrameOfReference)gc.frameOfReferenceX;
+                    }
+                    break;
+                default:
+                    if (gr != null) {
+                        return gr.frameOfReferenceZ;
+                    }
+                    if (gc != null) {
+                        return (GestureRecognition.FrameOfReference)gc.frameOfReferenceZ;
+                    }
+                    break;
             }
             return GestureRecognition.FrameOfReference.Head;
         }
         set
         {
-            if (this.mivryCoordinateSystem == Mivry.MivryCoordinateSystem.UnrealEngine)
-            {
-                if (gr != null)
-                {
-                    gr.frameOfReferenceX = value;
-                }
-                if (gc != null)
-                {
-                    gc.frameOfReferenceX = (GestureCombinations.FrameOfReference)value;
-                }
-            }
-            else
-            {
-                if (gr != null)
-                {
-                    gr.frameOfReferenceZ = value;
-                }
-                if (gc != null)
-                {
-                    gc.frameOfReferenceZ = (GestureCombinations.FrameOfReference)value;
-                }
+            switch (this.mivryCoordinateSystem) {
+                case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                    if (gr != null) {
+                        gr.frameOfReferenceX = value;
+                    }
+                    if (gc != null) {
+                        gc.frameOfReferenceX = (GestureCombinations.FrameOfReference)value;
+                    }
+                    break;
+                default:
+                    if (gr != null) {
+                        gr.frameOfReferenceZ = value;
+                    }
+                    if (gc != null) {
+                        gc.frameOfReferenceZ = (GestureCombinations.FrameOfReference)value;
+                    }
+                    break;
             }
             GestureManagerVR.me?.submenuFrameOfReference?.GetComponent<SubmenuFrameOfReference>().refresh();
         }
@@ -400,7 +389,6 @@ public class GestureManager : MonoBehaviour
     public int copy_gesture_from_id = 0; // which gesture to copy
     public int copy_gesture_to_id = 0; // which gesture to copy (+1 so that "0" means "new gesture (-1))
     public bool copy_gesture_mirror = true; // whether to mirror the gesture to copy
-    public bool copy_gesture_rotate = true; // whether to rotate the gesture to copy
 
     // The gesture recognition object:
     // You can have as many of these as you want simultaneously.

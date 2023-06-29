@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -54,17 +54,23 @@ public class SubmenuCoordinateSystem : MonoBehaviour
             return;
         switch (gm.mivryCoordinateSystem)
         {
-            case Mivry.MivryCoordinateSystem.OpenXR:
+            case Mivry.MivryCoordinateSystem.Unity_OpenXR:
                 SubmenuCoordinateSystemValue.text = "OpenXR";
                 break;
-            case Mivry.MivryCoordinateSystem.OculusVR:
+            case Mivry.MivryCoordinateSystem.Unity_OculusVR:
                 SubmenuCoordinateSystemValue.text = "OculusVR";
                 break;
-            case Mivry.MivryCoordinateSystem.SteamVR:
+            case Mivry.MivryCoordinateSystem.Unity_SteamVR:
                 SubmenuCoordinateSystemValue.text = "SteamVR";
                 break;
-            case Mivry.MivryCoordinateSystem.UnrealEngine:
-                SubmenuCoordinateSystemValue.text = "Unreal";
+            case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                SubmenuCoordinateSystemValue.text = "UE OpenXR";
+                break;
+            case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                SubmenuCoordinateSystemValue.text = "UE OculusVR";
+                break;
+            case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                SubmenuCoordinateSystemValue.text = "UE SteamVR";
                 break;
         }
     }

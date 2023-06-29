@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -75,6 +75,7 @@ public class MiVRy : ModuleRules
 			RuntimeDependencies.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Windows/x86_64/GestureRecognition_Win_x86_64.dll");
 			PublicDelayLoadDLLs.Add("GestureRecognition_Win_x86_64.dll");
 		} else if (Target.Platform == UnrealTargetPlatform.Android) {
+            /*
 			IAndroidToolChain ToolChain = AndroidExports.CreateToolChain(Target.ProjectFile);
             var Architectures = ToolChain.GetAllArchitectures();
             var ArchitectureDetected = false;
@@ -96,6 +97,21 @@ public class MiVRy : ModuleRules
 			if (ArchitectureDetected == false) {
                 // Log.TraceInformation("[MiVRy] WARNING: Could not detect target architecture. Defaulting to arm64-v8a.");
                 PublicAdditionalLibraries.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Android/arm_64/libmivry.so");
+            }
+            */
+            if (Target.Architecture == UnrealArch.Arm64) {
+				PublicAdditionalLibraries.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Android/arm_64/libmivry.so");
+			} else if (Target.Architecture == UnrealArch.X64) {
+				PublicAdditionalLibraries.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Android/x86_64/libmivry.so");
+			} else {
+				if (Target.Architectures.Contains(UnrealArch.Arm64)) {
+					PublicAdditionalLibraries.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Android/arm_64/libmivry.so");
+				} else if (Target.Architectures.Contains(UnrealArch.X64)) {
+					PublicAdditionalLibraries.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Android/x86_64/libmivry.so");
+				} else {
+                    // Log.TraceInformation("[MiVRy] WARNING: Could not detect target architecture. Defaulting to arm64-v8a.");
+					PublicAdditionalLibraries.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Android/arm_64/libmivry.so");
+				}
             }
             string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
             AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "MiVRy_APL.xml"));

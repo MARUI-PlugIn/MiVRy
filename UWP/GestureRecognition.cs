@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -113,6 +113,7 @@
  * (-16) : The provided license key is not valid or the operation is not permitted under the current license.
  * (-17) : Return code for: the operation could not be performed because the AI is currently being saved to database file.
  * (-18) : Return code for: invalid parameter(s) provided to function.
+ * (-19) : Return code for: input/output failure.
  */
 
 using System.Collections;
@@ -174,8 +175,25 @@ public class GestureRecognition
                 return "The operation could not be performed because the AI currently being saved to a database file.";
             case -18:
                 return "Invalid parameter(s) provided to function.";
+            case -19:
+                return "Input/output failure.";
         }
         return "Unknown error.";
+    }
+    //                                                                       ___________________
+    //______________________________________________________________________/        Axis
+    /// <summary>
+    /// Coordinate system axis / dimension IDs.
+    /// </summary>
+    public enum Axis
+    {
+        None = 0
+        ,
+        X = 1
+        ,
+        Y = 2
+        ,
+        Z = 4
     }
     //                                                                       ___________________
     //______________________________________________________________________/ FrameOfReference
@@ -1038,6 +1056,20 @@ public class GestureRecognition
         return GestureRecognition_isStrokeStarted(m_gro) != 0;
     }
     //                                                      ____________________________________
+    //_____________________________________________________/        pruneStroke()
+    /// <summary>
+    /// Prune the current gesture motion performance, discarding older tracking data points.
+    /// </summary>
+    /// <param name="num">Number of tracking data points to retain. -1 for no numeric limit.</param>
+    /// <param name="ms">Time frame (in milliseconds) of tracking data points to retain. -1 for no time limit.</param>
+    /// <returns>
+    /// The number of tracking data points retained, a negative error code on failure.
+    /// </returns>
+    public int pruneStroke(int num, int ms)
+    {
+        return GestureRecognition_pruneStroke(m_gro, num, ms);
+    }
+    //                                                      ____________________________________
     //_____________________________________________________/        cancelStroke()
     /// <summary>
     /// Cancel a gesture performance without identifying it.
@@ -1277,6 +1309,41 @@ public class GestureRecognition
         return GestureRecognition_getGestureNumberOfSamples(m_gro, index);
     }
     //                                                          ________________________________
+    //_________________________________________________________/    getGestureSampleType()
+    /// <summary>
+    /// Get the type of a previously recorded sample stroke.
+    /// Available sample types:
+    /// 0: Standard gesture motion.
+    /// 1: Continuous gesture motion.
+    /// </summary>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="sample_index">The zero-based index(ID) of the sample to retrieve.</param>
+    /// <returns>
+    /// The type of the sample stroke, or a negative error code on failure.
+    /// </returns>
+    public int getGestureSampleType(int gesture_index, int sample_index)
+    {
+        return GestureRecognition_getGestureSampleType(m_gro, gesture_index, sample_index);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    setGestureSampleType()
+    /// <summary>
+    /// Set the type of a previously recorded sample stroke.
+    /// Available sample types:
+    /// 0: Standard gesture motion.
+    /// 1: Continuous gesture motion.
+    /// </summary>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="sample_index">The zero-based index(ID) of the sample to retrieve.</param>
+    /// <param name="type">Type to set the sample to.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setGestureSampleType(int gesture_index, int sample_index, int type)
+    {
+        return GestureRecognition_setGestureSampleType(m_gro, gesture_index, sample_index, type);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/    getGestureSampleLength()
     /// <summary>
     /// Get the number of data points a sample has.
@@ -1353,6 +1420,9 @@ public class GestureRecognition
     //_________________________________________________________/    getGestureMeanStroke()
     /// <summary>
     /// Retrieve a gesture mean (average over samples).
+    /// Note: The 'stroke_q' average gesture rotation is the quaternion who rotates the x-axis (Vector3.right) into the
+    /// primary (most significant) direction of the gesture, the y-axis (Vector3.up) into secondary (second most significant)
+    /// direction, and the z-axis (Vector3.forward) into the least significant direction of the mean gesture.
     /// </summary>
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
     /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
@@ -2080,6 +2150,8 @@ public class GestureRecognition
     public static extern int GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] p, double[] s, int[] n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
     [DllImport(libfile, EntryPoint = "GestureRecognition_isStrokeStarted", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_isStrokeStarted(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_pruneStroke", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_pruneStroke(IntPtr gro, int num, int ms);
     [DllImport(libfile, EntryPoint = "GestureRecognition_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_cancelStroke(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentify", CallingConvention = CallingConvention.Cdecl)]
@@ -2116,6 +2188,10 @@ public class GestureRecognition
     public static extern IntPtr GestureRecognition_getGestureMetadata(IntPtr gro, int index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureNumberOfSamples", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getGestureNumberOfSamples(IntPtr gro, int index);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureSampleType", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getGestureSampleType(IntPtr gco, int gesture_index, int sample_index);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setGestureSampleType", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setGestureSampleType(IntPtr gco, int gesture_index, int sample_index, int type);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureSampleLength", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getGestureSampleLength(IntPtr gro, int gesture_index, int sample_index, int processed);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureSampleStroke", CallingConvention = CallingConvention.Cdecl)]

@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -58,15 +58,23 @@ public:
 		void setNumberOfParts(int NewNumberOfParts);
 	
 	/**
-	* Whether GestureDatabase files to be loaded/saved by this actor are using the Unity coordinate system.
-	* Set to true if you want to load GestureDatabase files created with Unity apps (for example
-	* the Unity-OpenXR-based GestureManager) or save GestureDatabase files for later use in Unity.
-	* This internally switches the coordinate system (z-up -> y-up) and scales
-	* the world (centimeters -> meters).
-	* Regarding the Unreal VR world scale, see: World Settings -> World To Meters.
+    * Which VR plugin you're using in your project.
+    * By default, UE5 uses OpenXR plugin as other plug-ins have been deprecated.
+    * However, in UE4 several plugins were available including "OculusVR" which used a different coordinate
+    * system for the controller.
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Combinations")
-		GestureRecognition_CoordinateSystem CoordinateSystem = GestureRecognition_CoordinateSystem::Unreal;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Combinations", meta = (DisplayName = "Unreal VR Plugin"))
+		GestureRecognition_VRPlugin UnrealVRPlugin = GestureRecognition_VRPlugin::OpenXR;
+	
+	/**
+	* Which coordinate system is used inside the MiVRy AI.
+	* If you recorded your gestures in another coordinate system (for example: in Unity with the Gesture Manager VR App),
+	* select the correct coorinate system here to automatically convery between your project and the gesture recordings in the
+	* MiVRy gesture database file.
+    * Regarding the Unreal VR world scale, see: World Settings -> World To Meters.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Combinations", meta = (DisplayName = "MiVRy Coordinate System"))
+		GestureRecognition_CoordinateSystem MivryCoordinateSystem = GestureRecognition_CoordinateSystem::Unreal_OpenXR;
 
 	/**
 	* License ID (name) of your MiVRy license.
@@ -140,18 +148,18 @@ public:
 
 	/**
 	* Update the current position of the HMD/headset during a gesture performance (stroke).
-	* \param  HMD_Position		Current position of the headset.
-	* \param  HMD_Rotation      Current orientation/rotation of the headset.
-	* \return                   Zero on success, a negative error code on failure.
+	* @param  HMD_Position		Current position of the headset.
+	* @param  HMD_Rotation      Current orientation/rotation of the headset.
+	* @return                   Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Update Head Position"))
 	int updateHeadPosition(const FVector& HMD_Position, const FRotator& HMD_Rotation);
 
 	/**
 	* Update the current position of the HMD/headset during a gesture performance (stroke).
-	* \param  HMD_Position		Current position of the headset.
-	* \param  HMD_Rotation      Current orientation/rotation of the headset.
-	* \return                   Zero on success, a negative error code on failure.
+	* @param  HMD_Position		Current position of the headset.
+	* @param  HMD_Rotation      Current orientation/rotation of the headset.
+	* @return                   Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Update Head Position (Quaternion Rotation)"))
 	int updateHeadPositionQ(const FVector& HMD_Position, const FQuat& HMD_Rotation);
@@ -207,16 +215,27 @@ public:
 	* @param    part            The sub-gesture index (or side) of the gesture motion.
 	* @param    probabilities   Array to receive the propability values (0~1) for each registered gesture.
 	* @param    similarities    Array to receive the similarity values (0~1) for each registered gesture.
-	* \return                   Zero on success, or a negative error code on failure.
+	* @return                   Zero on success, or a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get all Probabilities and Similarities (last stroke)"))
 	int getPartProbabilitiesAndSimilarities(int part, TArray<float>& probabilities, TArray<float>& similarities);
 
 	/**
 	* Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
-	* \return   True if a gesture motion (stroke) was started and is ongoing, false if not.
+	* @return   True if a gesture motion (stroke) was started and is ongoing, false if not.
 	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Is Stroke Started"))
 	bool isStrokeStarted(int part);
+
+	/**
+	* Prune the current stroke (gesture motion).
+	* @param    part            The sub-gesture index (or side) of the gesture motion.
+	* @param    num             The number of tracking data points to retain. -1 for no numeric limit.
+	* @param    ms              The time duration of tracking data to retain (in milliseconds). -1 for no time limit.
+	* @return   The number of retained tracking data points, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Prune Stroke"))
+	int pruneStroke(int part, int num, int ms);
 
 	/**
 	* Cancel a gesture motion for one hand or part of the combination.
@@ -354,14 +373,12 @@ public:
 	* @param from_part The combination part or hand side index from which to copy.
 	* @param from_gesture_index The ID of the gesture to copy.
 	* @param to_part The combination part or hand side index to which to copy.
-	* @param to_gesture_index The ID of the gesture into which to copy.
-	* @param mirror_x Whether to mirror the samples about the x-axis.
-	* @param mirror_y Whether to mirror the samples about the y-axis.
-	* @param mirror_z Whether to mirror the samples about the z-axis.
+	* @param to_gesture_index The ID of the gesture into which to copy. -1 to create a new gesture.
+	* @param mirror Whether to mirror the samples (left/right).
 	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Copy Gesture"))
-	int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x = false, bool mirror_y = false, bool mirror_z = false);
+	int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index=-1, bool mirror=false);
 
 	/**
 	* Get the gesture recognition score of the current neural network (0~1).
@@ -419,6 +436,31 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Number Of Samples"))
 	int getGestureNumberOfSamples(int part, int index);
+	
+    /**
+    * Get the type of a previously recorded sample stroke.
+    * 0 = Standard.
+    * 1 = Continuous.
+    * @param   part            The sub-gesture index (or side).
+    * @param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+    * @param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+    * @return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+    */
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Get Gesture Sample Type"))
+    int getGestureSampleType(int part, int gesture_index, int sample_index) const;
+
+    /**
+    * Set the type of a previously recorded sample stroke.
+    * 0 = Standard.
+    * 1 = Continuous.
+    * @param   part            The sub-gesture index (or side).
+    * @param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+    * @param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+    * @param   type            The type ID to set for the sample stroke.
+    * @return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+    */
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Set Gesture Sample Type"))
+    int setGestureSampleType(int part, int gesture_index, int sample_index, int type);
 
 	/**
 	* Get the number of data points a sample has.

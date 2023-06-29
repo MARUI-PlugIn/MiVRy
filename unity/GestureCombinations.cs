@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -144,6 +144,7 @@
  * (-16) : Return code for: the provided license key is not valid or the operation is not permitted under the current license.
  * (-17) : Return code for: the operation could not be performed because the AI is currently being saved to database file.
  * (-18) : Return code for: invalid parameter(s) provided to function.
+ * (-19) : Return code for: input/output failure.
  */
 
 using System.Collections;
@@ -156,6 +157,21 @@ using System.Text;
 
 public class GestureCombinations
 {
+    //                                                                       ___________________
+    //______________________________________________________________________/       Axis
+    /// <summary>
+    /// Coordinate system axis / dimension IDs.
+    /// </summary>
+    public enum Axis
+    {
+        None = 0
+        ,
+        X = 1
+        ,
+        Y = 2
+        ,
+        Z = 4
+    }
     //                                                                       ___________________
     //______________________________________________________________________/ FrameOfReference
     /// <summary>
@@ -885,6 +901,22 @@ public class GestureCombinations
         return GestureCombinations_isStrokeStarted(m_gc, part) != 0;
     }
     //                                                          ________________________________
+    //_________________________________________________________/       pruneStroke()
+    /// <summary>
+    /// Prune the currently running a gesture motion (stroke), discarding older
+    /// tracking data points.
+    /// </summary>
+    /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
+    /// <param name="num">The number of tracking data points to retain, -1 for no numeric limit.</param>
+    /// <param name="ms">The time duration to retain in milliseconds, -1 for no time limit.</param>
+    /// <returns>
+    /// The number of tracking data points in the current gesture motion, a negative error code on failure.
+    /// </returns>
+    public int pruneStroke(int part, int num, int ms)
+    {
+        return GestureCombinations_pruneStroke(m_gc, part, num, ms);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/         cancelStroke()
     /// <summary>
     /// Cancel a gesture (stroke).
@@ -1331,15 +1363,14 @@ public class GestureCombinations
     /// <param name="from_part">The sub-gesture index from which to copy.</param>
     /// <param name="gesture_index">The gesture ID index to copy.</param>
     /// <param name="to_part">The sub-gesture index to which to copy.</param>
-    /// <param name="mirror_x">Whether to mirror about the x-axis.</param>
-    /// <param name="mirror_y">Whether to mirror about the y-axis.</param>
-    /// <param name="mirror_z">Whether to mirror about the z-axis.</param>
+    /// <param name="to_gesture_index">The gesture ID to which to copy (-1 to create new gesture).</param>
+    /// <param name="mirror_axis">The axis along which to mirror the gesture (0=none, 1=x, 2=y, 4=z).</param>
     /// <returns>
     /// ID of the new gesture, -1 on failure.
     /// </returns>
-    public int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x, bool mirror_y, bool mirror_z)
+    public int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, Axis mirror_axis)
     {
-        return GestureCombinations_copyGesture(m_gc, from_part, from_gesture_index, to_part, to_gesture_index, mirror_x ? 1 : 0, mirror_y ? 1 : 0, mirror_z ? 1 : 0);
+        return GestureCombinations_copyGesture(m_gc, from_part, from_gesture_index, to_part, to_gesture_index, (int)mirror_axis);
     }
     //                                                          ________________________________
     //_________________________________________________________/ subGestureRecognitionScore()
@@ -1437,6 +1468,43 @@ public class GestureCombinations
         return GestureCombinations_getGestureNumberOfSamples(m_gc, part, index);
     }
     //                                                          ________________________________
+    //_________________________________________________________/    getGestureSampleType()
+    /// <summary>
+    /// Get the type of a previously recorded sample stroke.
+    /// Available sample types:
+    /// 0: Standard gesture motion.
+    /// 1: Continuous gesture motion.
+    /// </summary>
+    /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="sample_index">The zero-based index(ID) of the sample to retrieve.</param>
+    /// <returns>
+    /// The type of the sample stroke, or a negative error code on failure.
+    /// </returns>
+    public int getGestureSampleType(int part, int gesture_index, int sample_index)
+    {
+        return GestureCombinations_getGestureSampleType(m_gc, part, gesture_index, sample_index);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    setGestureSampleType()
+    /// <summary>
+    /// Set the type of a previously recorded sample stroke.
+    /// Available sample types:
+    /// 0: Standard gesture motion.
+    /// 1: Continuous gesture motion.
+    /// </summary>
+    /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="sample_index">The zero-based index(ID) of the sample to retrieve.</param>
+    /// <param name="type">Type to set the sample to.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setGestureSampleType(int part, int gesture_index, int sample_index, int type)
+    {
+        return GestureCombinations_setGestureSampleType(m_gc, part, gesture_index, sample_index, type);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/    getGestureSampleLength()
     /// <summary>
     /// Get the number of data points a sample has.
@@ -1515,6 +1583,9 @@ public class GestureCombinations
     //_________________________________________________________/    getGestureMeanStroke()
     /// <summary>
     /// Retrieve a gesture mean (average over samples).
+    /// Note: The 'stroke_q' average gesture rotation is the quaternion who rotates the x-axis (Vector3.right) into the
+    /// primary (most significant) direction of the gesture, the y-axis (Vector3.up) into secondary (second most significant)
+    /// direction, and the z-axis (Vector3.forward) into the least significant direction of the mean gesture.
     /// </summary>
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
@@ -2270,6 +2341,8 @@ public class GestureCombinations
     public static extern int GestureCombinations_getPartProbabilitiesAndSimilarities(IntPtr gco, int part, double[] p, double[] s, int[] n);
     [DllImport(libfile, EntryPoint = "GestureCombinations_isStrokeStarted", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_isStrokeStarted(IntPtr gco, int part);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_pruneStroke", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_pruneStroke(IntPtr gco, int part, int num, int ms);
     [DllImport(libfile, EntryPoint = "GestureCombinations_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_cancelStroke(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_identifyGestureCombination", CallingConvention = CallingConvention.Cdecl)]
@@ -2295,7 +2368,7 @@ public class GestureCombinations
     [DllImport(libfile, EntryPoint = "GestureCombinations_createGesture", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_createGesture(IntPtr gco, int part, string name, IntPtr metadata); //!< Create new gesture.
     [DllImport(libfile, EntryPoint = "GestureCombinations_copyGesture", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_copyGesture(IntPtr gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
+    public static extern int GestureCombinations_copyGesture(IntPtr gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_axis); //!< Copy gesture from one part/side to another.
     [DllImport(libfile, EntryPoint = "GestureCombinations_gestureRecognitionScore", CallingConvention = CallingConvention.Cdecl)]
     public static extern double GestureCombinations_gestureRecognitionScore(IntPtr gco, int part); //!< Get the gesture recognition score of the current artificial intelligence (0~1).
     // [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureName", CallingConvention = CallingConvention.Cdecl)]
@@ -2310,6 +2383,10 @@ public class GestureCombinations
     public static extern int GestureCombinations_getGestureEnabled(IntPtr gco, int part, int index);
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureNumberOfSamples", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getGestureNumberOfSamples(IntPtr gco, int part, int index); //!< Get the number of recorded samples of a registered gesture.
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureSampleType", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getGestureSampleType(IntPtr gco, int part, int gesture_index, int sample_index);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setGestureSampleType", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setGestureSampleType(IntPtr gco, int part, int gesture_index, int sample_index, int type);
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureSampleLength", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getGestureSampleLength(IntPtr gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     [DllImport(libfile, EntryPoint = "GestureCombinations_getGestureSampleStroke", CallingConvention = CallingConvention.Cdecl)]

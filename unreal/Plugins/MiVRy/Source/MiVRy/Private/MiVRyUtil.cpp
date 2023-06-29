@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -236,87 +236,322 @@ void UMiVRyUtil::readFileToBuffer(const FString& path, GestureRecognition_Result
 	result = GestureRecognition_Result::Error;
 }
 
-const FQuat RotateYp56(0.0f,  0.4717815f, 0.0f,       0.8817155f);
-const FQuat RotateYm56(0.0f, -0.4717815f, 0.0f,       0.8817155f);
-const FQuat RotateZp90(0.0f,  0.0f,       0.7071068f, 0.7071068f);
-const FQuat RotateZm90(0.0f,  0.0f,      -0.7071068f, 0.7071068f);
+const FQuat RotateYp55(0, 0.4617486f,  0, 0.8870108f); // Controller rotation: OpenXR -> OculusVR
+const FQuat RotateYm55(0, -0.4617486f, 0, 0.8870108f); // Controller rotation: OculusVR -> OpenXR
+const FQuat RotateYp25(0, 0.2164396f,  0, 0.976296f ); // Controller rotation: SteamVR -> OculusVR
+const FQuat RotateYm25(0, -0.2164396f, 0, 0.976296f ); // Controller rotation: OculusVR -> SteamVR
+const FQuat RotateYp20(0, 0.258819f,   0, 0.9659258f); // Controller rotation: OpenXR -> SteamVR
+const FQuat RotateYm20(0, -0.258819f,  0, 0.9659258f); // Controller rotation: SteamVR -> OpenXR
 const FQuat RotateXZY( 0.5f,  0.5f,       0.5f,       0.5f);
 const FQuat RotateXYZ(-0.5f, -0.5f,      -0.5f,       0.5f);
 
-void UMiVRyUtil::convertInput(const FVector& location, const FQuat& rotation, GestureRecognition_DeviceType device_type, GestureRecognition_CoordinateSystem coord_sys, double p[3], double q[4])
+void UMiVRyUtil::convertInput(const FVector& location, const FQuat& rotation_in, GestureRecognition_DeviceType device_type, GestureRecognition_VRPlugin vr_plugin, GestureRecognition_CoordinateSystem coord_sys, double p[3], double q[4])
 {
-	if (coord_sys == GestureRecognition_CoordinateSystem::Unreal) {
-		p[0] = location.X;
-		p[1] = location.Y;
-		p[2] = location.Z;
-		q[0] = rotation.X;
-		q[1] = rotation.Y;
-		q[2] = rotation.Z;
-		q[3] = rotation.W;
-		return;
-	}
-	FQuat quaternion = RotateXYZ * rotation;
-	switch (device_type) {
-	case GestureRecognition_DeviceType::Headset:
-		quaternion = quaternion * RotateXZY;
-		break;
-	case GestureRecognition_DeviceType::Controller:
+	FQuat rotation = rotation_in;
+    if (vr_plugin == GestureRecognition_VRPlugin::OculusVR) {
+        switch (coord_sys) {
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+            p[0] = location.X;
+            p[1] = location.Y;
+            p[2] = location.Z;
+			if (device_type == GestureRecognition_DeviceType::Controller) {
+				if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OpenXR) {
+					rotation = rotation * RotateYm55; // Unreal_OculusVR -> Unreal_OpenXR
+				} else if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_SteamVR) {
+					rotation = rotation * RotateYm25; // Unreal_OculusVR -> Unreal_SteamVR
+				}
+			}
+			q[0] = rotation.X;
+			q[1] = rotation.Y;
+			q[2] = rotation.Z;
+			q[3] = rotation.W;
+            return;
+        }
+        // else: one of the Unity coordinate systems
+		rotation = RotateXYZ * rotation;
+        switch (device_type) {
+        case GestureRecognition_DeviceType::Headset:
+			rotation = rotation * RotateXZY;
+            break;
+        case GestureRecognition_DeviceType::Controller:
+            switch (coord_sys) {
+            case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+				rotation = rotation * RotateYm55 * RotateXZY; // Unreal_OculusVR -> Unity_OpenXR
+				break;
+            case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+				rotation = rotation * RotateYm25 * RotateXZY; // Unreal_OculusVR -> Unity_SteamVR
+                break;
+            case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+				rotation = rotation * RotateXZY; // Unreal_OculusVR -> Unreal_OculusVR
+                break;
+            }
+            break;
+        }
+        p[0] = location.Y * 0.01; // Unity.X = right = Unreal.Y
+        p[1] = location.Z * 0.01; // Unity.Y = up    = Unreal.Z
+        p[2] = location.X * 0.01; // Unity.Z = front = Unreal.X
+        q[0] = rotation.X;
+        q[1] = rotation.Y;
+        q[2] = rotation.Z;
+        q[3] = rotation.W;
+        return;
+    } else
+	if (vr_plugin == GestureRecognition_VRPlugin::SteamVR) {
 		switch (coord_sys) {
-		case GestureRecognition_CoordinateSystem::UnityOpenXR:
-		case GestureRecognition_CoordinateSystem::UnitySteamVR:
-			quaternion = quaternion * RotateYp56 * RotateZp90;
-			break;
-		case GestureRecognition_CoordinateSystem::UnityOculusVR:
-			quaternion = quaternion * RotateYp56 * RotateXZY;
-			break;
-		}
-		break;
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+            p[0] = location.X;
+            p[1] = location.Y;
+            p[2] = location.Z;
+			if (device_type == GestureRecognition_DeviceType::Controller) {
+				if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OpenXR) {
+					rotation = rotation * RotateYm20; // Unreal_SteamVR -> Unreal_OpenXR
+				} else if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OculusVR) {
+					rotation = rotation * RotateYp25; // Unreal_SteamVR -> Unreal_OculusVR
+				}
+			}
+			q[0] = rotation.X;
+			q[1] = rotation.Y;
+			q[2] = rotation.Z;
+			q[3] = rotation.W;
+            return;
+        }
+        // else: one of the Unity coordinate systems
+		rotation = RotateXYZ * rotation;
+        switch (device_type) {
+        case GestureRecognition_DeviceType::Headset:
+			rotation = rotation * RotateXZY;
+            break;
+        case GestureRecognition_DeviceType::Controller:
+            switch (coord_sys) {
+            case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+				rotation = rotation * RotateYm20 * RotateXZY; // Unreal_SteamVR -> Unity_OpenXR
+				break;
+            case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+				rotation = rotation * RotateXZY; // Unreal_SteamVR -> Unity_SteamVR
+                break;
+            case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+				rotation = rotation * RotateYp25 * RotateXZY; // Unreal_SteamVR -> Unity_OculusVR
+                break;
+            }
+            break;
+        }
+        p[0] = location.Y * 0.01; // Unity.X = right = Unreal.Y
+        p[1] = location.Z * 0.01; // Unity.Y = up    = Unreal.Z
+        p[2] = location.X * 0.01; // Unity.Z = front = Unreal.X
+        q[0] = rotation.X;
+        q[1] = rotation.Y;
+        q[2] = rotation.Z;
+        q[3] = rotation.W;
+        return;
+	} else { // (vr_plugin == GestureRecognition_VRPlugin::Unreal_OpenXR)
+		switch (coord_sys) {
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+            p[0] = location.X;
+            p[1] = location.Y;
+            p[2] = location.Z;
+			if (device_type == GestureRecognition_DeviceType::Controller) {
+				if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_SteamVR) {
+					rotation = rotation * RotateYp20; // Unreal_OpenXR -> Unreal_SteamVR
+				} else if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OculusVR) {
+					rotation = rotation * RotateYp55; // Unreal_OpenXR -> Unreal_OculusVR
+				}
+			}
+			q[0] = rotation.X;
+			q[1] = rotation.Y;
+			q[2] = rotation.Z;
+			q[3] = rotation.W;
+            return;
+        }
+        // else: one of the Unity coordinate systems
+		rotation = RotateXYZ * rotation;
+        switch (device_type) {
+        case GestureRecognition_DeviceType::Headset:
+			rotation = rotation * RotateXZY;
+            break;
+        case GestureRecognition_DeviceType::Controller:
+            switch (coord_sys) {
+            case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+				rotation = rotation * RotateXZY; // Unreal_OpenXR -> Unity_OpenXR
+				break;
+            case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+				rotation = rotation * RotateYp20 * RotateXZY; // Unreal_OpenXR -> Unity_SteamVR
+                break;
+            case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+				rotation = rotation * RotateYp55 * RotateXZY; // Unreal_OpenXR -> Unity_OculusVR
+                break;
+            }
+            break;
+        }
+        p[0] = location.Y * 0.01; // Unity.X = right = Unreal.Y
+        p[1] = location.Z * 0.01; // Unity.Y = up    = Unreal.Z
+        p[2] = location.X * 0.01; // Unity.Z = front = Unreal.X
+        q[0] = rotation.X;
+        q[1] = rotation.Y;
+        q[2] = rotation.Z;
+        q[3] = rotation.W;
+        return;
 	}
-	p[0] = location.Y * 0.01; // Unity.X = right = Unreal.Y
-	p[1] = location.Z * 0.01; // Unity.Y = up    = Unreal.Z
-	p[2] = location.X * 0.01; // Unity.Z = front = Unreal.X
-	q[0] = quaternion.X;
-	q[1] = quaternion.Y;
-	q[2] = quaternion.Z;
-	q[3] = quaternion.W;
 }
 
 
-void UMiVRyUtil::convertOutput(GestureRecognition_CoordinateSystem coord_sys, const double p[3], const double q[4], GestureRecognition_DeviceType device_type, FVector& location, FQuat& rotation)
+void UMiVRyUtil::convertOutput(GestureRecognition_VRPlugin vr_plugin, GestureRecognition_CoordinateSystem coord_sys, const double p[3], const double q[4], GestureRecognition_DeviceType device_type, FVector& location, FQuat& rotation)
 {
-	if (coord_sys == GestureRecognition_CoordinateSystem::Unreal) {
-		location.X = (float)p[0];
-		location.Y = (float)p[1];
-		location.Z = (float)p[2];
-		rotation.X = (float)q[0];
-		rotation.Y = (float)q[1];
-		rotation.Z = (float)q[2];
-		rotation.W = (float)q[3];
-		return;
-	}
-	location.X = 100.0f * (float)p[2]; // Unreal.X = front = Unity.Z
-	location.Y = 100.0f * (float)p[0]; // Unreal.Y = right = Unity.X
-	location.Z = 100.0f * (float)p[1]; // Unreal.Z = up    = Unity.Y
-	rotation.X = (float)q[0]; // in Unity coordinates
-	rotation.Y = (float)q[1];
-	rotation.Z = (float)q[2];
-	rotation.W = (float)q[3];
-	rotation.Normalize();
-	rotation = RotateXZY * rotation;
-	switch (device_type) {
-	case GestureRecognition_DeviceType::Headset:
-		rotation = rotation * RotateXYZ;
-		break;
-	case GestureRecognition_DeviceType::Controller:
+    if (vr_plugin == GestureRecognition_VRPlugin::OculusVR) {
+        switch (coord_sys) {
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+            location.X = (float)p[0];
+            location.Y = (float)p[1];
+            location.Z = (float)p[2];
+            rotation.X = (float)q[0];
+            rotation.Y = (float)q[1];
+            rotation.Z = (float)q[2];
+            rotation.W = (float)q[3];
+            if (device_type == GestureRecognition_DeviceType::Controller) {
+				if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OpenXR) {
+					rotation = rotation * RotateYp55; // Unreal_OpenXR -> Unreal_OculusVR
+				} else if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_SteamVR) {
+					rotation = rotation * RotateYp25; // Unreal_SteamVR -> Unreal_OculusVR
+				}
+            }
+            return;
+        }
+        // else: one of the Unity coordinate systems
+        location.X = 100.0f * (float)p[2]; // Unreal.X = front = Unity.Z
+        location.Y = 100.0f * (float)p[0]; // Unreal.Y = right = Unity.X
+        location.Z = 100.0f * (float)p[1]; // Unreal.Z = up    = Unity.Y
+        rotation.X = (float)q[0]; // in Unity coordinates
+        rotation.Y = (float)q[1];
+        rotation.Z = (float)q[2];
+        rotation.W = (float)q[3];
+        rotation.Normalize();
+        rotation = RotateXZY * rotation;
+        switch (device_type) {
+        case GestureRecognition_DeviceType::Headset:
+            rotation = rotation * RotateXYZ;
+            break;
+        case GestureRecognition_DeviceType::Controller:
+            switch (coord_sys) {
+            case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+				rotation = rotation * RotateXYZ * RotateYp55; // Unity_OpenXR -> Unreal_OculusVR
+				break;
+            case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+                rotation = rotation * RotateXYZ * RotateYp25; // Unity_SteamVR -> Unreal_OculusVR
+                break;
+            case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+                rotation = rotation * RotateXYZ; // Unity_OculusVR -> Unreal_OculusVR
+                break;
+            }
+            break;
+        }
+        return;
+    } else
+	if (vr_plugin == GestureRecognition_VRPlugin::SteamVR) {
 		switch (coord_sys) {
-		case GestureRecognition_CoordinateSystem::UnityOpenXR:
-		case GestureRecognition_CoordinateSystem::UnitySteamVR:
-			rotation = rotation * RotateZm90 * RotateYm56;
-			break;
-		case GestureRecognition_CoordinateSystem::UnityOculusVR:
-			rotation = rotation * RotateXYZ * RotateYm56;
-			break;
-		}
-		break;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+            location.X = (float)p[0];
+            location.Y = (float)p[1];
+            location.Z = (float)p[2];
+            rotation.X = (float)q[0];
+            rotation.Y = (float)q[1];
+            rotation.Z = (float)q[2];
+            rotation.W = (float)q[3];
+            if (device_type == GestureRecognition_DeviceType::Controller) {
+				if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OpenXR) {
+					rotation = rotation * RotateYp20; // Unreal_OpenXR -> Unreal_SteamVR
+				} else if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OculusVR) {
+					rotation = rotation * RotateYm25; // Unreal_OculusVR -> Unreal_SteamVR
+				}
+            }
+            return;
+        }
+        // else: one of the Unity coordinate systems
+        location.X = 100.0f * (float)p[2]; // Unreal.X = front = Unity.Z
+        location.Y = 100.0f * (float)p[0]; // Unreal.Y = right = Unity.X
+        location.Z = 100.0f * (float)p[1]; // Unreal.Z = up    = Unity.Y
+        rotation.X = (float)q[0]; // in Unity coordinates
+        rotation.Y = (float)q[1];
+        rotation.Z = (float)q[2];
+        rotation.W = (float)q[3];
+        rotation.Normalize();
+        rotation = RotateXZY * rotation;
+        switch (device_type) {
+        case GestureRecognition_DeviceType::Headset:
+            rotation = rotation * RotateXYZ;
+            break;
+        case GestureRecognition_DeviceType::Controller:
+            switch (coord_sys) {
+            case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+				rotation = rotation * RotateXYZ * RotateYp20; // Unity_OpenXR -> Unreal_SteamVR
+				break;
+            case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+                rotation = rotation * RotateXYZ; // Unity_SteamVR -> Unreal_SteamVR
+                break;
+            case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+                rotation = rotation * RotateXYZ * RotateYm25; // Unity_OculusVR -> Unreal_SteamVR
+                break;
+            }
+            break;
+        }
+        return;
+	} else { // vr_plugin == GestureRecognition_VRPlugin::OpenXR
+		switch (coord_sys) {
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+            location.X = (float)p[0];
+            location.Y = (float)p[1];
+            location.Z = (float)p[2];
+            rotation.X = (float)q[0];
+            rotation.Y = (float)q[1];
+            rotation.Z = (float)q[2];
+            rotation.W = (float)q[3];
+            if (device_type == GestureRecognition_DeviceType::Controller) {
+				if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_SteamVR) {
+					rotation = rotation * RotateYm20; // Unreal_SteamVR -> Unreal_OpenXR
+				} else if (coord_sys == GestureRecognition_CoordinateSystem::Unreal_OculusVR) {
+					rotation = rotation * RotateYm55; // Unreal_OculusVR -> Unreal_OpenXR
+				}
+            }
+            return;
+        }
+        // else: one of the Unity coordinate systems
+        location.X = 100.0f * (float)p[2]; // Unreal.X = front = Unity.Z
+        location.Y = 100.0f * (float)p[0]; // Unreal.Y = right = Unity.X
+        location.Z = 100.0f * (float)p[1]; // Unreal.Z = up    = Unity.Y
+        rotation.X = (float)q[0]; // in Unity coordinates
+        rotation.Y = (float)q[1];
+        rotation.Z = (float)q[2];
+        rotation.W = (float)q[3];
+        rotation.Normalize();
+        rotation = RotateXZY * rotation;
+        switch (device_type) {
+        case GestureRecognition_DeviceType::Headset:
+            rotation = rotation * RotateXYZ;
+            break;
+        case GestureRecognition_DeviceType::Controller:
+            switch (coord_sys) {
+            case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+				rotation = rotation * RotateXYZ; // Unity_OpenXR -> Unreal_OpenXR
+				break;
+            case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+                rotation = rotation * RotateXYZ * RotateYm20; // Unity_SteamVR -> Unreal_OpenXR
+                break;
+            case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+                rotation = rotation * RotateXYZ * RotateYm55; // Unity_OculusVR -> Unreal_OpenXR
+                break;
+            }
+            break;
+        }
+        return;
 	}
 }

@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -97,14 +97,23 @@ public:
 		FFilePath GestureDatabaseFile;
 
 	/**
-	* Whether the GestureDatabase file has been created with Unity,
-	* for example with the Unity-OpenXR-based "GestureManager" app.
-	* This internally switches the coordinate system (z-up -> y-up) and scales
-	* the world (centimeters -> meters).
+	* Which VR plug-in you're using in your project.
+	* By default, UE5 uses OpenXR plug-in as other plug-ins have been deprecated.
+	* However, in UE4, several plug-ins were available including "OculusVR" which used a different coordinate
+	* system for the controller.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy", meta = (DisplayName = "Unreal VR Plugin"))
+		GestureRecognition_VRPlugin UnrealVRPlugin = GestureRecognition_VRPlugin::OpenXR;
+
+	/**
+	* Which coordinate system is used inside the MiVRy AI.
+	* If you recorded your gestures in another coordinate system (for example: in Unity with the Gesture Manager VR App),
+	* select the correct coorinate system here to automatically convery between your project and the gesture recordings in the
+	* MiVRy gesture database file.
 	* Regarding the Unreal VR world scale, see: World Settings -> World To Meters.
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		GestureRecognition_CoordinateSystem CoordinateSystem = GestureRecognition_CoordinateSystem::Unreal;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy", meta = (DisplayName = "MiVRy Coordinate System"))
+		GestureRecognition_CoordinateSystem MivryCoordinateSystem = GestureRecognition_CoordinateSystem::Unreal_OpenXR;
 
 	/**
 	* Actor component (eg. MotionControllerComponent) to use as left hand. (Optinal).

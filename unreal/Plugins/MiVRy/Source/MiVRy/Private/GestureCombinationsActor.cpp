@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -54,10 +54,18 @@ void AGestureCombinationsActor::BeginPlay()
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("GestureCombinations::create returned null"));
 		return;
 	}
-	if (this->CoordinateSystem == GestureRecognition_CoordinateSystem::Unreal) {
-		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::ZYX;
-	} else { // Unity
-		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::YXZ;
+	switch (this->MivryCoordinateSystem) {
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+		default:
+			this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::ZYX;
+			break;
+		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+			this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::YXZ;
+			break;
 	}
 	if (this->LicenseName.IsEmpty() == false) {
 		auto license_name = StringCast<ANSICHAR>(*this->LicenseName);
@@ -87,10 +95,16 @@ void AGestureCombinationsActor::setNumberOfParts(int NewNumberOfParts)
 		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString("GestureCombinations::create returned null"));
 		return;
 	}
-	if (this->CoordinateSystem == GestureRecognition_CoordinateSystem::Unreal) {
+	switch (this->MivryCoordinateSystem) {
+	case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+	default:
 		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::ZYX;
-	}
-	else { // Unity
+		break;
+	case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 		this->gco->rotationalFrameOfReference.rotationOrder = IGestureRecognition::RotationOrder::YXZ;
 	}
 	if (this->LicenseName.IsEmpty() == false) {
@@ -151,7 +165,7 @@ int AGestureCombinationsActor::startStrokeQ(int part, const FVector& HMD_Positio
 		return -99;
 	double p[3];
 	double q[4];
-	UMiVRyUtil::convertInput(HMD_Position, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, p, q);
+	UMiVRyUtil::convertInput(HMD_Position, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, p, q);
 	return this->gco->startStroke(part, p, q, record_as_sample);
 }
 
@@ -167,7 +181,7 @@ int AGestureCombinationsActor::updateHeadPositionQ(const FVector& HMD_Position, 
 	}
 	double p[3];
 	double q[4];
-	UMiVRyUtil::convertInput(HMD_Position, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, p, q);
+	UMiVRyUtil::convertInput(HMD_Position, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, p, q);
 	return this->gco->updateHeadPositionQ(p, q);
 }
 
@@ -183,7 +197,7 @@ int AGestureCombinationsActor::contdStrokeQ(int part, const FVector& HandPositio
 		return -99;
 	double p[3];
 	double q[4];
-	UMiVRyUtil::convertInput(HandPosition, HandRotation, GestureRecognition_DeviceType::Controller, this->CoordinateSystem, p, q);
+	UMiVRyUtil::convertInput(HandPosition, HandRotation, GestureRecognition_DeviceType::Controller, this->UnrealVRPlugin, this->MivryCoordinateSystem, p, q);
 	return this->gco->contdStrokeQ(part, p, q);
 }
 
@@ -205,11 +219,14 @@ int AGestureCombinationsActor::endStrokeQ(int part, FVector& GesturePosition, FQ
 	double dir1[3] = {0,1,0};
 	double dir2[3] = {0,0,1};
 	int ret = this->gco->endStroke(part, pos, &scale, dir0, dir1, dir2);
-	if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
+	FRotationMatrix rm(FRotator(0, 0, 0));
+	switch (this->MivryCoordinateSystem) {
+	case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unity_SteamVR:
 		GesturePosition.X = float(pos[2]) * 100.0f; // Unreal.X = front = Unity.Z
 		GesturePosition.Y = float(pos[0]) * 100.0f; // Unreal.Y = right = Unity.X
 		GesturePosition.Z = float(pos[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
-		FRotationMatrix rm(FRotator(0, 0, 0));
 		rm.M[0][0] = (float)dir0[2]; // Unreal.X = front = Unity.Z
 		rm.M[0][1] = (float)dir0[0]; // Unreal.Y = right = Unity.X
 		rm.M[0][2] = (float)dir0[1]; // Unreal.Z = up    = Unity.Y
@@ -221,11 +238,14 @@ int AGestureCombinationsActor::endStrokeQ(int part, FVector& GesturePosition, FQ
 		rm.M[2][2] = (float)dir2[1];
 		GestureRotation = rm.ToQuat();
 		GestureScale = float(scale) * 100.0f;
-	} else {
+		break;
+	case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+	default:
 		GesturePosition.X = pos[0];
 		GesturePosition.Y = pos[1];
 		GesturePosition.Z = pos[2];
-		FRotationMatrix rm(FRotator(0, 0, 0));
 		rm.M[0][0] = (float)dir0[0]; // dir0 = main direction = forward = x-axis
 		rm.M[0][1] = (float)dir0[1];
 		rm.M[0][2] = (float)dir0[2];
@@ -272,6 +292,14 @@ bool AGestureCombinationsActor::isStrokeStarted(int part)
 	if (!this->gco)
 		return false;
 	return this->gco->isStrokeStarted(part);
+}
+
+
+int AGestureCombinationsActor::pruneStroke(int part, int num, int ms)
+{
+	if (!this->gco)
+		return -99;
+	return this->gco->pruneStroke(part, num, ms);
 }
 
 
@@ -328,7 +356,7 @@ int AGestureCombinationsActor::contdIdentifyQ(const FVector& HMD_Location, const
 		return -99;
 	double hmd_p[3];
 	double hmd_q[4];
-	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, hmd_p, hmd_q);
+	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, hmd_p, hmd_q);
 	double similarity = -1;
 	const int num_parts = this->gco->numberOfParts();
 	double* parts_probabilities = new double[num_parts];
@@ -360,7 +388,7 @@ int AGestureCombinationsActor::contdRecordQ(const FVector& HMD_Location, const F
 		return -99;
 	double hmd_p[3];
 	double hmd_q[4];
-	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->CoordinateSystem, hmd_p, hmd_q);
+	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, hmd_p, hmd_q);
 	return this->gco->contdRecord(hmd_p, hmd_q);
 }
 
@@ -424,11 +452,26 @@ int AGestureCombinationsActor::createGesture(int part, const FString& name)
 }
 
 
-int AGestureCombinationsActor::copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x, bool mirror_y, bool mirror_z)
+int AGestureCombinationsActor::copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror)
 {
 	if (!this->gco)
 		return -99;
-	return this->gco->copyGesture(from_part, from_gesture_index, to_part, to_gesture_index, mirror_x, mirror_y, mirror_z);
+	IGestureRecognition::Axis mirror_axis = IGestureRecognition::Axis_None;
+	if (mirror) {
+		switch (this->MivryCoordinateSystem) {
+		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+			mirror_axis = IGestureRecognition::Axis_X; // x-axis
+			break;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+		default:
+			mirror_axis = IGestureRecognition::Axis_Y; // y-axis
+		}
+	}
+	return this->gco->copyGesture(from_part, from_gesture_index, to_part, to_gesture_index, mirror_axis);
 }
 
 
@@ -506,6 +549,20 @@ int AGestureCombinationsActor::getGestureNumberOfSamples(int part, int index)
 	return this->gco->getGestureNumberOfSamples(part, index);
 }
 
+int AGestureCombinationsActor::getGestureSampleType(int part, int gesture_index, int sample_index) const
+{
+	if (!this->gco)
+		return -99;
+	return this->gco->getGestureSampleType(part, gesture_index, sample_index);
+}
+
+int AGestureCombinationsActor::setGestureSampleType(int part, int gesture_index, int sample_index, int type)
+{
+	if (!this->gco)
+		return -99;
+	return this->gco->setGestureSampleType(part, gesture_index, sample_index, type);
+}
+
 int AGestureCombinationsActor::getGestureSampleLength(int part, int gesture_index, int sample_index, bool processed)
 {
 	if (!this->gco)
@@ -540,10 +597,10 @@ int AGestureCombinationsActor::getGestureSampleStroke(int part, int gesture_inde
 	HMD_Rotations.SetNum(len);
 	FQuat quat;
 	for (int i = 0; i < len; i++) {
-		UMiVRyUtil::convertOutput(this->CoordinateSystem, &p[3*i], &q[4*i], GestureRecognition_DeviceType::Controller, Locations[i], quat);
+		UMiVRyUtil::convertOutput(this->UnrealVRPlugin, this->MivryCoordinateSystem, &p[3*i], &q[4*i], GestureRecognition_DeviceType::Controller, Locations[i], quat);
 		Rotations[i] = quat.Rotator();
 
-		UMiVRyUtil::convertOutput(this->CoordinateSystem, &hmd_p[3*i], &hmd_q[4*i], GestureRecognition_DeviceType::Headset, HMD_Locations[i], quat);
+		UMiVRyUtil::convertOutput(this->UnrealVRPlugin, this->MivryCoordinateSystem, &hmd_p[3*i], &hmd_q[4*i], GestureRecognition_DeviceType::Headset, HMD_Locations[i], quat);
 		HMD_Rotations[i] = quat.Rotator();
 	}
 	delete[] p;
@@ -570,10 +627,10 @@ int AGestureCombinationsActor::getGestureMeanStroke(int part, int gesture_index,
 		return mean_len;
 	double* p = new double[3 * mean_len];
 	double* q = new double[4 * mean_len];
-	double hmd_p[3];
-	double hmd_q[4];
+	double stroke_p[3];
+	double stroke_q[4];
 	double scale;
-	int ret = this->gco->getGestureMeanStroke(part, gesture_index, (double(*)[3])p, (double(*)[4])q, mean_len, hmd_p, hmd_q, &scale);
+	int ret = this->gco->getGestureMeanStroke(part, gesture_index, (double(*)[3])p, (double(*)[4])q, mean_len, stroke_p, stroke_q, &scale);
 	if (ret < 0) {
 		delete[] p;
 		delete[] q;
@@ -581,41 +638,28 @@ int AGestureCombinationsActor::getGestureMeanStroke(int part, int gesture_index,
 		Rotations.Empty(0);
 		return ret;
 	}
+	switch (this->MivryCoordinateSystem) {
+	case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+		GestureLocation = FVector((float)stroke_p[2], (float)stroke_p[0], (float)stroke_p[1]);
+		GestureRotation = FQuat((float)stroke_q[2], (float)stroke_q[0], (float)stroke_q[1], (float)stroke_q[3]).Rotator();
+		GestureScale = (float)scale * 100.0f;
+		break;
+	case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+	default:
+		GestureLocation = FVector((float)stroke_p[0], (float)stroke_p[1], (float)stroke_p[2]);
+		GestureRotation = FQuat((float)stroke_q[0], (float)stroke_q[1], (float)stroke_q[2], (float)stroke_q[3]).Rotator();
+		GestureScale = (float)scale;
+	}
 	const int len = (ret < mean_len) ? ret : mean_len;
 	Locations.SetNum(len);
 	Rotations.SetNum(len);
 	FQuat quat;
-	UMiVRyUtil::convertOutput(this->CoordinateSystem, hmd_p, hmd_q, GestureRecognition_DeviceType::Headset, GestureLocation, quat);
-	GestureRotation = quat.Rotator();
-	GestureScale = (float)scale;
-	if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
-		GestureScale *= 100.0f;
-	}
 	for (int i = 0; i < len; i++) {
-		Locations[i].X = (float)p[3 * i + 0]; // x = primart axis
-		Locations[i].Y = (float)p[3 * i + 1]; // y = secondary axis
-		Locations[i].Z = (float)p[3 * i + 2]; // z = least-significant axis
-		quat.X = (float)q[4 * i + 0];
-		quat.Y = (float)q[4 * i + 1];
-		quat.Z = (float)q[4 * i + 2];
-		quat.W = (float)q[4 * i + 3];
-		quat.Normalize();
-		if (this->CoordinateSystem != GestureRecognition_CoordinateSystem::Unreal) {
-			const FVector xaxis = quat.GetAxisX();
-			const FVector yaxis = quat.GetAxisY();
-			const FVector zaxis = quat.GetAxisZ();
-			FRotationMatrix m(FRotator::ZeroRotator);
-			m.M[0][0] = -yaxis.Z;
-			m.M[0][1] = -yaxis.X;
-			m.M[0][2] = -yaxis.Y;
-			m.M[1][0] = xaxis.Z;
-			m.M[1][1] = xaxis.X;
-			m.M[1][2] = xaxis.Y;
-			m.M[2][0] = zaxis.Z;
-			m.M[2][1] = zaxis.X;
-			m.M[2][2] = zaxis.Y;
-			quat = m.ToQuat();
-		}
+		UMiVRyUtil::convertOutput(this->UnrealVRPlugin, this->MivryCoordinateSystem, &p[3 * i], &q[4 * i], GestureRecognition_DeviceType::Controller, Locations[i], quat);
 		Rotations[i] = quat.Rotator();
 	}
 	delete[] p;
@@ -1130,7 +1174,17 @@ GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFram
 	if (!this->gco) {
 		return (GestureRecognition_FrameOfReference)-1;
 	}
-	return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.x;
+    switch (this->MivryCoordinateSystem) {
+        case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+        case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+        case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+            return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.z;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+        default:
+            return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.x;
+    }
 }
 
 void AGestureCombinationsActor::setRotationalFrameOfReferenceRoll(GestureRecognition_FrameOfReference i)
@@ -1138,7 +1192,18 @@ void AGestureCombinationsActor::setRotationalFrameOfReferenceRoll(GestureRecogni
 	if (!this->gco) {
 		return;
 	}
-	this->gco->rotationalFrameOfReference.x = IGestureRecognition::FrameOfReference(i);
+    switch (this->MivryCoordinateSystem) {
+        case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+        case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+        case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+            this->gco->rotationalFrameOfReference.z = IGestureRecognition::FrameOfReference(i);
+            break;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+        default:
+            this->gco->rotationalFrameOfReference.x = IGestureRecognition::FrameOfReference(i);
+    }
 }
 
 GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFrameOfReferencePitch()
@@ -1146,7 +1211,17 @@ GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFram
 	if (!this->gco) {
 		return (GestureRecognition_FrameOfReference)-1;
 	}
-	return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.y;
+    switch (this->MivryCoordinateSystem) {
+        case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+        case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+        case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+            return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.x;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+        default:
+            return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.y;
+    }
 }
 
 void AGestureCombinationsActor::setRotationalFrameOfReferencePitch(GestureRecognition_FrameOfReference i)
@@ -1154,7 +1229,18 @@ void AGestureCombinationsActor::setRotationalFrameOfReferencePitch(GestureRecogn
 	if (!this->gco) {
 		return;
 	}
-	this->gco->rotationalFrameOfReference.y = IGestureRecognition::FrameOfReference(i);
+    switch (this->MivryCoordinateSystem) {
+        case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+        case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+        case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+            this->gco->rotationalFrameOfReference.x = IGestureRecognition::FrameOfReference(i);
+            break;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+        default:
+            this->gco->rotationalFrameOfReference.y = IGestureRecognition::FrameOfReference(i);
+    }
 }
 
 GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFrameOfReferenceYaw()
@@ -1162,7 +1248,17 @@ GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFram
 	if (!this->gco) {
 		return (GestureRecognition_FrameOfReference)-1;
 	}
-	return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.z;
+    switch (this->MivryCoordinateSystem) {
+        case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+        case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+        case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+            return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.y;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+        default:
+            return (GestureRecognition_FrameOfReference)this->gco->rotationalFrameOfReference.z;
+    }
 }
 
 void AGestureCombinationsActor::setRotationalFrameOfReferenceYaw(GestureRecognition_FrameOfReference i)
@@ -1170,7 +1266,18 @@ void AGestureCombinationsActor::setRotationalFrameOfReferenceYaw(GestureRecognit
 	if (!this->gco) {
 		return;
 	}
-	this->gco->rotationalFrameOfReference.z = IGestureRecognition::FrameOfReference(i);
+    switch (this->MivryCoordinateSystem) {
+        case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+        case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+        case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+            this->gco->rotationalFrameOfReference.y = IGestureRecognition::FrameOfReference(i);
+            break;
+		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+        default:
+            this->gco->rotationalFrameOfReference.z = IGestureRecognition::FrameOfReference(i);
+    }
 }
 
 GestureRecognition_RotationOrder AGestureCombinationsActor::getRotationalFrameOfReferenceRotationOrder()

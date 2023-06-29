@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -60,10 +60,9 @@ public class GestureManagerEditor : UnityEditor.Editor
         var copy_gesture_to_part_prop = serializedObject.FindProperty("copy_gesture_to_part");
         var copy_gesture_to_id_prop = serializedObject.FindProperty("copy_gesture_to_id");
         var copy_gesture_mirror_prop = serializedObject.FindProperty("copy_gesture_mirror");
-        var copy_gesture_rotate_prop = serializedObject.FindProperty("copy_gesture_rotate");
 
         string[] unityXrPlugins = { "OpenXR", "OculusVR", "SteamVR" };
-        string[] mivryCoordinateSystems = { "OpenXR", "OculusVR", "SteamVR", "UnrealEngine" };
+        string[] mivryCoordinateSystems = { "OpenXR", "OculusVR", "SteamVR", "UE OpenXR", "UE OculusVR", "UE SteamVR" };
 
         EditorGUILayout.BeginVertical(GUI.skin.box);
         EditorGUILayout.LabelField("COORDINATE SYSTEM CONVERSION:", "");
@@ -441,11 +440,22 @@ public class GestureManagerEditor : UnityEditor.Editor
             EditorGUILayout.EndHorizontal();
             
             copy_gesture_mirror_prop.boolValue = EditorGUILayout.Toggle("Mirror left/right", copy_gesture_mirror_prop.boolValue);
-            copy_gesture_rotate_prop.boolValue = EditorGUILayout.Toggle("Rotate 180 degrees", copy_gesture_rotate_prop.boolValue);
 
-            if (GUILayout.Button("Copy"))
-            {
-                int new_gesture = gm.gc.copyGesture(gm.copy_gesture_from_part, gm.copy_gesture_from_id, gm.copy_gesture_to_part, gm.copy_gesture_to_id - 1, gm.copy_gesture_mirror ^ gm.copy_gesture_rotate, false, gm.copy_gesture_rotate);
+            if (GUILayout.Button("Copy")) {
+                GestureCombinations.Axis mirror_axis = GestureCombinations.Axis.None;
+                if (gm.copy_gesture_mirror) {
+                    switch (gm.mivryCoordinateSystem) {
+                        case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
+                        case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
+                        case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
+                            mirror_axis = GestureCombinations.Axis.Y;
+                            break;
+                        default: // Unity
+                            mirror_axis = GestureCombinations.Axis.X;
+                            break;
+                    }
+                }
+                int new_gesture = gm.gc.copyGesture(gm.copy_gesture_from_part, gm.copy_gesture_from_id, gm.copy_gesture_to_part, gm.copy_gesture_to_id - 1, mirror_axis);
                 if (new_gesture < 0)
                 {
                     Debug.Log("[ERROR] Failed to copy gesture.");

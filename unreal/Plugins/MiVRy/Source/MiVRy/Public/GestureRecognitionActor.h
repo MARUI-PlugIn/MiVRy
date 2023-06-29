@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -45,15 +45,23 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	/**
-	* Whether GestureDatabase files to be loaded/saved by this actor are using the Unity coordinate system.
-	* Set to true if you want to load GestureDatabase files created with Unity apps (for example
-	* the Unity-OpenXR-based GestureManager) or save GestureDatabase files for later use in Unity.
-	* This internally switches the coordinate system (z-up -> y-up) and scales
-	* the world (centimeters -> meters).
+    * Which VR plug-in you're using in your project.
+    * By default, UE5 uses OpenXR plug-in as other plug-ins have been deprecated.
+    * However, in UE4, several plug-ins were available including "OculusVR" which used a different coordinate
+    * system for the controller.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Recognition", meta = (DisplayName = "Unreal VR Plugin"))
+	GestureRecognition_VRPlugin UnrealVRPlugin = GestureRecognition_VRPlugin::OpenXR;
+	
+	/**
+	* Which coordinate system is used inside the MiVRy AI.
+	* If you recorded your gestures in another coordinate system (for example: in Unity with the Gesture Manager VR App),
+	* select the correct coorinate system here to automatically convery between your project and the gesture recordings in the
+	* MiVRy gesture database file.
 	* Regarding the Unreal VR world scale, see: World Settings -> World To Meters.
 	*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Recognition")
-	GestureRecognition_CoordinateSystem CoordinateSystem = GestureRecognition_CoordinateSystem::Unreal;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gesture Recognition", meta = (DisplayName = "MiVRy Coordinate System"))
+	GestureRecognition_CoordinateSystem MivryCoordinateSystem = GestureRecognition_CoordinateSystem::Unreal_OpenXR;
 
 	/**
 	* License ID (name) of your MiVRy license.
@@ -108,18 +116,18 @@ public:
 
 	/**
 	* Update the current position of the HMD/headset during a gesture performance (stroke).
-	* \param  HMD_Position		Current position of the headset.
-	* \param  HMD_Rotation      Current orientation/rotation of the headset.
-	* \return                   Zero on success, a negative error code on failure.
+	* @param  HMD_Position		Current position of the headset.
+	* @param  HMD_Rotation      Current orientation/rotation of the headset.
+	* @return                   Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Update Head Position"))
 	int updateHeadPosition(const FVector& HMD_Position, const FRotator& HMD_Rotation);
 
 	/**
 	* Update the current position of the HMD/headset during a gesture performance (stroke).
-	* \param  HMD_Position		Current position of the headset.
-	* \param  HMD_Rotation      Current orientation/rotation of the headset.
-	* \return                   Zero on success, a negative error code on failure.
+	* @param  HMD_Position		Current position of the headset.
+	* @param  HMD_Rotation      Current orientation/rotation of the headset.
+	* @return                   Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Update Head Position (Quaternion Rotation)"))
 	int updateHeadPositionQ(const FVector& HMD_Position, const FQuat& HMD_Rotation);
@@ -224,7 +232,17 @@ public:
 	* Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
 	* @return   True if a gesture motion (stroke) was started and is ongoing, false if not.
 	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Is Stroke Started"))
 	bool isStrokeStarted();
+
+    /**
+    * Prune currently performed gesture motion by discarding older tracking data points.
+    * @param    num             Number of tracking data points to retain. -1 for no numeric limit.
+    * @param    ms              Time frame (in milliseconds) of tracking data points to retain. -1 for no time limit.
+    * @return   Number of retained tracking data points, a negative error code on failure.
+    */
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Prune Stroke"))
+    int pruneStroke(int num, int ms);
 	
 	/**
 	* Cancel a started gesture motion.
@@ -415,6 +433,29 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Number Of Gesture Samples"))
 	int getGestureNumberOfSamples(int index);
+
+	/**
+	* Get the type of a previously recorded sample stroke.
+	* 0 = Standard.
+	* 1 = Continuous.
+	* @param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+	* @param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+	* @return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get Gesture Sample Type"))
+	int getGestureSampleType(int gesture_index, int sample_index) const;
+
+	/**
+	* Set the type of a previously recorded sample stroke.
+	* 0 = Standard.
+	* 1 = Continuous.
+	* @param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+	* @param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+	* @param   type            The type ID to set for the sample stroke.
+	* @return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Set Gesture Sample Type"))
+	int setGestureSampleType(int gesture_index, int sample_index, int type);
 
 	/**
 	* Get the number of data points a sample has.

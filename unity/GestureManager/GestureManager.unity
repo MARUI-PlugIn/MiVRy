@@ -1854,7 +1854,6 @@ MonoBehaviour:
   copy_gesture_from_id: 0
   copy_gesture_to_id: 0
   copy_gesture_mirror: 1
-  copy_gesture_rotate: 1
 --- !u!4 &1431119463
 Transform:
   m_ObjectHideFlags: 0

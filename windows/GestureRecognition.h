@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -119,6 +119,7 @@
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDLICENSE    -16  //!< Return code for: the provided license key is not valid or the operation is not permitted under the current license.
 #define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYSAVING   -17  //!< Return code for: the operation could not be performed because the AI is currently being saved to database file.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM      -18  //!< Return code for: invalid parameter(s) provided to function.
+#define GESTURERECOGNITION_RESULT_ERROR_IOFAILURE         -19  //!< Return code for: input/output failure.
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -135,6 +136,11 @@
 #define GESTURERECOGNITION_ROTATIONORDER_YZX 3 //!< Identifier for y->z->x order of (Euler) rotation angles.
 #define GESTURERECOGNITION_ROTATIONORDER_ZXY 4 //!< Identifier for z->x->y order of (Euler) rotation angles.
 #define GESTURERECOGNITION_ROTATIONORDER_ZYX 5 //!< Identifier for z->y->x order of (Euler) rotation angles.
+
+#define GESTURERECOGNITION_AXIS_NONE    0   //!< Identifier for no axis / dimension.
+#define GESTURERECOGNITION_AXIS_X       1   //!< Identifier for the x-axis / dimension.
+#define GESTURERECOGNITION_AXIS_Y       2   //!< Identifier for the y-axis / dimension.
+#define GESTURERECOGNITION_AXIS_Z       4   //!< Identifier for the z-axis / dimension.
 
 #ifdef _WIN32
 #define GESTURERECOGNITION_LIBEXPORT __declspec(dllexport)
@@ -168,6 +174,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetSimilarity(void* gro, double* similarity, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get similarity value.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_endStrokeAndGetAllProbabilitiesAndSimilarities(void* gro, double p[], double s[], int* n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and get gesture probabilities and similarity values.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_isStrokeStarted(void* gro); //!< Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_pruneStroke(void* gro, int num, int ms); //!< Prune currently performed gesture motion by discarding older tracking data points.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_cancelStroke(void* gro); //!< Cancel a started stroke.
 
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentify(void* gro, const double hmd_p[3], const double hmd_q[4], double* similarity); //!< Continuous gesture identification.
@@ -193,6 +200,8 @@ extern "C" {
 
     GESTURERECOGNITION_LIBEXPORT void*       GestureRecognition_getGestureMetadata(void* gro, int index); //!< Get the command of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureNumberOfSamples(void* gro, int index); //!< Get the number of recorded samples of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleType(void* gro, int gesture_index, int sample_index); //!< Get the stroke type of a previously recorded sample.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_setGestureSampleType(void* gro, int gesture_index, int sample_index, int type); //!< Set the stroke type of a previously recorded sample.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleLength(void* gro, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]); //!< Retrieve a sample stroke.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanLength(void* gro, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
@@ -328,6 +337,8 @@ public:
         Error_CurrentlySaving = GESTURERECOGNITION_RESULT_ERROR_CURRENTLYSAVING //!< Return code for: the operation could not be performed because the AI is current being saved to a database file.
         ,
         Error_InvalidParameter = GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM //!< Return code for: invalid parameter(s) provided to function.
+        ,
+        Error_IOFailure = GESTURERECOGNITION_RESULT_ERROR_IOFAILURE //!< Return code for: input/output failure.
     };
 
     /**
@@ -648,6 +659,14 @@ public:
     virtual bool isStrokeStarted()=0;
 
     /**
+    * Prune currently performed gesture motion by discarding older tracking data points.
+    * \param    num             Number of tracking data points to retain. -1 for no numeric limit.
+    * \param    ms              Time frame (in milliseconds) of tracking data points to retain. -1 for no time limit.
+    * \return   Number of retained tracking data points, a negative error code on failure.
+    */
+    virtual int pruneStroke(int num, int ms)=0;
+
+    /**
     * Cancel a started stroke (gesture motion).
     * \return   Zero on success, an error code on failure.
     */
@@ -799,6 +818,27 @@ public:
     virtual int getGestureNumberOfSamples(int index) const =0;
 
     /**
+    * Get the type of a previously recorded sample stroke.
+    * 0 = Standard.
+    * 1 = Continuous.
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+    * \param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+    * \return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+    */
+    virtual int getGestureSampleType(int gesture_index, int sample_index) const=0;
+
+    /**
+    * Set the type of a previously recorded sample stroke.
+    * 0 = Standard.
+    * 1 = Continuous.
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+    * \param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+    * \param   type            The type ID to set for the sample stroke.
+    * \return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+    */
+    virtual int setGestureSampleType(int gesture_index, int sample_index, int type)=0;
+
+    /**
     * Get the number of data points a sample has.
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
     * \param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
@@ -830,6 +870,9 @@ public:
 
     /**
     * Retrieve a gesture mean (average over samples).
+    * Note: The 'stroke_q' average gesture rotation is the quaternion who rotates the x-axis into the
+    * primary (most significant) direction of the gesture, the y-axis into secondary (second most significant)
+    * direction, and the z-axis into the least significant direction of the mean gesture.
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the sample.
     * \param   p               [OUT] A place to store the stroke positional data. May be zero if this data is not required.
     * \param   q               [OUT] A place to store the stroke rotational data. May be zero if this data is not required.
@@ -1217,6 +1260,19 @@ public:
     * \return A function pointer to the global createDefaultMetadataCreatorFunction.
     */
     static MetadataCreatorFunction* getDefaultMetadataCreatorFunction();
+
+    /**
+    * Identifiers for different coordinate system axes / dimensions.
+    */
+    enum Axis {
+        Axis_None= GESTURERECOGNITION_AXIS_NONE  //!< Identifier for no axis / dimension.
+        ,
+        Axis_X   = GESTURERECOGNITION_AXIS_X //!< Identifier for the x-axis / dimension.
+        ,
+        Axis_Y   = GESTURERECOGNITION_AXIS_Y //!< Identifier for the y-axis / dimension.
+        ,
+        Axis_Z   = GESTURERECOGNITION_AXIS_Z //!< Identifier for the z-axis / dimension.
+    };
 };
 
 #endif // #ifdef __cplusplus

@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy Gesture Recognition - Unity Plug-In for Hololens
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 

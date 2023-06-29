@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.7
+ * Version 2.8
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -148,6 +148,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_endStroke(void* gco, int part, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and identify the gesture.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getPartProbabilitiesAndSimilarities(void* gco, int part, double p[], double s[], int* n); //!< Get all the probabilities and similarities (for each registered gesture) of the last gesture performance.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_isStrokeStarted(void* gco, int part); //!< Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_pruneStroke(void* gco, int part, int num, int ms); //!< Prune the current (started) stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_cancelStroke(void* gco, int part); //!< Cancel a started stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_identifyGestureCombination(void* gco, double* probability, double* similarity, double parts_probabilities[], double parts_similarities[]); //!< Return the most likely gesture candidate for the previous multi-gesture.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[] = 0, double parts_similarities[] = 0); //!< Continuous gesture identification.
@@ -163,7 +164,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_deleteGesture(void* gco, int part, int index); //!< Delete the recorded gesture with the specified index.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_deleteAllGestures(void* gco, int part); //!< Delete recorded gestures.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_createGesture(void* gco, int part, const char* name, void* metadata); //!< Create new gesture.
-    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_copyGesture(void* gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_x, int mirror_y, int mirror_z); //!< Copy gesture from one part/side to another.
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_copyGesture(void* gco, int from_part, int from_gesture_index, int to_part, int to_gesture_index, int mirror_axis); //!< Copy gesture from one part/side to another.
     GESTURERECOGNITION_LIBEXPORT double GestureCombinations_gestureRecognitionScore(void* gco, int part); //!< Get the gesture recognition score of the current neural network (0~1).
         
     GESTURERECOGNITION_LIBEXPORT const char* GestureCombinations_getGestureName(void* gco, int part, int index); //!< Get the name of a registered gesture.
@@ -173,6 +174,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void*       GestureCombinations_getGestureMetadata(void* gco, int part, int index); //!< Get the command of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureEnabled(void* gco, int part, int index); //!< Get whether a registered gesture is enabled or disabled.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureNumberOfSamples(void* gco, int part, int index); //!< Get the number of recorded samples of a registered gesture.
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleType(void* gco, int part, int gesture_index, int sample_index); //!< Get the stroke type of a previously recorded sample.
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_setGestureSampleType(void* gco, int part, int gesture_index, int sample_index, int type); //!< Set the stroke type of a previously recorded sample.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleLength(void* gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleStroke(void* gco, int part, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]); //!< Retrieve a sample stroke.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureMeanLength(void* gco, int part, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
@@ -419,6 +422,15 @@ public:
     virtual bool isStrokeStarted(int part)=0;
 
     /**
+    * Prune the current stroke (gesture motion).
+    * \param    part            The sub-gesture index (or side) of the gesture motion.
+    * \param    num             The number of tracking data points to retain. -1 for no numeric limit.
+    * \param    ms              The time duration of tracking data to retain (in milliseconds). -1 for no time limit.
+    * \return   The number of retained tracking data points, a negative error code on failure.
+    */
+    virtual int pruneStroke(int part, int num, int ms)=0;
+
+    /**
     * Cancel a started stroke (gesture motion).
     * \param    part            The sub-gesture index (or side) of the gesture motion.
     * \return   Zero on success, an error code on failure.
@@ -538,13 +550,11 @@ public:
     * \param    from_part           The sub-gesture index (or side) from which to copy.
     * \param    from_gesture_index  The index (ID) of the gesture to copy.
     * \param    to_part             The sub-gesture index (or side) to which to copy.
-    * \param    into_gesture_index  The index (ID) of the gesture into to which the samples should be added.
-    * \param    mirror_x            Whether to mirror the gesture samples over the x-axis.
-    * \param    mirror_y            Whether to mirror the gesture samples over the y-axis.
-    * \param    mirror_z            Whether to mirror the gesture samples over the z-axis.
+    * \param    into_gesture_index  The index (ID) of the gesture into to which the samples should be added. -1 to create new gesture.
+    * \param    mirror_axis         About which axis to mirror the gesture motion (0=none, 1=x, 2=y, 4=z).
     * \return                       The gesture index to which the copy was performed, or a negative error code on failure.
     */
-    virtual int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, bool mirror_x=false, bool mirror_y=false, bool mirror_z=false)=0;
+    virtual int copyGesture(int from_part, int from_gesture_index, int to_part, int to_gesture_index, IGestureRecognition::Axis mirror_axis)=0;
 
     /**
     * Get the gesture recognition score of the current neural network (0~1).
@@ -603,6 +613,29 @@ public:
     virtual int getGestureNumberOfSamples(int part, int index)=0;
 
     /**
+    * Get the type of a previously recorded sample stroke.
+    * 0 = Standard.
+    * 1 = Continuous.
+    * \param   part            The sub-gesture index (or side).
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+    * \param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+    * \return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+    */
+    virtual int getGestureSampleType(int part, int gesture_index, int sample_index) const=0;
+
+    /**
+    * Set the type of a previously recorded sample stroke.
+    * 0 = Standard.
+    * 1 = Continuous.
+    * \param   part            The sub-gesture index (or side).
+    * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
+    * \param   sample_index    The zero-based index (ID) of the sample for which to retrieve the number of data points.
+    * \param   type            The type ID to set for the sample stroke.
+    * \return  The type (ID) of the recorded sample stroke, a negative error code on failure.
+    */
+    virtual int setGestureSampleType(int part, int gesture_index, int sample_index, int type)=0;
+
+    /**
     * Get the number of data points a sample has.
     * \param   part            The sub-gesture index (or side).
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the number of data points.
@@ -637,6 +670,9 @@ public:
 
     /**
     * Retrieve a gesture mean (average over samples).
+    * Note: The 'stroke_q' average gesture rotation is the quaternion who rotates the x-axis into the
+    * primary (most significant) direction of the gesture, the y-axis into secondary (second most significant)
+    * direction, and the z-axis into the least significant direction of the mean gesture.
     * \param   part            The sub-gesture index (or side).
     * \param   gesture_index   The zero-based index (ID) of the gesture from where to retrieve the sample.
     * \param   sample_index    The zero-based index (ID) of the sample to retrieve.
