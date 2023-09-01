@@ -554,6 +554,7 @@ public class MivryQuestHands : MonoBehaviour
                     for (int i = this.numberOfTrackingPointsLeft - 1; i > 0; i--) {
                         this.gc.endStroke(i);
                     }
+                    this.isGesturingLeft = false;
                     if (!this.isGesturingRight) {
                         data.gestureID = gc.identifyGestureCombination(ref data.similarity);
                         data.gestureName = (data.gestureID >= 0)
@@ -633,6 +634,7 @@ public class MivryQuestHands : MonoBehaviour
                     for (int i = this.numberOfTrackingPointsRight - 1; i > 0; i--) {
                         this.gc.endStroke(i);
                     }
+                    this.isGesturingRight = false;
                     if (!this.isGesturingLeft) {
                         data.gestureID = gc.identifyGestureCombination(ref data.similarity);
                         data.gestureName = (data.gestureID >= 0)
