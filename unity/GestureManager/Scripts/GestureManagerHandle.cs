@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.8
+ * Version 2.9
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -41,6 +41,21 @@ public class GestureManagerHandle : MonoBehaviour
     public static float hoverHandleLastUpdate = 0.0f;
     public static float draggingHandleLastUpdate = 0.0f;
 
+    private Material material {
+        set {
+            var renderer = this.GetComponent<Renderer>();
+            if (renderer != null) {
+                renderer.material = value;
+            }
+            for (int i=this.transform.childCount-1; i>=0; i--) {
+                renderer = this.transform.GetChild(i)?.gameObject.GetComponent<Renderer>();
+                if (renderer != null) {
+                    renderer.material = value;
+                }
+            }
+        }
+    }
+
     private void Update()
     {
         if (draggingHandle == this) {
@@ -57,7 +72,7 @@ public class GestureManagerHandle : MonoBehaviour
             {
                 draggingHandle = null;
                 GestureManagerVR.gesturingEnabled = true;
-                this.GetComponent<Renderer>().material = (hoverHandle == this) ? hoverHandleMaterial : inactiveHandleMaterial;
+                this.material = (hoverHandle == this) ? hoverHandleMaterial : inactiveHandleMaterial;
                 this.lastPointerMat = Matrix4x4.identity;
                 return;
             } // else:
@@ -75,7 +90,7 @@ public class GestureManagerHandle : MonoBehaviour
                 targetObject.transform.position = gmMat.GetColumn(3);
                 targetObject.transform.rotation = gmMat.rotation;
             }
-            this.GetComponent<Renderer>().material = activeHandleMaterial;
+            this.material = activeHandleMaterial;
             this.lastPointerMat = pointerMat;
             draggingHandleLastUpdate = Time.time;
             if (GestureManagerVR.me != null && GestureManagerVR.me.followUser)
@@ -106,7 +121,7 @@ public class GestureManagerHandle : MonoBehaviour
                 GestureManagerVR.gesturingEnabled = false;
                 draggingHandle = this;
                 draggingHandleLastUpdate = Time.time;
-                this.GetComponent<Renderer>().material = activeHandleMaterial;
+                this.material = activeHandleMaterial;
                 this.lastPointerMat = Matrix4x4.identity;
             }
             return;
@@ -125,7 +140,7 @@ public class GestureManagerHandle : MonoBehaviour
         hoverHandle = this;
         activePointer = other.gameObject;
         hoverHandleLastUpdate = Time.time;
-        this.GetComponent<Renderer>().material = hoverHandleMaterial;
+        this.material = hoverHandleMaterial;
     }
 
     public void OnTriggerStay(Collider other)
@@ -151,6 +166,6 @@ public class GestureManagerHandle : MonoBehaviour
             return;
         hoverHandle = null;
         GestureManagerVR.gesturingEnabled = true;
-        this.GetComponent<Renderer>().material = inactiveHandleMaterial;
+        this.material = inactiveHandleMaterial;
     }
 }

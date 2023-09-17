@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.8
+ * Version 2.9
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -23,7 +23,7 @@ using UnityEngine;
 public class SubmenuRecord : MonoBehaviour
 {
     private bool initialized = false;
-    private TextMesh SubmenuRecordValue;
+    private SubmenuRecordRecordButton recordButton;
     private TextMesh SubmenuRecordSampleDisplayValue;
 
     void Start()
@@ -38,8 +38,8 @@ public class SubmenuRecord : MonoBehaviour
             GameObject child = this.transform.GetChild(i).gameObject;
             switch (child.name)
             {
-                case "SubmenuRecordValue":
-                    this.SubmenuRecordValue = child.GetComponent<TextMesh>();
+                case "SubmenuRecordRecordBtn":
+                    this.recordButton = child.GetComponent<SubmenuRecordRecordButton>();
                     break;
                 case "SubmenuRecordSampleDisplayValue":
                     this.SubmenuRecordSampleDisplayValue = child.GetComponent<TextMesh>();
@@ -53,6 +53,7 @@ public class SubmenuRecord : MonoBehaviour
     {
         if (!this.initialized)
             this.init();
+        this.recordButton.refresh();
         GestureManager gm = GestureManagerVR.me?.gestureManager;
         if (gm == null)
             return;
@@ -62,25 +63,16 @@ public class SubmenuRecord : MonoBehaviour
                 gm.record_gesture_id = num_gestures - 1;
             }
             if (gm.record_gesture_id < 0) {
-                this.SubmenuRecordValue.text = "Identifying, not recording";
                 this.SubmenuRecordSampleDisplayValue.text = "[off]";
                 GestureManagerVR.sampleDisplay.sampleId = -1;
             } else {
-                string gestureName = gm.gr.getGestureName(gm.record_gesture_id);
-                if (gestureName.Length > 8) {
-                    gestureName = gestureName.Substring(0, 8);
-                }
-                this.SubmenuRecordValue.text = $"Recording '{gestureName}' samples";
-
                 int numSamples = gm.gr.getGestureNumberOfSamples(gm.record_gesture_id);
-                if (GestureManagerVR.sampleDisplay.sampleId >= numSamples)
-                {
+                if (GestureManagerVR.sampleDisplay.sampleId >= numSamples) {
                     GestureManagerVR.sampleDisplay.sampleId = numSamples - 1;
                 }
                 if (GestureManagerVR.sampleDisplay.sampleId >= 0) {
                     this.SubmenuRecordSampleDisplayValue.text = $"{GestureManagerVR.sampleDisplay.sampleId}";
-                } else
-                {
+                } else {
                     this.SubmenuRecordSampleDisplayValue.text = "[off]";
                 }
             }
@@ -91,40 +83,27 @@ public class SubmenuRecord : MonoBehaviour
             if (gm.record_combination_id >= num_combinations)
                 gm.record_combination_id = num_combinations - 1;
             if (gm.record_combination_id < 0) {
-                this.SubmenuRecordValue.text = "Identifying, not recording";
                 this.SubmenuRecordSampleDisplayValue.text = "[off]";
                 GestureManagerVR.sampleDisplay.sampleId = -1;
             } else {
-                string combinationName = gm.gc.getGestureCombinationName(gm.record_combination_id);
-                if (combinationName.Length > 8) {
-                    combinationName = combinationName.Substring(0, 8);
-                }
-                this.SubmenuRecordValue.text = $"Recording '{combinationName}' samples"; 
                 int numSamples = 0;
-                for (int part = gm.gc.numberOfParts() - 1; part >=0; part--)
-                {
+                for (int part = gm.gc.numberOfParts() - 1; part >=0; part--) {
                     int partGestureId = gm.gc.getCombinationPartGesture(gm.record_combination_id, part);
-                    if (partGestureId >= 0)
-                    {
+                    if (partGestureId >= 0) {
                         int partNumSamples = gm.gc.getGestureNumberOfSamples(part, partGestureId);
                         numSamples = Mathf.Max(numSamples, partNumSamples);
                     }
                 }
-                if (GestureManagerVR.sampleDisplay.sampleId >= numSamples)
-                {
+                if (GestureManagerVR.sampleDisplay.sampleId >= numSamples) {
                     GestureManagerVR.sampleDisplay.sampleId = numSamples - 1;
                 }
-                if (GestureManagerVR.sampleDisplay.sampleId >= 0)
-                {
+                if (GestureManagerVR.sampleDisplay.sampleId >= 0) {
                     this.SubmenuRecordSampleDisplayValue.text = $"{GestureManagerVR.sampleDisplay.sampleId}";
-                }
-                else
-                {
+                } else {
                     this.SubmenuRecordSampleDisplayValue.text = "[off]";
                 }
             }
         } else {
-            this.SubmenuRecordValue.text = "Identifying, not recording";
             this.SubmenuRecordSampleDisplayValue.text = "[off]";
             GestureManagerVR.sampleDisplay.sampleId = -1;
         }

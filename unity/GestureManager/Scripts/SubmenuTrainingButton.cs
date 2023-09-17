@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.8
+ * Version 2.9
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -20,7 +20,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SubmenuTrainingButton : MonoBehaviour, GestureManagerButton
+public class SubmenuTrainingButton : GestureManagerButton
 {
     public enum Operation
     {
@@ -29,8 +29,6 @@ public class SubmenuTrainingButton : MonoBehaviour, GestureManagerButton
     }
     public Operation operation;
 
-    [SerializeField] private Material inactiveButtonMaterial;
-    [SerializeField] private Material activeButtonMaterial;
 
     private void OnTriggerEnter(Collider other)
     {
@@ -42,7 +40,7 @@ public class SubmenuTrainingButton : MonoBehaviour, GestureManagerButton
         if (GestureManagerVR.activeButton != null)
             return;
         GestureManagerVR.activeButton = this;
-        this.GetComponent<Renderer>().material = activeButtonMaterial;
+        this.material = activeButtonMaterial;
         if (gm.gr != null)
         {
             if (this.operation == Operation.StartTraining)
@@ -71,13 +69,13 @@ public class SubmenuTrainingButton : MonoBehaviour, GestureManagerButton
     {
         if (other.name.EndsWith("pointer") && (Object)GestureManagerVR.activeButton == this)
             GestureManagerVR.activeButton = null;
-        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+        this.material = inactiveButtonMaterial;
     }
 
     private void OnDisable()
     {
         if ((Object)GestureManagerVR.activeButton == this)
             GestureManagerVR.activeButton = null;
-        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+        this.material = inactiveButtonMaterial;
     }
 }

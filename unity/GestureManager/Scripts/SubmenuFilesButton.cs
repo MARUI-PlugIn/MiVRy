@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.8
+ * Version 2.9
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-public class SubmenuFilesButton : MonoBehaviour, GestureManagerButton
+public class SubmenuFilesButton : GestureManagerButton
 {
     [System.Serializable]
     public enum Operation {
@@ -33,9 +33,6 @@ public class SubmenuFilesButton : MonoBehaviour, GestureManagerButton
     };
     public Operation operation;
 
-    [SerializeField] private Material inactiveButtonMaterial;
-    [SerializeField] private Material activeButtonMaterial;
-
     private void OnTriggerEnter(Collider other)
     {
         GestureManager gm = GestureManagerVR.me?.gestureManager;
@@ -46,7 +43,7 @@ public class SubmenuFilesButton : MonoBehaviour, GestureManagerButton
         if (GestureManagerVR.activeButton != null)
             return;
         GestureManagerVR.activeButton = this;
-        this.GetComponent<Renderer>().material = activeButtonMaterial;
+        this.material = activeButtonMaterial;
         switch (this.operation)
         {
             case Operation.LoadGestureFile:
@@ -95,13 +92,13 @@ public class SubmenuFilesButton : MonoBehaviour, GestureManagerButton
     {
         if (other.name.EndsWith("pointer") && (Object)GestureManagerVR.activeButton == this)
             GestureManagerVR.activeButton = null;
-        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+        this.material = inactiveButtonMaterial;
     }
 
     private void OnDisable()
     {
         if ((Object)GestureManagerVR.activeButton == this)
             GestureManagerVR.activeButton = null;
-        this.GetComponent<Renderer>().material = inactiveButtonMaterial;
+        this.material = inactiveButtonMaterial;
     }
 }

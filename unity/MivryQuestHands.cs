@@ -1,6 +1,6 @@
 /*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.8
+ * Version 2.9
  * Copyright (c) 2023 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -31,82 +31,6 @@ using UnityEngine.Networking;
 using Ludiq;
 using Bolt;
 #endif
-
-/// <summary>
-/// Data regarding the identified gesture.
-/// This will be provided to the registered event handler function.
-/// </summary>
-[System.Serializable]
-public class GestureCompletionData
-{
-    /// <summary>
-    /// The ID (index) of the gesture which was just identified.
-    /// '-1' if no gesture could be identified.
-    /// </summary>
-    public int gestureID;
-    /// <summary>
-    /// The name of the gesture which was just identified.
-    /// </summary>
-    public string gestureName;
-    /// <summary>
-    /// The similarity between the performed gesture and the identified
-    /// gesture on a scale from 0 (no similarity) to 1 (perfect match).
-    /// </summary>
-    public double similarity;
-    /// <summary>
-    /// Data about the individual parts of the gesture (if two-handed / multi-part gesture).
-    /// </summary>
-    public class Part
-    {
-        /// <summary>
-        /// Index of the side (left or right) of the hand that performed the gesture part.
-        /// </summary>
-        public enum Side { Left=0, Right=1 };
-        /// <summary>
-        /// Which side (hand) performed this gesture part.
-        /// </summary>
-        public Side side;
-        /// <summary>
-        /// Where in the scene the gesture was performed.
-        /// </summary>
-        public Vector3 position;
-        /// <summary>
-        /// At which scale the gesture was performed.
-        /// </summary>
-        public double scale;
-        /// <summary>
-        /// In which direction the gesture was performed.
-        /// </summary>
-        public Quaternion orientation;
-        /// <summary>
-        /// Primary axis along which the gesture was performed.
-        /// For example, a figure eight ('8') starting from the top
-        /// will have the primary direction "downwards".
-        /// </summary>
-        public Vector3 primaryDirection;
-        /// <summary>
-        /// Secondary axis along which the gesture was performed.
-        /// For example, a figure eight ('8')
-        /// will have the secondary direction "right".
-        /// </summary>
-        public Vector3 secondaryDirection;
-    };
-    /// <summary>
-    /// Data about the individual parts of the gesture.
-    /// If the gesture was one-handed, only one part will be provided.
-    /// If the gesture was two-handed, two parts are provided.
-    /// </summary>
-    public Part[] parts = new Part[0];
-}
-
-/// <summary>
-/// Event callback function object type definition.
-/// </summary>
-[System.Serializable]
-public class GestureCompletionEvent : UnityEvent<GestureCompletionData>
-{
-
-}
 
 /// <summary>
 /// Convenience Unity script that can be added as a component to any script
@@ -152,29 +76,6 @@ public class MivryQuestHands : MonoBehaviour
         RightHandGrab = 3,
         Manual= 4,
         _NUM_VALUES = 5
-    };
-
-    /// <summary>
-    /// Which Unity XR plug-in is used (see Unity Package Manager and Project Settings -> XR Plugin Management).
-    /// </summary>
-    [System.Serializable]
-    public enum UnityXrPlugin
-    {
-        OpenXR,
-        OculusVR,
-        SteamVR
-    };
-
-    /// <summary>
-    /// Which coordinate system Mivry uses internally (in the Gesture Database file).
-    /// </summary>
-    [System.Serializable]
-    public enum MivryCoordinateSystem
-    {
-        OpenXR,
-        OculusVR,
-        SteamVR,
-        UnrealEngine
     };
 
     #endregion
@@ -283,16 +184,12 @@ public class MivryQuestHands : MonoBehaviour
     [Tooltip("The current value of the trigger. When the trigger is 'manual', use this to indicate the start/end of the gesture motion.")]
     public float rightGestureTriggerValue = 0;
 
-
-
     /// <summary>
     /// Event callback functions to be called when a gesture was performed.
     /// </summary>
     [Tooltip("Event to trigger when a gesture was performed.")]
     [SerializeField]
     public GestureCompletionEvent OnGestureCompletion = null;
-
-
 
     /// <summary>
     /// Which Unity XR plugin is being used by this project.
@@ -301,13 +198,13 @@ public class MivryQuestHands : MonoBehaviour
     /// See the Unity Package Manager and Project Settings -> XR Plugin Manager to see which plugin is being used.
     /// </summary>
     [Tooltip("The Unity XR plugin used in this project (see: Project Settings -> XR Plugin Manager).")]
-    public UnityXrPlugin unityXrPlugin = UnityXrPlugin.OculusVR;
+    public Mivry.UnityXrPlugin unityXrPlugin = Mivry.UnityXrPlugin.OculusVR;
 
     /// <summary>
     /// The coordinate system MiVRy should use internally (or that the GestureDatabase file was created with).
     /// </summary>
     [Tooltip("The coordinate system MiVRy should use internally (or that the GestureDatabase file was created with).")]
-    public MivryCoordinateSystem mivryCoordinateSystem = MivryCoordinateSystem.OculusVR;
+    public Mivry.MivryCoordinateSystem mivryCoordinateSystem = Mivry.MivryCoordinateSystem.Unity_OculusVR;
 
     /// <summary>
     /// The OVRSkeleton bone indices used for the finger tips.
@@ -496,7 +393,7 @@ public class MivryQuestHands : MonoBehaviour
                 if (this.isLeftTriggerPressed) {
                     p = Camera.main.transform.position;
                     q = Camera.main.transform.rotation;
-                    MivryQuestHands.convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
+                    Mivry.convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
                     for (int i = this.numberOfTrackingPointsLeft - 1; i > 0; i--) {
                         this.gc.startStroke(i, p, q, this.recordGestureSample);
                     }
@@ -510,7 +407,7 @@ public class MivryQuestHands : MonoBehaviour
                             t = leftHandSkeleton.Bones[i].Transform;
                             p = t.position;
                             q = t.rotation;
-                            MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                            Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                             this.gc.contdStrokeQ(i, p, q);
                         }
                         break;
@@ -518,27 +415,27 @@ public class MivryQuestHands : MonoBehaviour
                         t = leftHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_ThumbTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(0, p, q);
                         t = leftHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_IndexTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(1, p, q);
                         t = leftHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_MiddleTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(2, p, q);
                         t = leftHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_RingTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(3, p, q);
                         t = leftHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_PinkyTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(4, p, q);
                         break;
                     case TrackingPoints.IndexFingerTipOnly:
@@ -546,7 +443,7 @@ public class MivryQuestHands : MonoBehaviour
                         t = leftHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_IndexTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(0, p, q);
                         break;
                 }
@@ -576,7 +473,7 @@ public class MivryQuestHands : MonoBehaviour
                 if (this.isRightTriggerPressed) {
                     p = Camera.main.transform.position;
                     q = Camera.main.transform.rotation;
-                    MivryQuestHands.convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
+                    Mivry.convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
                     for (int i = this.numberOfTrackingPointsRight - 1; i > 0; i--) {
                         this.gc.startStroke(i, p, q, this.recordGestureSample);
                     }
@@ -590,7 +487,7 @@ public class MivryQuestHands : MonoBehaviour
                             t = rightHandSkeleton.Bones[i].Transform;
                             p = t.position;
                             q = t.rotation;
-                            MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                            Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                             this.gc.contdStrokeQ(i, p, q);
                         }
                         break;
@@ -598,27 +495,27 @@ public class MivryQuestHands : MonoBehaviour
                         t = rightHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_ThumbTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(0, p, q);
                         t = rightHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_IndexTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(1, p, q);
                         t = rightHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_MiddleTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(2, p, q);
                         t = rightHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_RingTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(3, p, q);
                         t = rightHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_PinkyTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(4, p, q);
                         break;
                     case TrackingPoints.IndexFingerTipOnly:
@@ -626,7 +523,7 @@ public class MivryQuestHands : MonoBehaviour
                         t = rightHandSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_IndexTip].Transform;
                         p = t.position;
                         q = t.rotation;
-                        MivryQuestHands.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
+                        Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                         this.gc.contdStrokeQ(0, p, q);
                         break;
                 }
@@ -676,6 +573,9 @@ public class MivryQuestHands : MonoBehaviour
 
     public static float getGrabStrength(OVRSkeleton handSkeleton)
     {
+        if (handSkeleton?.Bones?.Count <= (int)OVRSkeleton.BoneId.Hand_Pinky2) {
+            return 0.0f;
+        }
         float minStrength = 1.0f;
         Quaternion wristRotation = handSkeleton.Bones[(int)OVRSkeleton.BoneId.Hand_WristRoot].Transform.rotation;
         float indexBend = Quaternion.Angle(
@@ -770,136 +670,6 @@ public class MivryQuestHands : MonoBehaviour
                     // case GestureTrigger.Manual:
             }
             return this.rightGestureTriggerValue >= this.rightGestureTriggerThreshold;
-        }
-    }
-
-    /// <summary>
-    /// Convert position and orientation of a VR controller based on the Unity XR plugin used
-    /// to MiVRy's internal coordinate system, if it should differ from the one being used by the XR plugin.
-    /// </summary>
-    /// <param name="unityXrPlugin">Which Unity XR plug-in is used by your project (see: Project Settings -> XR Plugin Manager).</param>
-    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
-    /// <param name="p">The VR controller position.</param>
-    /// <param name="q">The VR controller orientation.</param>
-    public static void convertHandInput(UnityXrPlugin unityXrPlugin, MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
-    {
-        switch (unityXrPlugin)
-        {
-            case UnityXrPlugin.OpenXR:
-            case UnityXrPlugin.SteamVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OculusVR:
-                        q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
-                        break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(0, 0, -0.7071068f, 0.7071068f);
-                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
-                        break;
-                }
-                break;
-            case UnityXrPlugin.OculusVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OpenXR:
-                    case MivryCoordinateSystem.SteamVR:
-                        q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
-                        break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
-                        p = new Vector3(p.z, p.x, p.y) * 100.0f;
-                        break;
-                }
-                break;
-        }
-    }
-
-    /// <summary>
-    /// Convert position and orientation of a VR headset to MiVRy's internal coordinate system,
-    /// if it should differ from the one being used by the Unity XR plugin.
-    /// </summary>
-    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
-    /// <param name="p">The VR headset position.</param>
-    /// <param name="q">The VR headset orientation.</param>
-    public static void convertHeadInput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
-    {
-        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
-        {
-            p = new Vector3(p.z, p.x, p.y) * 100.0f;
-            q = new Quaternion(0.5f, 0.5f, 0.5f, 0.5f) * q * new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f);
-        }
-    }
-
-    /// <summary>
-    /// Convert position and orientation of MiVRy gesture output from MiVRy's internal coordinate system,
-    /// if it should differ from the one being used by the Unity XR plugin.
-    /// </summary>
-    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
-    /// <param name="p">The gesture position.</param>
-    /// <param name="q">The gesture orientation.</param>
-    public static void convertOutput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
-    {        
-        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
-        {
-            p = new Vector3(p.y, p.z, p.x) * 0.01f;
-            q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q;
-        }
-    }
-
-    /// <summary>
-    /// Convert back position and orientation of a VR controller from MiVRy's internal coordinate system
-    /// to the one used by the Unity XR plugin in use (if it should differ).
-    /// </summary>
-    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
-    /// <param name="unityXrPlugin">Which Unity XR plug-in is used by your project (see: Project Settings -> XR Plugin Manager).</param>
-    /// <param name="p">The VR controller position.</param>
-    /// <param name="q">The VR controller orientation.</param>
-    public static void convertBackHandInput(MivryCoordinateSystem mivryCoordinateSystem, UnityXrPlugin unityXrPlugin, ref Vector3 p, ref Quaternion q)
-    {
-        switch (unityXrPlugin)
-        {
-            case UnityXrPlugin.OpenXR:
-            case UnityXrPlugin.SteamVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OculusVR:
-                        q = q * new Quaternion(-0.7071068f, 0, 0, 0.7071068f);
-                        break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0, 0, 0.7071068f, 0.7071068f);
-                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
-                        break;
-                }
-                break;
-            case UnityXrPlugin.OculusVR:
-                switch (mivryCoordinateSystem)
-                {
-                    case MivryCoordinateSystem.OpenXR:
-                    case MivryCoordinateSystem.SteamVR:
-                        q = q * new Quaternion(0.7071068f, 0, 0, 0.7071068f);
-                        break;
-                    case MivryCoordinateSystem.UnrealEngine:
-                        q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
-                        p = new Vector3(p.y, p.z, p.x) * 0.01f;
-                        break;
-                }
-                break;
-        }
-    }
-
-    /// <summary>
-    /// Convert back position and orientation of a VR headset from MiVRy's internal coordinate system,
-    /// to the one being used by the Unity XR plugin.
-    /// </summary>
-    /// <param name="mivryCoordinateSystem">The coordinate system that MiVRy should use internally.</param>
-    /// <param name="p">The VR headset position.</param>
-    /// <param name="q">The VR headset orientation.</param>
-    public static void convertBackHeadInput(MivryCoordinateSystem mivryCoordinateSystem, ref Vector3 p, ref Quaternion q)
-    {
-        if (mivryCoordinateSystem == MivryCoordinateSystem.UnrealEngine)
-        {
-            p = new Vector3(p.y, p.z, p.x) * 0.01f;
-            q = new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f) * q * new Quaternion(0.5f, 0.5f, 0.5f, 0.5f);
         }
     }
 
