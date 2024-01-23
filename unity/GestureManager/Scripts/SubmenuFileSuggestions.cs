@@ -1,7 +1,7 @@
 /*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -29,6 +29,11 @@ public class SubmenuFileSuggestions : MonoBehaviour
     GameObject selectButton;
     GameObject downButton;
     GameObject background;
+
+    // File/folder suggestions for the load files button
+    public static int file_suggestion_i = 0;
+    public static List<string> file_suggestions = new List<string>();
+    public static EditableTextField active_text_field = null;
 
     // Start is called before the first frame update
     void Start()
@@ -76,61 +81,54 @@ public class SubmenuFileSuggestions : MonoBehaviour
         GestureManager gm = GestureManagerVR.me?.gestureManager;
         if (gm == null)
             return;
-        string currentPath = gm.gr != null ? gm.file_load_gestures : gm.file_load_combinations;
-        currentPath = gm.getLoadPath(currentPath);
+        file_suggestions.Clear();
+        string currentPath = null;
+        if (active_text_field?.target == EditableTextField.Target.LoadFile) {
+            currentPath = gm.gr != null ? gm.fileLoadGestures : gm.fileLoadCombinations;
+            currentPath = gm.getLoadPath(currentPath);
+        } else if (active_text_field?.target == EditableTextField.Target.SaveFile) {
+            currentPath = gm.gr != null ? gm.fileSaveGestures : gm.fileSaveCombinations;
+            currentPath = gm.getSavePath(currentPath);
+        } else {
+            this.gameObject.SetActive(false);
+            return;
+        }
         string currentDir = Path.GetDirectoryName(currentPath);
-        gm.file_suggestions.Clear();
-        textField.text = "";
-        if (!Directory.Exists(currentDir))
-        {
-            upButton.SetActive(false);
-            selectButton.SetActive(false);
-            downButton.SetActive(false);
-            background.SetActive(false);
-            textField.text = "";
+        if (!Directory.Exists(currentDir)) {
+            this.gameObject.SetActive(false);
             return;
         }
-        foreach(string f in Directory.GetDirectories(currentDir))
-        {
-            gm.file_suggestions.Add(Path.GetFileName(f) + "/");
+        foreach(string f in Directory.GetDirectories(currentDir)) {
+            file_suggestions.Add(Path.GetFileName(f) + "/");
         }
-        foreach(string f in Directory.GetFiles(currentDir, "*.dat"))
-        {
-            gm.file_suggestions.Add(Path.GetFileName(f));
+        foreach(string f in Directory.GetFiles(currentDir, "*.dat")) {
+            file_suggestions.Add(Path.GetFileName(f));
         }
-        if (gm.file_suggestions.Count == 0)
-        {
-            upButton.SetActive(false);
-            selectButton.SetActive(false);
-            downButton.SetActive(false);
-            background.SetActive(false);
+        if (file_suggestions.Count == 0) {
+            this.gameObject.SetActive(false);
             return;
         }
-        background.SetActive(true);
+        this.gameObject.SetActive(true);
+        this.background.SetActive(true);
         if (!selectButton.activeSelf) selectButton.SetActive(true);
-        if (gm.file_suggestion < 0)
-        {
-            gm.file_suggestion = 0;
-        } else if (gm.file_suggestion >= gm.file_suggestions.Count)
-        {
-            gm.file_suggestion = gm.file_suggestions.Count - 1;
+        if (file_suggestion_i < 0) {
+            file_suggestion_i = 0;
+        } else if (file_suggestion_i >= file_suggestions.Count) {
+            file_suggestion_i = file_suggestions.Count - 1;
         }
-        if (gm.file_suggestion == 0)
-        {
+        textField.text = "";
+        if (file_suggestion_i == 0) {
             textField.text += "\n";
             upButton.SetActive(false);
-        } else
-        {
-            textField.text += gm.file_suggestions[gm.file_suggestion - 1] + "\n";
+        } else {
+            textField.text += file_suggestions[file_suggestion_i - 1] + "\n";
             if (!upButton.activeSelf) upButton.SetActive(true);
         }
-        textField.text += gm.file_suggestions[gm.file_suggestion] + "\n";
-        if (gm.file_suggestion + 1 < gm.file_suggestions.Count)
-        {
-            textField.text += gm.file_suggestions[gm.file_suggestion + 1];
+        textField.text += file_suggestions[file_suggestion_i] + "\n";
+        if (file_suggestion_i + 1 < file_suggestions.Count) {
+            textField.text += file_suggestions[file_suggestion_i + 1];
             if (!downButton.activeSelf) downButton.SetActive(true);
-        } else
-        {
+        } else {
             downButton.SetActive(false);
         }
     }

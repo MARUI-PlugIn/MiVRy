@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.8
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -49,7 +49,7 @@ public class MiVRy : ModuleRules
 			{
 				"Core",
 				"Projects",
-				"HeadMountedDisplay"
+				"AIModule"
 			}
 			);
 			
@@ -115,12 +115,15 @@ public class MiVRy : ModuleRules
             }
             string PluginPath = Utils.MakePathRelativeTo(ModuleDirectory, Target.RelativeEnginePath);
             AdditionalPropertiesForReceipt.Add("AndroidPlugin", Path.Combine(PluginPath, "MiVRy_APL.xml"));
-		} else if (Target.Platform == UnrealTargetPlatform.HoloLens) {
-			RuntimeDependencies.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Hololens/arm_64/GestureRecognition_UWP_ARM_64.dll");
-			PublicDelayLoadDLLs.Add("GestureRecognition_UWP_ARM_64.dll");
 		} else if (Target.Platform == UnrealTargetPlatform.Linux) {
 			PublicRuntimeLibraryPaths.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Linux/x86_64/");
 			RuntimeDependencies.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Linux/x86_64/libgesturerecognition.so");
+		} else if (Target.Platform == UnrealTargetPlatform.LinuxArm64) {
+			PublicRuntimeLibraryPaths.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Linux/arm_64/");
+			RuntimeDependencies.Add("$(PluginDir)/Source/ThirdParty/MiVRy/Linux/arm_64/libgesturerecognition.so");
+		} else if (Target.Platform == UnrealTargetPlatform.Mac) {
+			PublicAdditionalLibraries.Add("$(PluginDir)/Source/ThirdParty/MiVRy/MacOS/libgesturerecognition.dylib");
+			RuntimeDependencies.Add("$(PluginDir)/Source/ThirdParty/MiVRy/MacOS/libgesturerecognition.dylib");
 		}
 	}
 }

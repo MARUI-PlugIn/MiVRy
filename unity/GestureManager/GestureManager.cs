@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -126,7 +126,9 @@ public class GestureManager : MonoBehaviour
         {
             this.license_id = value;
             int ret = new GestureRecognition().activateLicense(this.license_id, this.license_key);
-            this.license_activated = (0 == ret);
+            // if (ret != 0) {
+            //     consoleText = $"Failed to activate license ({ret})";
+            // }
         }
     }
     [SerializeField] private string license_key = "";
@@ -140,7 +142,10 @@ public class GestureManager : MonoBehaviour
         {
             this.license_key = value;
             if (this.license_id.Length != 0 && this.license_key.Length != 0) {
-                this.license_activated = (0 == new GestureRecognition().activateLicense(this.license_id, this.license_key));
+                int ret = new GestureRecognition().activateLicense(this.license_id, this.license_key);
+                // if (ret != 0) {
+                //     consoleText = $"Failed to activate license ({ret})";
+                // }
             }
         }
     }
@@ -155,16 +160,24 @@ public class GestureManager : MonoBehaviour
         {
             this.license_file_path = value;
             if (this.license_file_path.Length != 0) {
-                this.license_activated = (0 == new GestureRecognition().activateLicenseFile(this.license_file_path));
+                int ret = new GestureRecognition().activateLicenseFile(this.license_file_path);
+                // if (ret != 0) {
+                //     consoleText = $"Failed to activate license ({ret})";
+                // }
             }
         }
     }
-    private bool license_activated = false;
     public bool licenseActivated
     {
         get
         {
-            return license_activated;
+            if (gr != null) {
+                return gr.getLicenseStatus() == 1;
+            }
+            if (gc != null) {
+                return gc.getLicenseStatus() == 1;
+            }
+            return new GestureRecognition().getLicenseStatus() == 1;
         }
     }
 
@@ -364,16 +377,100 @@ public class GestureManager : MonoBehaviour
     };
     [System.NonSerialized] private bool file_importing_completed = false;
 
-    public string file_load_combinations = "Samples/Sample_TwoHanded_Gestures.dat";
-    public string file_import_combinations = "Samples/Sample_Military_Gestures.dat";
-    public string file_load_subgestures = "Samples/Sample_OneHanded_Gestures.dat";
-    public int file_load_subgestures_i = 0;
-    public string file_load_gestures = "Samples/Sample_OneHanded_Gestures.dat";
-    public string file_import_gestures = "Samples/Sample_Pixie_Gestures.dat";
-    public string file_save_combinations = "Samples/Sample_TwoHanded_MyGestures.dat";
-    // public string file_save_subgestures = "Samples/Sample_TwoHanded_MyGesturesLeft.dat";
-    // public int file_save_subgestures_i = 0;
-    public string file_save_gestures = "Samples/Sample_OneHanded_MyGestures.dat";
+    [SerializeField] private string file_load_combinations = "Samples/Sample_TwoHanded_Gestures.dat";
+    public string fileLoadCombinations
+    {
+        get
+        {
+            return this.file_load_combinations;
+        }
+        set
+        {
+            this.file_load_combinations = value;
+            PlayerPrefs.SetString("file_load_combinations", value);
+        }
+    }
+    [SerializeField] private string file_import_combinations = "Samples/Sample_Military_Gestures.dat";
+    public string fileImportCombinations
+    {
+        get
+        {
+            return this.file_import_combinations;
+        }
+        set
+        {
+            this.file_import_combinations = value;
+            PlayerPrefs.SetString("file_import_combinations", value);
+        }
+    }
+    [SerializeField] private string file_load_subgestures = "Samples/Sample_OneHanded_Gestures.dat";
+    public string fileLoadSubgestures
+    {
+        get
+        {
+            return this.file_load_subgestures;
+        }
+        set
+        {
+            this.file_load_subgestures = value;
+            PlayerPrefs.SetString("file_load_subgestures", value);
+        }
+    }
+    [SerializeField] public int file_load_subgestures_i = 0;
+    [SerializeField] private string file_load_gestures = "Samples/Sample_OneHanded_Gestures.dat";
+    public string fileLoadGestures
+    {
+        get
+        {
+            return this.file_load_gestures;
+        }
+        set
+        {
+            this.file_load_gestures = value;
+            PlayerPrefs.SetString("file_load_gestures", value);
+        }
+    }
+    [SerializeField] private string file_import_gestures = "Samples/Sample_Pixie_Gestures.dat";
+    public string fileImportGestures
+    {
+        get
+        {
+            return this.file_import_gestures;
+        }
+        set
+        {
+            this.file_import_gestures = value;
+            PlayerPrefs.SetString("file_import_gestures", value);
+        }
+    }
+    [SerializeField] private string file_save_combinations = "Samples/Sample_TwoHanded_MyGestures.dat";
+    public string fileSaveCombinations
+    {
+        get
+        {
+            return this.file_save_combinations;
+        }
+        set
+        {
+            this.file_save_combinations = value;
+            PlayerPrefs.SetString("file_save_combinations", value);
+        }
+    }
+    // [SerializeField] private string file_save_subgestures = "Samples/Sample_TwoHanded_MyGesturesLeft.dat";
+    // [SerializeField] public int file_save_subgestures_i = 0;
+    [SerializeField] private string file_save_gestures = "Samples/Sample_OneHanded_MyGestures.dat";
+    public string fileSaveGestures
+    {
+        get
+        {
+            return this.file_save_gestures;
+        }
+        set
+        {
+            this.file_save_gestures = value;
+            PlayerPrefs.SetString("file_save_gestures", value);
+        }
+    }
 
     public string create_combination_name = "(new gesture combination name)";
     public string create_gesture_name = "(new gesture name)";
@@ -474,10 +571,6 @@ public class GestureManager : MonoBehaviour
         }
     }
 
-    // File/folder suggestions for the load files button
-    [System.NonSerialized] public int file_suggestion = 0;
-    [System.NonSerialized] public List<string> file_suggestions = new List<string>();
-
     public GestureManager() : base()
     {
         me = GCHandle.Alloc(this);
@@ -575,6 +668,28 @@ public class GestureManager : MonoBehaviour
         InputDevices.GetDevices(devices);
         foreach (var device in devices) {
             DeviceConnected(device);
+        }
+
+        if (PlayerPrefs.HasKey("file_load_combinations")) {
+            this.file_load_combinations = PlayerPrefs.GetString("file_load_combinations");
+        }
+        if (PlayerPrefs.HasKey("file_import_combinations")) {
+            this.file_import_combinations = PlayerPrefs.GetString("file_import_combinations");
+        }
+        if (PlayerPrefs.HasKey("file_load_subgestures")) {
+            this.file_load_subgestures = PlayerPrefs.GetString("file_load_subgestures");
+        }
+        if (PlayerPrefs.HasKey("file_load_gestures")) {
+            this.file_load_gestures = PlayerPrefs.GetString("file_load_gestures");
+        }
+        if (PlayerPrefs.HasKey("file_import_gestures")) {
+            this.file_import_gestures = PlayerPrefs.GetString("file_import_gestures");
+        }
+        if (PlayerPrefs.HasKey("file_save_combinations")) {
+            this.file_save_combinations = PlayerPrefs.GetString("file_save_combinations");
+        }
+        if (PlayerPrefs.HasKey("file_save_gestures")) {
+            this.file_save_gestures = PlayerPrefs.GetString("file_save_gestures");
         }
     }
 

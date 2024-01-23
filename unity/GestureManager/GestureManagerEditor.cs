@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -139,44 +139,44 @@ public class GestureManagerEditor : UnityEditor.Editor
         EditorGUILayout.LabelField("GESTURE FILES:");
         if (gm.gr != null)
         {
-            file_load_gestures_prop.stringValue = EditorGUILayout.TextField("Load gestures file:", file_load_gestures_prop.stringValue);
+            file_load_gestures_prop.stringValue = gm.fileLoadGestures = EditorGUILayout.TextField("Load gestures file:", file_load_gestures_prop.stringValue);
             if (GUILayout.Button("Load Gestures from File"))
             {
                 gm.loadFromFile();
             }
-            file_import_gestures_prop.stringValue = EditorGUILayout.TextField("Import gestures file:", file_import_gestures_prop.stringValue);
+            file_import_gestures_prop.stringValue = gm.fileImportGestures = EditorGUILayout.TextField("Import gestures file:", file_import_gestures_prop.stringValue);
             if (GUILayout.Button("Import Gestures from File"))
             {
                 gm.importFromFile();
             }
-            file_save_gestures_prop.stringValue = EditorGUILayout.TextField("Save gestures file:", file_save_gestures_prop.stringValue);
+            file_save_gestures_prop.stringValue = gm.fileSaveGestures = EditorGUILayout.TextField("Save gestures file:", file_save_gestures_prop.stringValue);
             if (GUILayout.Button("Save Gestures to File"))
             {
                 gm.saveToFile();
             }
         } else if (gm.gc != null)
         {
-            file_load_combinations_prop.stringValue = EditorGUILayout.TextField("Load GestureCombinations File: ", file_load_combinations_prop.stringValue);
+            file_load_combinations_prop.stringValue = gm.fileLoadCombinations = EditorGUILayout.TextField("Load GestureCombinations File: ", file_load_combinations_prop.stringValue);
             if (GUILayout.Button("Load GestureCombinations File"))
             {
                 gm.loadFromFile();
             }
-            file_import_combinations_prop.stringValue = EditorGUILayout.TextField("Import GestureCombinations File: ", file_import_combinations_prop.stringValue);
+            file_import_combinations_prop.stringValue = gm.fileImportCombinations =  EditorGUILayout.TextField("Import GestureCombinations File: ", file_import_combinations_prop.stringValue);
             if (GUILayout.Button("Import GestureCombinations File"))
             {
                 gm.importFromFile();
             }
-            file_save_combinations_prop.stringValue = EditorGUILayout.TextField("Save GestureCombinations File: ", file_save_combinations_prop.stringValue);
+            file_save_combinations_prop.stringValue = gm.fileSaveCombinations = EditorGUILayout.TextField("Save GestureCombinations File: ", file_save_combinations_prop.stringValue);
             if (GUILayout.Button("Save GestureCombinations File"))
             {
                 gm.saveToFile();
             }
             EditorGUILayout.LabelField("(optional) Import single-handed gesture file:");
-            file_load_subgestures_prop.stringValue = EditorGUILayout.TextField("Import SubGestures File:", file_load_subgestures_prop.stringValue);
+            file_load_subgestures_prop.stringValue = gm.fileLoadSubgestures = EditorGUILayout.TextField("Import SubGestures File:", file_load_subgestures_prop.stringValue);
             file_load_subgestures_i_prop.intValue = EditorGUILayout.IntField("^ ... for subgesture #", file_load_subgestures_i_prop.intValue);
             if (GUILayout.Button("Import SubGesture File"))
             {
-                int ret = gm.gc.loadGestureFromFile(gm.file_load_subgestures_i, gm.file_load_subgestures);
+                int ret = gm.gc.loadGestureFromFile(gm.file_load_subgestures_i, gm.fileLoadSubgestures);
                 Debug.Log((ret == 0 ? "Gesture file imported successfully" : $"[ERROR] Failed to import gesture file ({ret})."));
             }
         }
@@ -245,11 +245,11 @@ public class GestureManagerEditor : UnityEditor.Editor
 
             }
             GUILayout.EndHorizontal();
-            file_load_gestures_prop.stringValue = EditorGUILayout.TextField("Import gestures:", file_load_gestures_prop.stringValue);
+            file_load_gestures_prop.stringValue = gm.fileLoadGestures = EditorGUILayout.TextField("Import gestures:", file_load_gestures_prop.stringValue);
             if (GUILayout.Button("Import Gestures from File"))
             {
                 GestureRecognition importGR = new GestureRecognition();
-                int ret = importGR.loadFromFile(gm.file_load_gestures);
+                int ret = importGR.loadFromFile(gm.fileLoadGestures);
                 if (ret != 0)
                 {
                     Debug.Log($"[ERROR] Failed to load gesture file ({ret}).");

@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -93,6 +93,13 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Activate License File"))
 	int activateLicenseFile(const FString& license_file_path);
+
+	/**
+	* Check if a license was activated to enable additional functionality.
+	* @return   One if a license was activated, zero if not.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Recognition", meta = (DisplayName = "Get License Status"))
+	int getLicenseStatus() const;
 
 	/**
 	* Start new gesture motion.

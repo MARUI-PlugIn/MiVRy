@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -476,19 +476,31 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 			for (int i = 0; i < parts.Num(); i++) {
 				parts[i].PartGestureID = -1;
 			}
+			this->OnGestureIdentifiedDelegate.Broadcast(this, Result, -1, "", -1, TArray<FMiVRyGesturePart>());
 			return;
 		}
 		for (int i = 0; i < parts.Num(); i++) {
 			parts[i].PartGestureID = this->gco->getCombinationPartGesture(this->gesture_id, (int)parts[i].Side);
 		}
 		Result = GestureRecognition_Identification::GestureIdentified;
+		GestureRecognition_Result Result2;
+		int GestureID = -1;
+		FString GestureName = "";
+		float Similarity = -1;
+		TArray<FMiVRyGesturePart> GestureParts;
+		this->getIdentifiedGestureInfo(Result2, GestureID, GestureName, Similarity, GestureParts);
+		this->OnGestureIdentifiedDelegate.Broadcast(
+			this,
+			(Result2 == GestureRecognition_Result::Error) ? GestureRecognition_Identification::FailedToIdentify : GestureRecognition_Identification::GestureIdentified,
+			GestureID, GestureName, Similarity, GestureParts
+		);
 		return;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.stopGesturing] GestureRecognition object was not created. Failed to load database file?"));
 	Result = GestureRecognition_Identification::FailedToIdentify;
 }
 
-void AMiVRyActor::getIdentifiedGestureInfo(GestureRecognition_Result& Result, int& GestureID, FString& GestureName, float& Similarity, TArray<FMiVRyGesturePart>& GestureParts)
+void AMiVRyActor::getIdentifiedGestureInfo(GestureRecognition_Result& Result, int& GestureID, FString& GestureName, float& Similarity, TArray<FMiVRyGesturePart>& GestureParts) const
 {
 	GestureID = this->gesture_id;
 	Similarity = (float)this->similarity;

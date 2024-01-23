@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy Gesture Recognition - Unity Plug-In for Hololens
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -20,9 +20,10 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Events;
-using Microsoft.MixedReality.Toolkit;
-using Microsoft.MixedReality.Toolkit.Input;
-using Microsoft.MixedReality.Toolkit.Utilities;
+using UnityEngine.XR;
+using MixedReality.Toolkit;
+using MixedReality.Toolkit.Input;
+using MixedReality.Toolkit.Subsystems;
 using AOT;
 using System;
 
@@ -71,6 +72,7 @@ public class HololensGestureRecognition : MonoBehaviour
     /// <summary>
     /// Database (.dat) file to load gestures from.
     /// </summary>
+    [Tooltip("Database (.dat) file to load gestures from.")]
     public string gestureDatabaseFile;
 
     [System.Serializable]
@@ -78,8 +80,8 @@ public class HololensGestureRecognition : MonoBehaviour
 
     /// <summary>
     /// Events to be called when a gesture was performed (after the gesture was completed and identified).
-    /// WARNING: The event is called from a non-Unity thread, so it should NOT be used to perform any changes in the Unity scene.
     /// </summary>
+    [Tooltip("Events to be called when a gesture was performed.")]
     public GestureRecognitionEvent OnGesture;
 
     [System.Serializable]
@@ -87,20 +89,29 @@ public class HololensGestureRecognition : MonoBehaviour
 
     /// <summary>
     /// Events to be called during training when a new training milestone was achieved.
-    /// WARNING: The event is called from a non-Unity thread, so it should NOT be used to perform any changes in the Unity scene.
+    /// The number parameter is the recognition performance (percentage of correctly identified gestures).
     /// </summary>
+    [Tooltip("Events to be called during training when a new training milestone was achieved.")]
     public TrainingEvent OnTrainingUpdate;
 
     /// <summary>
     /// Events to be called when training was completed.
-    /// WARNING: The event is called from a non-Unity thread, so it should NOT be used to perform any changes in the Unity scene.
+    /// The number parameter is the recognition performance (percentage of correctly identified gestures).
     /// </summary>
+    [Tooltip("Events to be called when training was completed.")]
     public TrainingEvent OnTrainingFinished;
 
     /// <summary>
     /// Enable / disable gesturing.
     /// </summary>
+    [Tooltip("Enable / disable gesturing.")]
     public bool gesturingEnabled = true;
+
+    /// <summary>
+    /// The threshold (between 0 and 1) to distinguish between "pinching" and "not pinching" with index finger and thumb.
+    /// </summary>
+    [Tooltip("The threshold (between 0 and 1) to distinguish between 'pinching' and 'not pinching' with index finger and thumb.")]
+    public float pinchThreshold = 0.8f;
 
     #endregion Public Inspector Variables
 
@@ -166,11 +177,11 @@ public class HololensGestureRecognition : MonoBehaviour
         gr.setTrainingUpdateCallbackMetadata((IntPtr)me);
         gr.setTrainingFinishCallback(trainingFinishCallback);
         gr.setTrainingFinishCallbackMetadata((IntPtr)me);
-        if (gr.startTraining() == 0)
-        {
-            isTraining = true;
+        this.isTraining = true;
+        if (gr.startTraining() == 0) {
             return true;
-        }
+        } // else:
+        this.isTraining = false;
         return false;
     }
 
@@ -247,6 +258,20 @@ public class HololensGestureRecognition : MonoBehaviour
     /// </summary>
     public void Update()
     {
+        while (this.pendingTrainingUpdateCallbacks.Count > 0) {
+            this.OnTrainingUpdate?.Invoke(
+                this,
+                this.pendingTrainingUpdateCallbacks[0] * 100.0
+            );
+            this.pendingTrainingUpdateCallbacks.RemoveAt(0);
+        }
+        while (this.pendingTrainingFinishCallbacks.Count > 0) {
+            this.OnTrainingFinished?.Invoke(
+                this,
+                this.pendingTrainingFinishCallbacks[0] * 100.0
+            );
+            this.pendingTrainingFinishCallbacks.RemoveAt(0);
+        }
         if (gesturingEnabled == false) {
             if (currentlyGesturing != Handedness.None) {
                 gr.cancelStroke();
@@ -254,19 +279,15 @@ public class HololensGestureRecognition : MonoBehaviour
             }
             return;
         }
-        float trigger_left  = HandPoseUtils.CalculateIndexPinch(Handedness.Left);
-        if (trigger_left == 1.0f) { // && HandPoseUtils.IndexFingerCurl(Handedness.Left) == 0.0f) {
-            trigger_left = 0.0f;
-        }
-        float trigger_right = HandPoseUtils.CalculateIndexPinch(Handedness.Right);
-        if (trigger_right == 1.0f) { // && HandPoseUtils.IndexFingerCurl(Handedness.Right) == 0.0f) {
-            trigger_right = 0.0f;
-        }
+
+        var aggregator = XRSubsystemHelpers.GetFirstRunningSubsystem<HandsAggregatorSubsystem>();
+        bool leftHandIsValid = aggregator.TryGetPinchProgress(XRNode.LeftHand, out bool isLeftReadyToPinch, out bool isLeftPinching, out float leftPinchAmount);
+        bool rightHandIsValid = aggregator.TryGetPinchProgress(XRNode.RightHand, out bool isRightReadyToPinch, out bool isRightPinching, out float rightPinchAmount);
 
         if (currentlyGesturing == Handedness.None) {
-            if (trigger_left > 0.8) {
+            if (leftHandIsValid && leftPinchAmount > pinchThreshold) {
                 currentlyGesturing = Handedness.Left;
-            } else if (trigger_right > 0.8) {
+            } else if (rightHandIsValid && rightPinchAmount > pinchThreshold) {
                 currentlyGesturing = Handedness.Right;
             } else { 
                 return;
@@ -276,13 +297,13 @@ public class HololensGestureRecognition : MonoBehaviour
             return;
         }
 
-        if ((currentlyGesturing == Handedness.Left && trigger_left > 0.7) || (currentlyGesturing == Handedness.Right && trigger_right > 0.7)) {
+        if ((currentlyGesturing == Handedness.Left && leftPinchAmount > pinchThreshold * 0.95f) || (currentlyGesturing == Handedness.Right && rightPinchAmount > pinchThreshold * 0.95f)) {
             if (compensateHeadMotion) {
                 GameObject mainCamera = Camera.main.gameObject; // GameObject.Find("Main Camera");
                 gr.updateHeadPosition(mainCamera.transform.position, mainCamera.transform.rotation);
             }
-            MixedRealityPose pose;
-            if (!HandJointUtils.TryGetJointPose(TrackedHandJoint.IndexTip, currentlyGesturing, out pose)) {
+            bool jointIsValid = aggregator.TryGetJoint(TrackedHandJoint.IndexTip, currentlyGesturing == Handedness.Left ? XRNode.LeftHand : XRNode.RightHand, out HandJointPose pose);
+            if (!jointIsValid) {
                 return;
             }
             Vector3 p = pose.Position;
@@ -326,6 +347,8 @@ public class HololensGestureRecognition : MonoBehaviour
         }
         stroke.Clear();
     }
+    
+    private List<double> pendingTrainingUpdateCallbacks = new List<double>();
 
     /// <summary>
     /// MiVRy Callback function to be called by the gesture recognition plug-in during the learning process.
@@ -338,8 +361,10 @@ public class HololensGestureRecognition : MonoBehaviour
         // Get the script/scene object back from metadata.
         GCHandle obj = (GCHandle)ptr;
         HololensGestureRecognition me = (obj.Target as HololensGestureRecognition);
-        me.OnTrainingUpdate?.Invoke(me, performance);
+        me.pendingTrainingUpdateCallbacks.Add(performance);
     }
+    
+    private List<double> pendingTrainingFinishCallbacks = new List<double>();
 
     /// <summary>
     /// Callback function to be called by the gesture recognition plug-in when the learning process was finished.
@@ -352,7 +377,7 @@ public class HololensGestureRecognition : MonoBehaviour
         // Get the script/scene object back from metadata.
         GCHandle obj = (GCHandle)ptr;
         HololensGestureRecognition me = (obj.Target as HololensGestureRecognition);
-        me.OnTrainingFinished?.Invoke(me, performance);
+        me.pendingTrainingFinishCallbacks.Add(performance);
         me.isTraining = false;
     }
     #endregion Internal Data Structures

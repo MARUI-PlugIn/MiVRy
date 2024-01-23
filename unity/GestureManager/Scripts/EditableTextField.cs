@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -91,17 +91,17 @@ public class EditableTextField : MonoBehaviour
                 } break;
             case Target.LoadFile:
                 if (gm.gr != null)
-                    text = gm.file_load_gestures;
+                    text = gm.fileLoadGestures;
                 else if (gm.gc != null)
-                    text = gm.file_load_combinations;
+                    text = gm.fileLoadCombinations;
                 else
                     text = "";
                 break;
             case Target.SaveFile:
                 if (gm.gr != null)
-                    text = gm.file_save_gestures;
+                    text = gm.fileSaveGestures;
                 else if (gm.gc != null)
-                    text = gm.file_save_combinations;
+                    text = gm.fileSaveCombinations;
                 else
                     text = "";
                 break;
@@ -148,15 +148,15 @@ public class EditableTextField : MonoBehaviour
                 } break;
             case Target.LoadFile:
                 if (gm.gr != null)
-                    gm.file_load_gestures = text;
+                    gm.fileLoadGestures = text;
                 else if (gm.gc != null)
-                    gm.file_load_combinations = text;
+                    gm.fileLoadCombinations = text;
                 break;
             case Target.SaveFile:
                 if (gm.gr != null)
-                    gm.file_save_gestures = text;
+                    gm.fileSaveGestures = text;
                 else if (gm.gc != null)
-                    gm.file_save_combinations = text;
+                    gm.fileSaveCombinations = text;
                 break;
         }
         this.refreshText();
@@ -194,15 +194,15 @@ public class EditableTextField : MonoBehaviour
                 }
             case Target.LoadFile:
                 if (gm.gr != null)
-                    return gm.file_load_gestures;
+                    return gm.fileLoadGestures;
                 else if (gm.gc != null)
-                    return gm.file_load_combinations;
+                    return gm.fileLoadCombinations;
                 return "[ERROR]";
             case Target.SaveFile:
                 if (gm.gr != null)
-                    return gm.file_save_gestures;
+                    return gm.fileSaveGestures;
                 else if (gm.gc != null)
-                    return gm.file_save_combinations;
+                    return gm.fileSaveCombinations;
                 return "[ERROR]";
         }
         return "[ERROR]";
@@ -222,5 +222,6 @@ public class EditableTextField : MonoBehaviour
         if (GestureManagerVR.isGesturing)
             return;
         GestureManagerVR.setInputFocus(this);
+        SubmenuFileSuggestions.active_text_field = this;
     }
 }

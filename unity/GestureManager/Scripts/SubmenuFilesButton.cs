@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -44,8 +44,7 @@ public class SubmenuFilesButton : GestureManagerButton
             return;
         GestureManagerVR.activeButton = this;
         this.material = activeButtonMaterial;
-        switch (this.operation)
-        {
+        switch (this.operation) {
             case Operation.LoadGestureFile:
                 gm.loadFromFile();
                 break;
@@ -53,35 +52,43 @@ public class SubmenuFilesButton : GestureManagerButton
                 gm.saveToFile();
                 break;
             case Operation.FileSuggestionUp:
-                if (gm.file_suggestion > 0)
-                {
-                    gm.file_suggestion--;
+                if (SubmenuFileSuggestions.file_suggestion_i > 0) {
+                    SubmenuFileSuggestions.file_suggestion_i--;
                 }
                 break;
             case Operation.FileSuggestionDown:
-                if (gm.file_suggestion + 1 < gm.file_suggestions.Count)
-                {
-                    gm.file_suggestion++;
+                if (SubmenuFileSuggestions.file_suggestion_i + 1 < SubmenuFileSuggestions.file_suggestions.Count) {
+                    SubmenuFileSuggestions.file_suggestion_i++;
                 }
                 break;
             case Operation.FileSuggestionSelect:
-                if (gm.file_suggestion >= 0 && gm.file_suggestion < gm.file_suggestions.Count)
-                {
-                    if (gm.gr != null)
-                    {
-                        string dir = (gm.file_load_gestures.Contains("/") || gm.file_load_gestures.Contains("\\"))
-                                   ? Path.GetDirectoryName(gm.file_load_gestures).Replace('\\', '/') + "/"
-                                   : "";
-                        gm.file_load_gestures = dir + gm.file_suggestions[gm.file_suggestion];
-                    } else if (gm.gc != null)
-                    {
-                        string dir = (gm.file_load_combinations.Contains("/") || gm.file_load_combinations.Contains("\\"))
-                                   ? Path.GetDirectoryName(gm.file_load_combinations).Replace('\\', '/') + "/"
-                                   : "";
-                        gm.file_load_combinations = dir + gm.file_suggestions[gm.file_suggestion];
+                if (SubmenuFileSuggestions.file_suggestion_i >= 0 && SubmenuFileSuggestions.file_suggestion_i < SubmenuFileSuggestions.file_suggestions.Count) {
+                    if (SubmenuFileSuggestions.active_text_field?.target == EditableTextField.Target.LoadFile) {
+                        if (gm.gr != null) {
+                            string dir = (gm.fileLoadGestures.Contains("/") || gm.fileLoadGestures.Contains("\\"))
+                                       ? Path.GetDirectoryName(gm.fileLoadGestures).Replace('\\', '/') + "/"
+                                       : "";
+                            gm.fileLoadGestures = dir + SubmenuFileSuggestions.file_suggestions[SubmenuFileSuggestions.file_suggestion_i];
+                        } else if (gm.gc != null) {
+                            string dir = (gm.fileLoadCombinations.Contains("/") || gm.fileLoadCombinations.Contains("\\"))
+                                       ? Path.GetDirectoryName(gm.fileLoadCombinations).Replace('\\', '/') + "/"
+                                       : "";
+                            gm.fileLoadCombinations = dir + SubmenuFileSuggestions.file_suggestions[SubmenuFileSuggestions.file_suggestion_i];
+                        }
+                    } else if (SubmenuFileSuggestions.active_text_field?.target == EditableTextField.Target.SaveFile) {
+                        if (gm.gr != null) {
+                            string dir = (gm.fileSaveGestures.Contains("/") || gm.fileSaveGestures.Contains("\\"))
+                                       ? Path.GetDirectoryName(gm.fileSaveGestures).Replace('\\', '/') + "/"
+                                       : "";
+                            gm.fileSaveGestures = dir + SubmenuFileSuggestions.file_suggestions[SubmenuFileSuggestions.file_suggestion_i];
+                        } else if (gm.gc != null) {
+                            string dir = (gm.fileSaveCombinations.Contains("/") || gm.fileSaveCombinations.Contains("\\"))
+                                       ? Path.GetDirectoryName(gm.fileSaveCombinations).Replace('\\', '/') + "/"
+                                       : "";
+                            gm.fileSaveCombinations = dir + SubmenuFileSuggestions.file_suggestions[SubmenuFileSuggestions.file_suggestion_i];
+                        }
                     }
                 }
-                
                 break;
         }
         GestureManagerVR.setInputFocus(null);

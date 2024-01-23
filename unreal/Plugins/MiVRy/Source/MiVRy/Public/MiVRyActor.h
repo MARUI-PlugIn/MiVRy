@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -21,7 +21,6 @@
 #include "MiVRyUtil.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MotionControllerComponent.h"
 #include "MiVRyActor.generated.h"
 
 class IGestureRecognition;
@@ -227,7 +226,7 @@ public:
 	* @param GestureParts Information about the individual parts (strokes) of which the gesture consisted.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MiVRy", Meta = (DisplayName = "Get Identified Gesture Info", ExpandEnumAsExecs = "Result"))
-		void getIdentifiedGestureInfo(GestureRecognition_Result& Result, int& GestureID, FString& GestureName, float& Similarity, TArray<FMiVRyGesturePart>& GestureParts);
+		void getIdentifiedGestureInfo(GestureRecognition_Result& Result, int& GestureID, FString& GestureName, float& Similarity, TArray<FMiVRyGesturePart>& GestureParts) const;
 
 	/**
 	* Retrieve a 3d gesture path that is the representative average of a gesture part.

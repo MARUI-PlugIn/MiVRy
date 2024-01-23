@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -252,20 +252,16 @@ public class GestureManagerVR : MonoBehaviour
     {
         if (me == null)
             return;
-        if (me.inputFocus != null)
-        {
+        if (me.inputFocus != null) {
             MeshRenderer meshRenderer = me.inputFocus.gameObject?.GetComponent<MeshRenderer>();
-            if (meshRenderer != null)
-            {
+            if (meshRenderer != null) {
                 meshRenderer.material = me.inputFocusOffMaterial;
             }
         }
         me.inputFocus = editableTextField;
-        if (me.inputFocus != null)
-        {
+        if (me.inputFocus != null) {
             MeshRenderer meshRenderer = me.inputFocus.gameObject?.GetComponent<MeshRenderer>();
-            if (meshRenderer != null)
-            {
+            if (meshRenderer != null) {
                 meshRenderer.material = me.inputFocusOnMaterial;
             }
         }
@@ -280,13 +276,11 @@ public class GestureManagerVR : MonoBehaviour
                         me.keyboard.transform.rotation = Quaternion.LookRotation(Camera.main.transform.position - me.inputFocus.gameObject.transform.position) * Quaternion.AngleAxis(90.0f, Vector3.right);
 
                         Bounds objBounds = new Bounds(me.inputFocus.gameObject.transform.position, Vector3.zero);
-                        foreach (Renderer r in me.inputFocus.gameObject.GetComponentsInChildren<Renderer>())
-                        {
+                        foreach (Renderer r in me.inputFocus.gameObject.GetComponentsInChildren<Renderer>()) {
                             objBounds.Encapsulate(r.bounds);
                         }
                         Bounds keyboardBounds = new Bounds(me.keyboard.transform.position, Vector3.zero);
-                        foreach (Renderer r in me.keyboard.GetComponentsInChildren<Renderer>())
-                        {
+                        foreach (Renderer r in me.keyboard.GetComponentsInChildren<Renderer>()) {
                             keyboardBounds.Encapsulate(r.bounds);
                         }
                         me.keyboard.transform.position = new Vector3(

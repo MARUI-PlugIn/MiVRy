@@ -1,7 +1,7 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -133,6 +133,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_delete(void* gco); //!< Delete instance.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_activateLicense(void* gco, const char* license_name, const char* license_key); //!< Provide a license to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_activateLicenseFile(void* gco, const char* license_file_path); //!< Provide a license file to enable additional functionality.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getLicenseStatus(void* gco); //!< Check if a license was activated to enable additional functionality.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_numberOfParts(void* gco); //!< Get the number of subgestures / parts / hands used by this multi-gesture object.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getPartEnabled(void* gco, int part); //!< Get whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setPartEnabled(void* gco, int part, int enabled); //!< Set whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
@@ -302,6 +303,12 @@ public:
     * \return   Zero on success, a negative error code on failure.
     */
     virtual int activateLicenseFile(const char* license_file_path)=0;
+
+    /**
+    * Check if a license was activated to enable additional functionality.
+    * \return   One if a license was activated, zero if not.
+    */
+    virtual int getLicenseStatus()=0;
 
     /**
     * Get the number of subgestures / parts / hands used by this multi-gesture object.

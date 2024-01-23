@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.9
- * Copyright (c) 2023 MARUI-PlugIn (inc.)
+ * Version 2.10
+ * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -134,6 +134,14 @@ int AGestureCombinationsActor::activateLicenseFile(const FString& license_file_p
 	}
 	auto license_file_path_str = StringCast<ANSICHAR>(*license_file_path);
 	return this->gco->activateLicenseFile(license_file_path_str.Get());
+}
+
+int AGestureCombinationsActor::getLicenseStatus() const
+{
+	if (this->gco == nullptr) {
+		return -99;
+	}
+	return this->gco->getLicenseStatus();
 }
 
 bool AGestureCombinationsActor::getPartEnabled(int part)

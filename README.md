@@ -1,5 +1,5 @@
 # MiVRy 3D Gesture Recognition AI
-Copyright (c) 2023 MARUI-PlugIn (inc.)
+Copyright (c) 2024 MARUI-PlugIn (inc.)
 
 MiVRy is an artificial intelligence (AI) that can learn to detect and distinguish motion patterns. It is aimed at human gesture recognition and can be trained to understand gestures such as a *"come here"* wave, performing a dance move, using tactical signs and gestures as used by military and police or you very own secret sign language.
 
@@ -10,7 +10,7 @@ It is cross-platform and can be used with any VR device, mobile device (phone, s
 ## License:
 MiVRy is licensed under The MIT License (MIT):
 
-Copyright © 2022 株式会社MARUI-PlugIn (inc.)
+Copyright © 2024 株式会社MARUI-PlugIn (inc.)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -24,6 +24,21 @@ These content files may NOT be used in any way except with MiVRy and may not be 
 The copyright to these files remain with the respective creators.
 
 ## Release Notes:
+
+### v2.10 (2024-01-22)
+
+- Added MacOS support.
+- Added UE Composite and Decorator nodes to use MiVRy in UE Behavior Trees.
+- Updated Unity Hololens plugin to MRTK3.
+- Added new getLicenseStatus function.
+
+### v2.9 (2023-09-17)
+
+- Updated Unreal Engine support to UE 5.3.
+- Improved gesture recognition performance.
+- Usability improvements on GestureManager.
+- Bugfixes in UnityQuestHands.
+- Fixed a bug where GestureCombinations might return wrong error code.
 
 ### v2.8 (2023-06-29)
 
