@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -49,6 +49,9 @@ public class MiVRy : ModuleRules
 			{
 				"Core",
 				"Projects",
+				// "InputCore",
+                "EnhancedInput",
+				"HeadMountedDisplay",
 				"AIModule"
 			}
 			);

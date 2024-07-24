@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -182,6 +182,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentifyM(void* gro, const double hmd[4][4], double* similarity); //!< Continuous gesture identification.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(void* gro, const double hmd_p[3], const double hmd_q[4], double p[], double s[], int* n);
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilaritiesM(void* gro, const double hmd[4][4], double p[], double s[], int* n);
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentifyAndGetStroke(void* gro, const double hmd_p[3], const double hmd_q[4], double* similarity, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]);
+    GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(void* gro, const double hmd_p[3], const double hmd_q[4], double p[], double s[], int* n, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]);
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdRecord(void* gro, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_contdRecordM(void* gro, const double hmd[4][4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureRecognition_getContdIdentificationPeriod(void* gro); //!< Get time frame for continuous gesture identification in milliseconds.
@@ -684,7 +686,7 @@ public:
     * \param  hmd_p             Vector (x,y,z) of the current headset position.
     * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
     * \param  similarity        [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
-    * \return                   The ID of the identified gesture on success, an negative error code on failure.
+    * \return                   The ID of the identified gesture on success, a negative error code on failure.
     */
     virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0)=0;
 
@@ -692,7 +694,7 @@ public:
     * Continuous gesture identification.
     * \param  hmd               Matrix of the current headset position and rotation.
     * \param  similarity        [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
-    * \return                   The ID of the identified gesture on success, an negative error code on failure.
+    * \return                   The ID of the identified gesture on success, a negative error code on failure.
     */
     virtual int contdIdentifyM(const double hmd[4][4], double* similarity=0)=0;
 
@@ -718,17 +720,47 @@ public:
     virtual int contdIdentifyAndGetAllProbabilitiesAndSimilaritiesM(const double hmd[4][4], double p[], double s[], int* n)=0;
 
     /**
+    * Continuous gesture identification.
+    * \param    hmd_p           Vector (x,y,z) of the current headset position.
+    * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
+    * \param    similarity      [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
+    * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
+    * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
+    * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
+    * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
+    * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
+    */
+    virtual int contdIdentifyAndGetStroke(const double hmd_p[3], const double hmd_q[4], double* similarity=0, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
+    * Continuous gesture identification.
+    * \param    hmd_p           Vector (x,y,z) of the current headset position.
+    * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
+    * \param    p               [OUT] Array of length n to which to write the probability values (each 0~1).
+    * \param    s               [OUT] Array of length n to which to write the similarity values (each 0~1).
+    * \param    n               [IN/OUT] The length of the arrays p and s. Will be overwritten with the number of probability values actually written into the p and s arrays.
+    * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
+    * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
+    * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
+    * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
+    * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
+    * \return                   The gesture ID of the identified gesture, or a negative error code on failure.
+    */
+    virtual int contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(const double hmd_p[3], const double hmd_q[4], double p[], double s[], int* n, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
     * Continuous gesture recording.
     * \param  hmd_p             Vector (x,y,z) of the current headset position.
     * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
-    * \return                   The ID of the recorded gesture on success, an negative error code on failure.
+    * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
     virtual int contdRecord(const double hmd_p[3], const double hmd_q[4])=0;
 
     /**
     * Continuous gesture recording.
     * \param  hmd               Matrix of the current headset position and rotation.
-    * \return                   The ID of the recorded gesture on success, an negative error code on failure.
+    * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
     virtual int contdRecordM(const double hmd[4][4])=0;
 

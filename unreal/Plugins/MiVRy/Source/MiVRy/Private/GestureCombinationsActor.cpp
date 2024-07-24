@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -1180,7 +1180,7 @@ GestureRecognition_UpdateHeadPositionPolicy AGestureCombinationsActor::getUpdate
 GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFrameOfReferenceRoll()
 {
 	if (!this->gco) {
-		return (GestureRecognition_FrameOfReference)-1;
+		return (GestureRecognition_FrameOfReference)-99;
 	}
     switch (this->MivryCoordinateSystem) {
         case GestureRecognition_CoordinateSystem::Unity_OpenXR:
@@ -1217,7 +1217,7 @@ void AGestureCombinationsActor::setRotationalFrameOfReferenceRoll(GestureRecogni
 GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFrameOfReferencePitch()
 {
 	if (!this->gco) {
-		return (GestureRecognition_FrameOfReference)-1;
+		return (GestureRecognition_FrameOfReference)-99;
 	}
     switch (this->MivryCoordinateSystem) {
         case GestureRecognition_CoordinateSystem::Unity_OpenXR:
@@ -1254,7 +1254,7 @@ void AGestureCombinationsActor::setRotationalFrameOfReferencePitch(GestureRecogn
 GestureRecognition_FrameOfReference AGestureCombinationsActor::getRotationalFrameOfReferenceYaw()
 {
 	if (!this->gco) {
-		return (GestureRecognition_FrameOfReference)-1;
+		return (GestureRecognition_FrameOfReference)-99;
 	}
     switch (this->MivryCoordinateSystem) {
         case GestureRecognition_CoordinateSystem::Unity_OpenXR:
@@ -1291,7 +1291,7 @@ void AGestureCombinationsActor::setRotationalFrameOfReferenceYaw(GestureRecognit
 GestureRecognition_RotationOrder AGestureCombinationsActor::getRotationalFrameOfReferenceRotationOrder()
 {
 	if (!this->gco) {
-		return (GestureRecognition_RotationOrder)-1;
+		return (GestureRecognition_RotationOrder)-99;
 	}
 	return (GestureRecognition_RotationOrder)this->gco->rotationalFrameOfReference.rotationOrder;
 }

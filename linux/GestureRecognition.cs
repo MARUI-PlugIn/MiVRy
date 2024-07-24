@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -760,9 +760,7 @@ public class GestureRecognition
     /// </summary>
     /// <param name="pos">[OUT] The position where the gesture was performed.</param>
     /// <param name="scale">[OUT] The scale at which the gesture was performed.</param>
-    /// <param name="dir0">[OUT] The primary direction in which the gesture was performed (ie. widest direction).</param>
-    /// <param name="dir1">[OUT] The secondary direction in which the gesture was performed.</param>
-    /// <param name="dir2">[OUT] The minor direction in which the gesture was performed (ie. narrowest direction).</param>
+    /// <param name="q">[OUT] The orientation (direction) into which the gesture was performed.</param>
     /// <returns>
     /// The ID of the gesture identified, a negative error code on failure.
     /// </returns>
@@ -778,6 +776,13 @@ public class GestureRecognition
         pos.y = (float)_pos[1];
         pos.z = (float)_pos[2];
         scale = _scale[0];
+        _dirsToQuaternion(_dir0, _dir1, _dir2, ref q);
+        return ret;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     _dirsToQuaternion
+    private void _dirsToQuaternion(double[] _dir0, double[] _dir1, double[] _dir2, ref Quaternion q)
+    {
         double tr = _dir0[0] + _dir1[1] + _dir2[2];
         if (tr > 0)
         {
@@ -811,7 +816,6 @@ public class GestureRecognition
             q.y = (float)((_dir2[1] + _dir1[2]) / s);
             q.z = (float)(0.25 * s);
         }
-        return ret;
     }
     //                                                          ________________________________
     //_________________________________________________________/          endStroke()
@@ -1131,6 +1135,123 @@ public class GestureRecognition
         int[] _n = new int[1];
         _n[0] = num_gestures;
         return GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(m_gro, _hmd_p, _hmd_q, p, s, _n);
+    }
+    //                                                             _____________________________
+    //____________________________________________________________/ contdIdentifyAndGetStroke()
+    /// <summary>
+    /// Continuous gesture identification.
+    /// </summary>
+    /// <param name="hmd_p">Vector (x,y,z) of the current headset position.</param>
+    /// <param name="hmd_q">Quaternion (x,y,z,w) of the current headset rotation.</param>
+    /// <param name="similarity">The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.</param>
+    /// <param name="pos">The position where the gesture was performed.</param>
+    /// <param name="scale">The scale (size) at which the gesture was performed.</param>
+    /// <param name="dir0">The primary direction at which the gesture was performed.</param>
+    /// <param name="dir1">The secondary direction at which the gesture was performed.</param>
+    /// <param name="dir2">The least-significant direction at which the gesture was performed.</param>
+    /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
+    public int contdIdentifyAndGetStroke(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref Vector3 pos, ref double scale, ref Vector3 dir0, ref Vector3 dir1, ref Vector3 dir2)
+    {
+        double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
+        double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
+        double[] _similarity = new double[1];
+        double[] _pos = new double[3];
+        double[] _scale = new double[1];
+        double[] _dir0 = new double[3];
+        double[] _dir1 = new double[3];
+        double[] _dir2 = new double[3];
+        int ret = GestureRecognition_contdIdentifyAndGetStroke(m_gro, _hmd_p, _hmd_q, _similarity, _pos, _scale, _dir0, _dir1, _dir2);
+        similarity = _similarity[0];
+        pos.x = (float)_pos[0];
+        pos.y = (float)_pos[1];
+        pos.z = (float)_pos[2];
+        scale = _scale[0];
+        dir0.x = (float)_dir0[0];
+        dir0.y = (float)_dir0[1];
+        dir0.z = (float)_dir0[2];
+        dir1.x = (float)_dir1[0];
+        dir1.y = (float)_dir1[1];
+        dir1.z = (float)_dir1[2];
+        dir2.x = (float)_dir2[0];
+        dir2.y = (float)_dir2[1];
+        dir2.z = (float)_dir2[2];
+        return ret;
+    }
+    //                                                             _____________________________
+    //____________________________________________________________/ contdIdentifyAndGetStroke()
+    /// <summary>
+    /// Continuous gesture identification.
+    /// </summary>
+    /// <param name="hmd_p">Vector (x,y,z) of the current headset position.</param>
+    /// <param name="hmd_q">Quaternion (x,y,z,w) of the current headset rotation.</param>
+    /// <param name="similarity">[OUT] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.</param>
+    /// <param name="pos">[OUT] The position where the gesture was performed.</param>
+    /// <param name="scale">[OUT] The scale (size) at which the gesture was performed.</param>
+    /// <param name="q">[OUT] The orientation (direction) into which the gesture was performed.</param>
+    /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
+    public int contdIdentifyAndGetStroke(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref Vector3 pos, ref double scale, ref Quaternion q)
+    {
+        double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
+        double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
+        double[] _similarity = new double[1];
+        double[] _pos = new double[3];
+        double[] _scale = new double[1];
+        double[] _dir0 = new double[3];
+        double[] _dir1 = new double[3];
+        double[] _dir2 = new double[3];
+        int ret = GestureRecognition_contdIdentifyAndGetStroke(m_gro, _hmd_p, _hmd_q, _similarity, _pos, _scale, _dir0, _dir1, _dir2);
+        similarity = _similarity[0];
+        pos.x = (float)_pos[0];
+        pos.y = (float)_pos[1];
+        pos.z = (float)_pos[2];
+        scale = _scale[0];
+        _dirsToQuaternion(_dir0, _dir1, _dir2, ref q);
+        return ret;
+    }
+    //                         _________________________________________________________________
+    //________________________/ contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities()
+    /// <summary>
+    /// Continuous gesture identification.
+    /// </summary>
+    /// <param name="hmd_p">Vector (x,y,z) of the current headset position.</param>
+    /// <param name="hmd_q">Quaternion (x,y,z,w) of the current headset rotation.</param>
+    /// <param name="p">[OUT] Array to which to write the probability values (each 0~1).</param>
+    /// <param name="s">[OUT] Array to which to write the similarity values (each 0~1).</param>
+    /// <param name="pos">[OUT] The position where the gesture was performed.</param>
+    /// <param name="scale">[OUT] The scale (size) at which the gesture was performed.</param>
+    /// <param name="dir0">[OUT] The primary direction at which the gesture was performed.</param>
+    /// <param name="dir1">[OUT] The secondary direction at which the gesture was performed.</param>
+    /// <param name="dir2">[OUT] The least-significant direction at which the gesture was performed.</param>
+    /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
+    public int contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s, ref Vector3 pos, ref double scale, ref Vector3 dir0, ref Vector3 dir1, ref Vector3 dir2)
+    {
+        double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
+        double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
+        int num_gestures = this.numberOfGestures();
+        p = new double[num_gestures];
+        s = new double[num_gestures];
+        int[] _n = new int[1];
+        _n[0] = num_gestures;
+        double[] _pos = new double[3];
+        double[] _scale = new double[1];
+        double[] _dir0 = new double[3];
+        double[] _dir1 = new double[3];
+        double[] _dir2 = new double[3];
+        int ret = GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(m_gro, _hmd_p, _hmd_q, p, s, _n, _pos, _scale, _dir0, _dir1, _dir2);
+        pos.x = (float)_pos[0];
+        pos.y = (float)_pos[1];
+        pos.z = (float)_pos[2];
+        scale = _scale[0];
+        dir0.x = (float)_dir0[0];
+        dir0.y = (float)_dir0[1];
+        dir0.z = (float)_dir0[2];
+        dir1.x = (float)_dir1[0];
+        dir1.y = (float)_dir1[1];
+        dir1.z = (float)_dir1[2];
+        dir2.x = (float)_dir2[0];
+        dir2.y = (float)_dir2[1];
+        dir2.z = (float)_dir2[2];
+        return ret;
     }
     //                                                      ____________________________________
     //_____________________________________________________/        contdRecord()
@@ -2170,7 +2291,11 @@ public class GestureRecognition
     public static extern int GestureRecognition_contdIdentify(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] similarity);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] p, double[] s, int[] n);
-   [DllImport(libfile, EntryPoint = "GestureRecognition_contdRecord", CallingConvention = CallingConvention.Cdecl)]
+    [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentifyAndGetStroke", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_contdIdentifyAndGetStroke(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] similarity, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] p, double[] s, int[] n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_contdRecord", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_contdRecord(IntPtr gro, double[] hmd_p, double[] hmd_q);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getContdIdentificationPeriod(IntPtr gro);

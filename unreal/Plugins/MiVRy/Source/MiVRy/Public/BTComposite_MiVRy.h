@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -28,8 +28,8 @@ namespace UBTComposite_MiVRy_ChildFinishReaction
 {
 	enum Type : int
 	{
-		Stop UMETA(DisplayName = "Stop Execution", ToolTip = "Stop executing child nodes.."),
-		Continue UMETA(DisplayName = "Continue Execution", ToolTip = "Continue executing child nodes."),
+		StopExecution UMETA(DisplayName = "Stop Execution", ToolTip = "Stop executing child nodes.."),
+		ContinueExecution UMETA(DisplayName = "Continue Execution", ToolTip = "Continue executing child nodes."),
 	};
 }
 
@@ -80,11 +80,14 @@ class MIVRY_API UBTComposite_MiVRy : public UBTCompositeNode
 	virtual ~UBTComposite_MiVRy();
 	virtual void PostLoad() override;
 	virtual void BeginDestroy() override;
+#if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 	virtual void NotifyNodeActivation(FBehaviorTreeSearchData& SearchData) const override;
 	virtual int32 GetNextChildHandler(struct FBehaviorTreeSearchData& SearchData, int32 PrevChild, EBTNodeResult::Type LastResult) const override;
 	virtual uint16 GetInstanceMemorySize() const override;
 	virtual void InitializeMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryInit::Type InitType) const override;
+	virtual void CleanupMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryClear::Type CleanupType) const override;
 	virtual FString GetStaticDescription() const override;
 	virtual void DescribeRuntimeValues(const UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTDescriptionVerbosity::Type Verbosity, TArray<FString>& Values) const override;
 
@@ -114,19 +117,19 @@ public:
 	* What to do when the last executed child finishes with "Success".
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "MiVRy", meta = (DisplayName = "When child finishes with 'Success'"))
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildSuccess = UBTComposite_MiVRy_ChildFinishReaction::Continue;
+	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildSuccess = UBTComposite_MiVRy_ChildFinishReaction::ContinueExecution;
 
 	/**
 	* What to do when the last executed child finishes with "Failure".
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "MiVRy", meta = (DisplayName = "When child finishes with 'Failure'"))
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildFailure = UBTComposite_MiVRy_ChildFinishReaction::Continue;
+	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildFailure = UBTComposite_MiVRy_ChildFinishReaction::ContinueExecution;
 
 	/**
 	* What to do when the last executed child finishes with "Abort".
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "MiVRy", meta = (DisplayName = "When child finishes with 'Abort'"))
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildAborted = UBTComposite_MiVRy_ChildFinishReaction::Stop;
+	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildAborted = UBTComposite_MiVRy_ChildFinishReaction::StopExecution;
 
 	/** Which Gesture ID (first number) should lead to the execution of which child
 	* (second number, where "0" is the leftmost child). A Gesture ID of "-1" means "no gesture was identified".

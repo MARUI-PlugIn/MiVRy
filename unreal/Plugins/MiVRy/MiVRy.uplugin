@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 210,
-	"VersionName": "2.10",
+	"Version": 211,
+	"VersionName": "2.11",
 	"FriendlyName": "MiVRy",
 	"Description": "3D Gesture Recognition",
 	"Category": "Other",
@@ -22,6 +22,12 @@
 			"WhitelistPlatforms": [
 				"Win64", "Android", "Mac", "Linux", "LinuxArm64"
 			]
+		}
+	],
+	"Plugins": [
+		{
+		  "Name": "EnhancedInput",
+		  "Enabled": true
 		}
 	]
 }

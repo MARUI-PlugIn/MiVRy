@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -21,6 +21,7 @@
 #include "MiVRyUtil.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "InputAction.h"
 #include "MiVRyActor.generated.h"
 
 class IGestureRecognition;
@@ -76,7 +77,22 @@ struct FMiVRyGesturePart
 	*/
 	UPROPERTY(BlueprintReadWrite, Category = "MiVRy")
 	int PartGestureID = -1;
+
+	void parse(const double pos[3], double scale, const double dir0[3], const double dir1[3], const double dir2[3], GestureRecognition_CoordinateSystem coordsys);
 };
+
+/**
+* Index/ID of the (hand) side (0=left, 1=right).
+*/
+UENUM(BlueprintType)
+enum class GestureRecognition_ContinuousIdentification : uint8
+{
+	Off = 0 UMETA(DisplayName = "Off"),
+	WhilePressingTrigger = 1 UMETA(DisplayName = "While Pressing Trigger"),
+	Always = 2 UMETA(DisplayName = "Always"),
+	// TriggerToggles = 3 UMETA(DisplayName = "Trigger Toggles On/Off"),
+};
+
 
 
 /**
@@ -115,40 +131,40 @@ public:
 		GestureRecognition_CoordinateSystem MivryCoordinateSystem = GestureRecognition_CoordinateSystem::Unreal_OpenXR;
 
 	/**
-	* Actor component (eg. MotionControllerComponent) to use as left hand. (Optinal).
+	* Actor component (eg. MotionControllerComponent) to use as left hand. (Optional).
 	* Use either this or LeftHandActor to specify the source
 	* for the location/rotation of the left hand.
 	* If neither is set, XRSystem->GetMotionControllerData is used.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		USceneComponent* LeftMotionController = nullptr;
+		TSoftObjectPtr<USceneComponent> LeftMotionController = nullptr;
 
 	/**
-	* Actor to use as left hand. (Optinal).
+	* Actor to use as left hand. (Optional).
 	* Use either this or LeftMotionController to specify the source
 	* for the location/rotation of the left hand.
 	* If neither is set, XRSystem->GetMotionControllerData is used.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		AActor* LeftHandActor = nullptr;
+		TSoftObjectPtr<AActor> LeftHandActor = nullptr;
 
 	/**
-	* Actor component (eg. MotionControllerComponent) to use as right hand. (Optinal).
+	* Actor component (eg. MotionControllerComponent) to use as right hand. (Optional).
 	* Use either this or RightHandActor to specify the source
 	* for the location/rotation of the right hand.
 	* If neither is set, XRSystem->GetMotionControllerData is used.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		USceneComponent* RightMotionController = nullptr;
+		TSoftObjectPtr<USceneComponent> RightMotionController = nullptr;
 
 	/**
-	* Actor to use as right hand. (Optinal).
+	* Actor to use as right hand. (Optional).
 	* Use either this or RightMotionController to specify the source
 	* for the location/rotation of the right hand.
 	* If neither is set, XRSystem->GetMotionControllerData is used.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		AActor* RightHandActor = nullptr;
+		TSoftObjectPtr<AActor> RightHandActor = nullptr;
 
 	/**
 	* Name of the input to use as trigger which starts/stops the
@@ -171,11 +187,66 @@ public:
 		FName RightTriggerInput;
 
 	/**
+	* The Input Action which indicates whether the user wishes to
+	* start/stop gesturing. When the value of the associated button (or axis)
+	* is above the LeftTriggerInputThreshold gesturing starts,
+	* when it falls below the threshold gesturing stops and MiVRy
+	* will identify the performed gesture.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		TSoftObjectPtr<UInputAction> LeftTriggerInputAction = nullptr;
+
+	/**
+	* The Input Action which indicates whether the user wishes to
+	* start/stop gesturing. When the value of the associated button (or axis)
+	* is above the RightTriggerInputThreshold gesturing starts,
+	* when it falls below the threshold gesturing stops and MiVRy
+	* will identify the performed gesture.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		TSoftObjectPtr<UInputAction> RightTriggerInputAction = nullptr;
+
+	/**
+	* The threshold value above which the associated Input Action value must rise
+	* to be considered "pressed" (or "triggered").
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		float LeftTriggerInputThreshold = 0.85f;
+
+	/**
+	* The threshold value above which the associated Input Action value must rise
+	* to be considered "pressed" (or "triggered").
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		float RightTriggerInputThreshold = 0.85f;
+
+	/**
+	* Whether gestures should be identified continuously during gesturing,
+	* instead of after a gesture motion is finished.
+	* NOTE: Continous gesture recognition is running *while* the trigger is pressed.
+	* So if you want to XXX
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		GestureRecognition_ContinuousIdentification ContinuousGestureRecognition = GestureRecognition_ContinuousIdentification::Off;
+
+	/**
+	* Time frame (in milliseconds) that continuous gestures are expected to be.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		int ContinuousGesturePeriod = 1000;
+
+	/**
+	* The number of samples to use for smoothing continuous gesture identification results.
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
+		int ContinuousGestureSmoothing = 3;
+
+	/**
 	* Whether or not to compensate head motions during gesturing
 	* by continuously updating the current head position/rotation.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
-		bool CompensateHeadMotion;
+		bool CompensateHeadMotion = false;
 
 	/**
 	* License ID (name) of your MiVRy license.
@@ -207,6 +278,9 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "MiVRy", Meta=(DisplayName="Start Gesturing", ExpandEnumAsExecs="Result"))
 		void startGesturing(GestureRecognition_Result& Result, int& ErrorCode, GestureRecognition_Side side = GestureRecognition_Side::Left);
+
+	UFUNCTION(BlueprintCallable, Category = "MiVRy", Meta = (DisplayName = "Is Gesturing"))
+		bool IsGesturing(GestureRecognition_Side side = GestureRecognition_Side::Left);
 
 	/**
 	* End a gesture motion.
@@ -265,6 +339,7 @@ public:
 	virtual void Tick(float DeltaTime) override; //!< Called every frame.
 protected:
 	virtual void BeginPlay() override; //!< Called when the game starts or when spawned.
+	void SetupPlayerInputComponent(class UInputComponent* InputComponent); //!< Bind the input component actions.
 	
 	IGestureRecognition* gro = nullptr; //!< The GestureRecognition object in use (if any).
 	IGestureCombinations* gco = nullptr; //!< The GestureCombinations object in use (if any).
@@ -277,4 +352,8 @@ protected:
 	void LeftTriggerInputReleased();
 	void RightTriggerInputPressed();
 	void RightTriggerInputReleased();
+
+	void EnhancedInputLeftTrigger(const FInputActionValue& Value);
+	void EnhancedInputRightTrigger(const FInputActionValue& Value);
+	float EnhancedInputTriggerValue(const FInputActionValue& Value);
 };

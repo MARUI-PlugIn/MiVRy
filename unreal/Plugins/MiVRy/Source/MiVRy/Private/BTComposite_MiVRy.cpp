@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -18,6 +18,7 @@
 
 #include "BTComposite_MiVRy.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
 #include "GestureRecognition.h"
 #include "GestureCombinations.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -27,6 +28,7 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Float.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Int.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_String.h"
+#include "Runtime/Launch/Resources/Version.h" // for ENGINE_MAJOR_VERSION / ENGINE_MINOR_VERSION
 
 UBTComposite_MiVRy::UBTComposite_MiVRy(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -34,7 +36,7 @@ UBTComposite_MiVRy::UBTComposite_MiVRy(const FObjectInitializer& ObjectInitializ
 	INIT_COMPOSITE_NODE_NOTIFY_FLAGS();
 	this->bUseNodeActivationNotify = 1;
 	this->Delegate.BindUFunction(this, "OnGestureIdentified");
-	if (!this->MiVRyActor.IsNull()) {
+	if (this->MiVRyActor.IsValid()) {
 		this->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		this->BoundMiVRyActor = this->MiVRyActor;
 	}
@@ -43,12 +45,13 @@ UBTComposite_MiVRy::UBTComposite_MiVRy(const FObjectInitializer& ObjectInitializ
 void UBTComposite_MiVRy::PostLoad()
 {
 	Super::PostLoad();
-	if (this->BoundMiVRyActor.IsNull() && !this->MiVRyActor.IsNull()) {
+	if (!this->BoundMiVRyActor.IsValid() && this->MiVRyActor.IsValid()) {
 		this->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		this->BoundMiVRyActor = this->MiVRyActor;
 	}
 }
 
+#if WITH_EDITOR
 void UBTComposite_MiVRy::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (PropertyChangedEvent.Property == nullptr) {
@@ -59,22 +62,23 @@ void UBTComposite_MiVRy::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 		return;
 	} // else:
-	if (!this->BoundMiVRyActor.IsNull()) {
+	if (this->BoundMiVRyActor.IsValid()) {
 		if (this->BoundMiVRyActor.IsValid()) {
 			this->BoundMiVRyActor->OnGestureIdentifiedDelegate.RemoveAll(this);
 		}
 		this->BoundMiVRyActor = nullptr;
 	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	if (!this->MiVRyActor.IsNull()) {
+	if (this->MiVRyActor.IsValid()) {
 		this->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		this->BoundMiVRyActor = this->MiVRyActor;
 	}
 }
+#endif
 
 void UBTComposite_MiVRy::NotifyNodeActivation(FBehaviorTreeSearchData& SearchData) const
 {
-	if (this->BoundMiVRyActor.IsNull() && !this->MiVRyActor.IsNull()) {
+	if (!this->BoundMiVRyActor.IsValid() && this->MiVRyActor.IsValid()) {
 		UBTComposite_MiVRy* me = (UBTComposite_MiVRy*)this;
 		me->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		me->BoundMiVRyActor = this->MiVRyActor;
@@ -83,7 +87,7 @@ void UBTComposite_MiVRy::NotifyNodeActivation(FBehaviorTreeSearchData& SearchDat
 
 UBTComposite_MiVRy::~UBTComposite_MiVRy()
 {
-	if (!this->BoundMiVRyActor.IsNull()) {
+	if (this->BoundMiVRyActor.IsValid()) {
 		if (this->BoundMiVRyActor.IsValid()) {
 			this->BoundMiVRyActor->OnGestureIdentifiedDelegate.RemoveAll(this);
 		}
@@ -94,7 +98,7 @@ UBTComposite_MiVRy::~UBTComposite_MiVRy()
 
 void UBTComposite_MiVRy::BeginDestroy()
 {
-	if (!this->BoundMiVRyActor.IsNull()) {
+	if (this->BoundMiVRyActor.IsValid()) {
 		if (this->BoundMiVRyActor.IsValid()) {
 			this->BoundMiVRyActor->OnGestureIdentifiedDelegate.RemoveAll(this);
 		}
@@ -111,7 +115,11 @@ uint16 UBTComposite_MiVRy::GetInstanceMemorySize() const
 
 void UBTComposite_MiVRy::InitializeMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryInit::Type InitType) const
 {
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
+	InitializeNodeMemory<UBTComposite_MiVRyMemory>(NodeMemory, InitType);
+#else
 	Super::InitializeMemory(OwnerComp, NodeMemory, InitType);
+#endif
 	UBTComposite_MiVRyMemory* Memory = CastInstanceNodeMemory<UBTComposite_MiVRyMemory>(NodeMemory);
 	if (InitType == EBTMemoryInit::Initialize)
 	{
@@ -119,10 +127,19 @@ void UBTComposite_MiVRy::InitializeMemory(UBehaviorTreeComponent& OwnerComp, uin
 	}
 }
 
+void UBTComposite_MiVRy::CleanupMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryClear::Type CleanupType) const
+{
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
+	CleanupNodeMemory<UBTComposite_MiVRyMemory>(NodeMemory, CleanupType);
+#else
+	Super::CleanupMemory(OwnerComp, NodeMemory, CleanupType);
+#endif
+}
+
 int32 UBTComposite_MiVRy::GetNextChildHandler(FBehaviorTreeSearchData& SearchData, int32 PrevChild, EBTNodeResult::Type LastResult) const
 {
 	UBTComposite_MiVRyMemory* Memory = GetNodeMemory<UBTComposite_MiVRyMemory>(SearchData);
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> reaction = UBTComposite_MiVRy_ChildFinishReaction::Continue;
+	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> reaction = UBTComposite_MiVRy_ChildFinishReaction::ContinueExecution;
 	switch (LastResult) {
 	case EBTNodeResult::Succeeded:
 		reaction = this->OnChildSuccess;
@@ -134,7 +151,7 @@ int32 UBTComposite_MiVRy::GetNextChildHandler(FBehaviorTreeSearchData& SearchDat
 		reaction = this->OnChildAborted;
 		break;
 	}
-	if (reaction == UBTComposite_MiVRy_ChildFinishReaction::Stop) {
+	if (reaction == UBTComposite_MiVRy_ChildFinishReaction::StopExecution) {
 		return BTSpecialChild::ReturnToParent;
 	}
 	// else:

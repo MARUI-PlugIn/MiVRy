@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -67,6 +67,8 @@ using UnityEngine.Events;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.UIElements;
+using static GestureCompletionData;
 #endif
 #if UNITY_ANDROID
 using UnityEngine.Networking;
@@ -313,6 +315,9 @@ public class Mivry : MonoBehaviour
     /// <summary>
     /// Whether gestures should be identified continuously during gesturing,
     /// instead of after a gesture motion is finished.
+	/// NOTE: You still need to start a gesture motion via the "trigger" for
+	/// continuous recognition to start. You can do so via a trigger input (button) or
+	/// by setting the trigger threshold to zero.
     /// </summary>
     [Tooltip("Whether gestures should be identified continuously during gesturing (instead of only after a gesture motion).")]
     public bool ContinuousGestureRecognition = false;
@@ -758,6 +763,7 @@ public class Mivry : MonoBehaviour
         GameObject activeGameObject = LeftHand;
         float activeTrigger = LeftTriggerValue;
         GestureCompletionData.Part.Side side = GestureCompletionData.Part.Side.Left;
+        GestureCompletionData.Part part;
         float activeTriggerThreshold = LeftTriggerThreshold;
         if (RightHandActive)
         {
@@ -778,9 +784,14 @@ public class Mivry : MonoBehaviour
             Quaternion q = activeGameObject.transform.rotation;
             convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
             gr.contdStrokeQ(p, q);
-            if (this.ContinuousGestureRecognition)
-            {
-                data.gestureID = gr.contdIdentify(hmd_p, hmd_q, ref data.similarity);
+            if (this.ContinuousGestureRecognition) {
+                Array.Resize<GestureCompletionData.Part>(ref data.parts, 1);
+                part = data.parts[0] = new GestureCompletionData.Part();
+                part.side = side;
+                data.gestureID = gr.contdIdentifyAndGetStroke(hmd_p, hmd_q, ref data.similarity, ref part.position, ref part.scale, ref part.orientation);
+                convertOutput(this.mivryCoordinateSystem, ref part.position, ref part.orientation);
+                part.primaryDirection = part.orientation * Vector3.right;
+                part.secondaryDirection = part.orientation * Vector3.up;
                 data.gestureName = (data.gestureID >= 0)
                     ? gr.getGestureName(data.gestureID)
                     : GestureRecognition.getErrorMessage(data.gestureID);
@@ -793,7 +804,7 @@ public class Mivry : MonoBehaviour
         }
         // else: user released the trigger, ending the gesture
         Array.Resize<GestureCompletionData.Part>(ref data.parts, 1);
-        GestureCompletionData.Part part = data.parts[0] = new GestureCompletionData.Part();
+        part = data.parts[0] = new GestureCompletionData.Part();
         part.side = side;
         data.gestureID = gr.endStroke(
             ref data.similarity,
@@ -856,12 +867,24 @@ public class Mivry : MonoBehaviour
                 Quaternion q = LeftHand.transform.rotation;
                 convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                 gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Left, p, q);
-                if (this.ContinuousGestureRecognition)
-                {
+                if (this.ContinuousGestureRecognition) {
                     data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref data.similarity);
-                    data.gestureName = (data.gestureID >= 0)
-                        ? gc.getGestureCombinationName(data.gestureID)
-                        : GestureRecognition.getErrorMessage(data.gestureID);
+                    if (data.gestureID < 0) {
+                        data.gestureName = GestureRecognition.getErrorMessage(data.gestureID);
+                        Array.Resize<GestureCompletionData.Part>(ref data.parts, 0);
+                    } else {
+                        data.gestureName = gc.getGestureCombinationName(data.gestureID);
+                        int numParts = gc.numberOfParts();
+                        Array.Resize<GestureCompletionData.Part>(ref data.parts, numParts);
+                        for (int i=0; i<numParts; i++) {
+                            GestureCompletionData.Part part = data.parts[i] = new Part();
+                            part.side = (Part.Side)i;
+                            gc.contdIdentifyGetLastStrokeInfo(i, ref part.position, ref part.scale, ref part.orientation);
+                            convertOutput(this.mivryCoordinateSystem, ref part.position, ref part.orientation);
+                            part.primaryDirection = part.orientation * Vector3.right;
+                            part.secondaryDirection = part.orientation * Vector3.up;
+                        }
+                    }
                     OnGestureCompletion.Invoke(data);
                     #if MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);
@@ -917,12 +940,24 @@ public class Mivry : MonoBehaviour
                 Quaternion q = RightHand.transform.rotation;
                 convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                 gc.contdStrokeQ((int)GestureCompletionData.Part.Side.Right, p, q);
-                if (this.ContinuousGestureRecognition)
-                {
+                if (this.ContinuousGestureRecognition) {
                     data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref data.similarity);
-                    data.gestureName = (data.gestureID >= 0)
-                        ? gc.getGestureCombinationName(data.gestureID)
-                        : GestureRecognition.getErrorMessage(data.gestureID);
+                    if (data.gestureID < 0) {
+                        data.gestureName = GestureRecognition.getErrorMessage(data.gestureID);
+                        Array.Resize<GestureCompletionData.Part>(ref data.parts, 0);
+                    } else {
+                        data.gestureName = gc.getGestureCombinationName(data.gestureID);
+                        int numParts = gc.numberOfParts();
+                        Array.Resize<GestureCompletionData.Part>(ref data.parts, numParts);
+                        for (int i=0; i<numParts; i++) {
+                            GestureCompletionData.Part part = data.parts[i] = new Part();
+                            part.side = (Part.Side)i;
+                            gc.contdIdentifyGetLastStrokeInfo(i, ref part.position, ref part.scale, ref part.orientation);
+                            convertOutput(this.mivryCoordinateSystem, ref part.position, ref part.orientation);
+                            part.primaryDirection = part.orientation * Vector3.right;
+                            part.secondaryDirection = part.orientation * Vector3.up;
+                        }
+                    }
                     OnGestureCompletion.Invoke(data);
                     #if MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);

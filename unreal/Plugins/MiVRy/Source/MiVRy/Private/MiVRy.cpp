@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -17,7 +17,6 @@
  */
 
 #include "MiVRy.h"
-// #include "Core.h"
 #include "Modules/ModuleManager.h"
 #include "Interfaces/IPluginManager.h"
 #include "Components/InputComponent.h"
@@ -45,7 +44,7 @@ void FMiVRyModule::StartupModule()
 #else
 	LibraryPath = FPaths::Combine(*BaseDir, TEXT("Source/ThirdParty/MiVRy/Linux/x86_32/libgesturerecognition.so"));
 #endif
-#elif PLATFORM_WINRT
+#elif PLATFORM_HOLOLENS
 #ifdef _WIN64
 	LibraryPath = FPaths::Combine(*BaseDir, TEXT("Source/ThirdParty/MiVRy/Hololens/arm_64/GestureRecognition_UWP_ARM_64.dll"));
 #else

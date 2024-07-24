@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -154,6 +154,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_identifyGestureCombination(void* gco, double* probability, double* similarity, double parts_probabilities[], double parts_similarities[]); //!< Return the most likely gesture candidate for the previous multi-gesture.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[] = 0, double parts_similarities[] = 0); //!< Continuous gesture identification.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyM(void* gco, const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyGetLastStrokeInfo(void* gco, int part, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]);
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecord(void* gco, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordM(void* gco, const double hmd[4][4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationPeriod(void* gco, int part); //!< Get time frame for continuous gesture identification in milliseconds.
@@ -476,17 +477,29 @@ public:
     virtual int contdIdentifyM(const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0)=0;
 
     /**
+    * Get detailed information about the stroke that was used in the last call to contdIdentify().
+    * \param    part            The sub-gesture index (or side) of the gesture motion.
+    * \param    pos             [OUT][OPTIONAL] The position where the gesture was performed.
+    * \param    scale           [OUT][OPTIONAL] The scale (size) at which the gesture was performed.
+    * \param    dir0            [OUT][OPTIONAL] The primary direction at which the gesture was performed.
+    * \param    dir1            [OUT][OPTIONAL] The secondary direction at which the gesture was performed.
+    * \param    dir2            [OUT][OPTIONAL] The least-significant direction at which the gesture was performed.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int contdIdentifyGetLastStrokeInfo(int part, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
+
+    /**
     * Continuous gesture recording.
     * \param    hmd_p           Vector (x,y,z) of the current headset position.
     * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
-    * \return                   The ID of the recorded gesture on success, an negative error code on failure.
+    * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
     virtual int contdRecord(const double hmd_p[3], const double hmd_q[4])=0;
 
     /**
     * Continuous gesture recording.
     * \param    hmd             Transformation matrix of the current headset position.
-    * \return                   The ID of the recorded gesture on success, an negative error code on failure.
+    * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
     virtual int contdRecordM(const double hmd[4][4])=0;
 

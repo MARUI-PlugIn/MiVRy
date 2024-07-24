@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -20,11 +20,69 @@
 #include "Interfaces/IPluginManager.h"
 #include "Misc/MessageDialog.h"
 #include "Misc/Paths.h"
+#include "Engine.h"
 #include "Engine/GameInstance.h"
+#include "Misc/FileHelper.h"
+#include "Camera/PlayerCameraManager.h"
 #include "IXRTrackingSystem.h"
+#include "EnhancedInputComponent.h"
 #include "GestureRecognition.h"
 #include "GestureCombinations.h"
-#include "Misc/FileHelper.h"
+
+void FMiVRyGesturePart::parse(const double pos[3], double scale, const double dir0[3], const double dir1[3], const double dir2[3], GestureRecognition_CoordinateSystem coordsys)
+{
+	FRotationMatrix rm(FRotator(0, 0, 0));
+	switch (coordsys) {
+	case GestureRecognition_CoordinateSystem::Unity_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unity_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unity_SteamVR:
+		this->Position.X = float(pos[2]) * 100.0f; // Unreal.X = front = Unity.Z
+		this->Position.Y = float(pos[0]) * 100.0f; // Unreal.Y = right = Unity.X
+		this->Position.Z = float(pos[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
+		this->Scale = float(scale) * 100.0f;
+		rm.M[0][0] = (float)dir0[2]; // Unreal.X = front = Unity.Z
+		rm.M[0][1] = (float)dir0[0]; // Unreal.Y = right = Unity.X
+		rm.M[0][2] = (float)dir0[1]; // Unreal.Z = up    = Unity.Y
+		rm.M[1][0] = (float)dir1[2];
+		rm.M[1][1] = (float)dir1[0];
+		rm.M[1][2] = (float)dir1[1];
+		rm.M[2][0] = (float)dir2[2];
+		rm.M[2][1] = (float)dir2[0];
+		rm.M[2][2] = (float)dir2[1];
+		this->Rotation = rm.Rotator();
+		this->PrimaryDirection.X = float(dir0[2]); // Unreal.X = front = Unity.Z
+		this->PrimaryDirection.Y = float(dir0[0]); // Unreal.Y = right = Unity.X
+		this->PrimaryDirection.Z = float(dir0[1]); // Unreal.Z = up    = Unity.Y
+		this->SecondaryDirection.X = float(dir1[2]);
+		this->SecondaryDirection.Y = float(dir1[0]);
+		this->SecondaryDirection.Z = float(dir1[1]);
+		break;
+	case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
+	case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
+	case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
+	default:
+		this->Position.X = float(pos[0]);
+		this->Position.Y = float(pos[1]);
+		this->Position.Z = float(pos[2]);
+		this->Scale = float(scale);
+		rm.M[0][0] = (float)dir0[0];
+		rm.M[0][1] = (float)dir0[1];
+		rm.M[0][2] = (float)dir0[2];
+		rm.M[1][0] = (float)dir1[0];
+		rm.M[1][1] = (float)dir1[1];
+		rm.M[1][2] = (float)dir1[2];
+		rm.M[2][0] = (float)dir2[0];
+		rm.M[2][1] = (float)dir2[1];
+		rm.M[2][2] = (float)dir2[2];
+		this->Rotation = rm.Rotator();
+		this->PrimaryDirection.X = float(dir0[0]);
+		this->PrimaryDirection.Y = float(dir0[1]);
+		this->PrimaryDirection.Z = float(dir0[2]);
+		this->SecondaryDirection.X = float(dir1[0]);
+		this->SecondaryDirection.Y = float(dir1[1]);
+		this->SecondaryDirection.Z = float(dir1[2]);
+	}
+}
 
 // Sets default values
 AMiVRyActor::AMiVRyActor()
@@ -56,38 +114,7 @@ void AMiVRyActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (this->InputComponent != nullptr) {
-		if (!this->LeftTriggerInput.IsNone() && this->LeftTriggerInput != "") {
-			auto& BindingPressed = this->InputComponent->BindAction(this->LeftTriggerInput, IE_Pressed, this, &AMiVRyActor::LeftTriggerInputPressed);
-			if (BindingPressed.IsValid()) {
-				BindingPressed.bConsumeInput = 0;
-			} else {
-				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *LeftTriggerInput.ToString());
-			}
-			auto& BindingReleased = this->InputComponent->BindAction(this->LeftTriggerInput, IE_Released, this, &AMiVRyActor::LeftTriggerInputReleased);
-			if (BindingReleased.IsValid()) {
-				BindingReleased.bConsumeInput = 0;
-			} else {
-				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *LeftTriggerInput.ToString());
-			}
-		}
-		if (!this->RightTriggerInput.IsNone() && this->RightTriggerInput != "") {
-			auto& BindingPressed = this->InputComponent->BindAction(this->RightTriggerInput, IE_Pressed, this, &AMiVRyActor::RightTriggerInputPressed);
-			if (BindingPressed.IsValid()) {
-				BindingPressed.bConsumeInput = 0;
-			} else {
-				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *RightTriggerInput.ToString());
-			}
-			auto& BindingReleased = this->InputComponent->BindAction(this->RightTriggerInput, IE_Released, this, &AMiVRyActor::RightTriggerInputReleased);
-			if (BindingReleased.IsValid()) {
-				BindingReleased.bConsumeInput = 0;
-			} else {
-				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *RightTriggerInput.ToString());
-			}
-		}
-	} else if (!this->LeftTriggerInput.IsNone() || !this->RightTriggerInput.IsNone()) {
-		UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Trigger Inputs are set but the actor has no InputComponend. Auto Receive Input setting missing?"));
-	}
+	this->SetupPlayerInputComponent(this->InputComponent);
 
 	FString path = this->GestureDatabaseFile.FilePath;
 	TArray64<uint8> file_contents;
@@ -188,23 +215,75 @@ void AMiVRyActor::BeginPlay()
 	UE_LOG(LogTemp, Error, TEXT("[MiVRyActor] Failed to load gesture database file %s: %s"), *this->GestureDatabaseFile.FilePath, *error_str);
 }
 
+void AMiVRyActor::SetupPlayerInputComponent(class UInputComponent* inputComponent)
+{
+	if (inputComponent == nullptr) {
+		if (!this->LeftTriggerInput.IsNone() || !this->RightTriggerInput.IsNone()) {
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Trigger Inputs are set but the actor has no InputComponend. Auto Receive Input setting missing?"));
+		}
+		if (this->LeftTriggerInputAction.IsValid() || this->RightTriggerInputAction.IsValid()) {
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Trigger Inputs are set but the actor has no InputComponend. Auto Receive Input setting missing?"));
+		}
+		return;
+	}
+	if (!this->LeftTriggerInput.IsNone() && this->LeftTriggerInput != "") {
+		auto& BindingPressed = inputComponent->BindAction(this->LeftTriggerInput, IE_Pressed, this, &AMiVRyActor::LeftTriggerInputPressed);
+		if (BindingPressed.IsValid()) {
+			BindingPressed.bConsumeInput = 0;
+		} else {
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *LeftTriggerInput.ToString());
+		}
+		auto& BindingReleased = inputComponent->BindAction(this->LeftTriggerInput, IE_Released, this, &AMiVRyActor::LeftTriggerInputReleased);
+		if (BindingReleased.IsValid()) {
+			BindingReleased.bConsumeInput = 0;
+		} else {
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *LeftTriggerInput.ToString());
+		}
+	}
+	if (!this->RightTriggerInput.IsNone() && this->RightTriggerInput != "") {
+		auto& BindingPressed = inputComponent->BindAction(this->RightTriggerInput, IE_Pressed, this, &AMiVRyActor::RightTriggerInputPressed);
+		if (BindingPressed.IsValid()) {
+			BindingPressed.bConsumeInput = 0;
+		} else {
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *RightTriggerInput.ToString());
+		}
+		auto& BindingReleased = inputComponent->BindAction(this->RightTriggerInput, IE_Released, this, &AMiVRyActor::RightTriggerInputReleased);
+		if (BindingReleased.IsValid()) {
+			BindingReleased.bConsumeInput = 0;
+		} else {
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Failed to bind input %s"), *RightTriggerInput.ToString());
+		}
+	}
+	UEnhancedInputComponent* enhancedInputComponent = Cast<UEnhancedInputComponent>(inputComponent);
+	if (enhancedInputComponent == nullptr) {
+		return;
+	}
+	if (this->LeftTriggerInputAction.IsValid()) {
+		enhancedInputComponent->BindAction(this->LeftTriggerInputAction.Get(), ETriggerEvent::Triggered, this, &AMiVRyActor::EnhancedInputLeftTrigger);
+	}
+	if (this->RightTriggerInputAction.IsValid()) {
+		enhancedInputComponent->BindAction(this->RightTriggerInputAction.Get(), ETriggerEvent::Triggered, this, &AMiVRyActor::EnhancedInputRightTrigger);
+	}
+}
+
 void AMiVRyActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	USceneComponent* motion_controllers[2];
-	motion_controllers[(uint8)GestureRecognition_Side::Left ] = this->LeftMotionController;
-	motion_controllers[(uint8)GestureRecognition_Side::Right] = this->RightMotionController;
+	motion_controllers[(uint8)GestureRecognition_Side::Left ] = this->LeftMotionController.Get();
+	motion_controllers[(uint8)GestureRecognition_Side::Right] = this->RightMotionController.Get();
 	AActor* hand_actors[2];
-	hand_actors[(uint8)GestureRecognition_Side::Left ] = this->LeftHandActor;
-	hand_actors[(uint8)GestureRecognition_Side::Right] = this->RightHandActor;
+	hand_actors[(uint8)GestureRecognition_Side::Left ] = this->LeftHandActor.Get();
+	hand_actors[(uint8)GestureRecognition_Side::Right] = this->RightHandActor.Get();
 	EControllerHand controller_hand[2];
 	controller_hand[(uint8)GestureRecognition_Side::Left ] = EControllerHand::Left;
 	controller_hand[(uint8)GestureRecognition_Side::Right] = EControllerHand::Right;
 
 	for (int side = 1; side >= 0; side--) {
-		if (!side_active[side])
+		if (!side_active[side] && this->ContinuousGestureRecognition != GestureRecognition_ContinuousIdentification::Always) {
 			continue;
+		}
 		FVector location;
 		FRotator rotation;
 		USceneComponent* motion_controller = motion_controllers[side];
@@ -260,6 +339,31 @@ void AMiVRyActor::Tick(float DeltaTime)
 			if (ret != 0) {
 				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureRecognition::contdStroke() failed with %i"), ret);
 			}
+			if (this->ContinuousGestureRecognition != GestureRecognition_ContinuousIdentification::Off) {
+				// this->gesture_id = this->gro->contdIdentify(hmd_p, hmd_q, &this->similarity);
+				double pos[3];
+				double scale;
+				double dir0[3];
+				double dir1[3];
+				double dir2[3];
+				this->gesture_id = this->gro->contdIdentifyAndGetStroke(hmd_p, hmd_q, &this->similarity, pos, &scale, dir0, dir1, dir2);
+				if (this->gesture_id < 0) {
+					UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Continuous identification failed with %i"), this->gesture_id);
+				} else {
+					this->parts.SetNum(1);
+					FMiVRyGesturePart& part = this->parts[0];
+					part.Side = (GestureRecognition_Side)side;
+					part.parse(pos, scale, dir0, dir1, dir2, this->MivryCoordinateSystem);
+					this->OnGestureIdentifiedDelegate.Broadcast(
+						this,
+						GestureRecognition_Identification::GestureIdentified,
+						this->gesture_id,
+						this->gro->getGestureName(this->gesture_id),
+						this->similarity,
+						this->parts
+					);
+				}
+			}
 		} else if (this->gco) {
 			if (this->CompensateHeadMotion) {
 				ret = this->gco->updateHeadPositionQ(hmd_p, hmd_q);
@@ -267,9 +371,39 @@ void AMiVRyActor::Tick(float DeltaTime)
 					UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::updateHeadPositionQ() failed with %i"), ret);
 				}
 			}
+			this->gco->setContdIdentificationPeriod((int)side, this->ContinuousGesturePeriod);
+			this->gco->setContdIdentificationSmoothing((int)side, this->ContinuousGestureSmoothing);
 			ret = this->gco->contdStrokeQ(side, p, q);
 			if (ret != 0) {
 				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::contdStroke() failed with %i"), ret);
+			}
+			if (this->ContinuousGestureRecognition != GestureRecognition_ContinuousIdentification::Off) {
+				this->gesture_id = this->gco->contdIdentify(hmd_p, hmd_q, &this->similarity);
+				if (this->gesture_id < 0) {
+					UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Continuous identification failed with %i"), this->gesture_id);
+				} else {
+					const int numParts = this->gco->numberOfParts();
+					this->parts.SetNum(numParts);
+					for (int i = numParts - 1; i >= 0; i--) {
+						FMiVRyGesturePart& part = this->parts[i];
+						part.Side = (GestureRecognition_Side)i;
+						double pos[3];
+						double scale;
+						double dir0[3];
+						double dir1[3];
+						double dir2[3];
+						this->gco->contdIdentifyGetLastStrokeInfo(i, pos, &scale, dir0, dir1, dir2);
+						part.parse(pos, scale, dir0, dir1, dir2, this->MivryCoordinateSystem);
+					}
+					this->OnGestureIdentifiedDelegate.Broadcast(
+						this,
+						GestureRecognition_Identification::GestureIdentified,
+						this->gesture_id,
+						this->gco->getGestureCombinationName(this->gesture_id),
+						this->similarity,
+						this->parts
+					);
+				}
 			}
 		} else {
 			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.Tick] GestureRecognition object was not created. Failed to load database file?"));
@@ -292,6 +426,8 @@ void AMiVRyActor::startGesturing(GestureRecognition_Result& Result, int& ErrorCo
 	double q[4];
 	UMiVRyUtil::convertInput(location, quaternion, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, p, q);
 	if (this->gro) {
+		this->gro->contdIdentificationPeriod = this->ContinuousGesturePeriod;
+		this->gro->contdIdentificationSmoothing = this->ContinuousGestureSmoothing;
 		ErrorCode = this->gro->startStroke(p, q, -1);
 		if (ErrorCode != 0) {
 			Result = GestureRecognition_Result::Error;
@@ -317,86 +453,58 @@ void AMiVRyActor::startGesturing(GestureRecognition_Result& Result, int& ErrorCo
 	Result = GestureRecognition_Result::Error;
 }
 
+bool AMiVRyActor::IsGesturing(GestureRecognition_Side side)
+{
+	return this->side_active[(uint8)side];
+}
+
 void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, GestureRecognition_Side side)
 {
 	this->side_active[(uint8)side] = false;
 	if (this->gro) {
-		double position[3];
+		double pos[3];
 		double scale;
 		double dir0[3];
 		double dir1[3];
 		double dir2[3];
-		this->gesture_id = this->gro->endStrokeAndGetSimilarity(&this->similarity, position, &scale, dir0, dir1, dir2);
+		this->gesture_id = this->gro->endStrokeAndGetSimilarity(&this->similarity, pos, &scale, dir0, dir1, dir2);
 		if (this->gesture_id < 0) {
 			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] Identification failed with %i"), this->gesture_id);
 			Result = GestureRecognition_Identification::FailedToIdentify;
+			this->parts.SetNum(1);
+			FMiVRyGesturePart& part = this->parts[0];
+			part.Side = side;
+			part.PartGestureID = -1;
+			this->OnGestureIdentifiedDelegate.Broadcast(this, Result, -1, "", -1, TArray<FMiVRyGesturePart>());
 			return;
 		}
 		this->parts.SetNum(1);
 		FMiVRyGesturePart& part = this->parts[0];
 		part.Side = side;
 		part.PartGestureID = this->gesture_id;
-		FRotationMatrix rm(FRotator(0, 0, 0));
-		switch (this->MivryCoordinateSystem) {
-		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
-		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
-		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
-			part.Position.X = float(position[2]) * 100.0f; // Unreal.X = front = Unity.Z
-			part.Position.Y = float(position[0]) * 100.0f; // Unreal.Y = right = Unity.X
-			part.Position.Z = float(position[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
-			part.Scale = float(scale) * 100.0f;
-			rm.M[0][0] = (float)dir0[2]; // Unreal.X = front = Unity.Z
-			rm.M[0][1] = (float)dir0[0]; // Unreal.Y = right = Unity.X
-			rm.M[0][2] = (float)dir0[1]; // Unreal.Z = up    = Unity.Y
-			rm.M[1][0] = (float)dir1[2];
-			rm.M[1][1] = (float)dir1[0];
-			rm.M[1][2] = (float)dir1[1];
-			rm.M[2][0] = (float)dir2[2];
-			rm.M[2][1] = (float)dir2[0];
-			rm.M[2][2] = (float)dir2[1];
-			part.Rotation = rm.Rotator();
-			part.PrimaryDirection.X = float(dir0[2]); // Unreal.X = front = Unity.Z
-			part.PrimaryDirection.Y = float(dir0[0]); // Unreal.Y = right = Unity.X
-			part.PrimaryDirection.Z = float(dir0[1]); // Unreal.Z = up    = Unity.Y
-			part.SecondaryDirection.X = float(dir1[2]);
-			part.SecondaryDirection.Y = float(dir1[0]);
-			part.SecondaryDirection.Z = float(dir1[1]);
-			break;
-		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
-		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
-		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
-		default:
-			part.Position.X = float(position[0]);
-			part.Position.Y = float(position[1]);
-			part.Position.Z = float(position[2]);
-			part.Scale = float(scale);
-			rm.M[0][0] = (float)dir0[0];
-			rm.M[0][1] = (float)dir0[1];
-			rm.M[0][2] = (float)dir0[2];
-			rm.M[1][0] = (float)dir1[0];
-			rm.M[1][1] = (float)dir1[1];
-			rm.M[1][2] = (float)dir1[2];
-			rm.M[2][0] = (float)dir2[0];
-			rm.M[2][1] = (float)dir2[1];
-			rm.M[2][2] = (float)dir2[2];
-			part.Rotation = rm.Rotator();
-			part.PrimaryDirection.X = float(dir0[0]);
-			part.PrimaryDirection.Y = float(dir0[1]);
-			part.PrimaryDirection.Z = float(dir0[2]);
-			part.SecondaryDirection.X = float(dir1[0]);
-			part.SecondaryDirection.Y = float(dir1[1]);
-			part.SecondaryDirection.Z = float(dir1[2]);
-		}
+		part.parse(pos, scale, dir0, dir1, dir2, this->MivryCoordinateSystem);
 		Result = GestureRecognition_Identification::GestureIdentified;
+
+		GestureRecognition_Result Result2;
+		int GestureID = -1;
+		FString GestureName = "";
+		float Similarity = -1;
+		TArray<FMiVRyGesturePart> GestureParts;
+		this->getIdentifiedGestureInfo(Result2, GestureID, GestureName, Similarity, GestureParts);
+		this->OnGestureIdentifiedDelegate.Broadcast(
+			this,
+			GestureRecognition_Identification::GestureIdentified,
+			GestureID, GestureName, Similarity, GestureParts);
+
 		return;
 	}
 	if (this->gco) {
-		double position[3];
+		double pos[3];
 		double scale;
 		double dir0[3];
 		double dir1[3];
 		double dir2[3];
-		int ret = this->gco->endStroke((int)side, position, &scale, dir0, dir1, dir2);
+		int ret = this->gco->endStroke((int)side, pos, &scale, dir0, dir1, dir2);
 		if (ret < 0) {
 			Result = GestureRecognition_Identification::FailedToIdentify;
 			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] GestureCombinations::endStroke() failed with %i"), ret);
@@ -406,6 +514,7 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 		for (int i = this->parts.Num() - 1; i >= 0; i--) {
 			if (this->parts[i].Side == side) {
 				part = &this->parts[i];
+				break;
 			}
 		}
 		if (part == nullptr) {
@@ -413,60 +522,9 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 			part = &this->parts[i];
 			part->Side = side;
 		}
-		FRotationMatrix rm(FRotator(0, 0, 0));
-		switch (this->MivryCoordinateSystem) {
-		case GestureRecognition_CoordinateSystem::Unity_OculusVR:
-		case GestureRecognition_CoordinateSystem::Unity_OpenXR:
-		case GestureRecognition_CoordinateSystem::Unity_SteamVR:
-			part->Position.X = float(position[2]) * 100.0f; // Unreal.X = front = Unity.Z
-			part->Position.Y = float(position[0]) * 100.0f; // Unreal.Y = right = Unity.X
-			part->Position.Z = float(position[1]) * 100.0f; // Unreal.Z = up    = Unity.Y
-			part->Scale = float(scale) * 100.0f;
-			rm.M[0][0] = (float)dir0[2]; // Unreal.X = front = Unity.Z
-			rm.M[0][1] = (float)dir0[0]; // Unreal.Y = right = Unity.X
-			rm.M[0][2] = (float)dir0[1]; // Unreal.Z = up    = Unity.Y
-			rm.M[1][0] = (float)dir1[2];
-			rm.M[1][1] = (float)dir1[0];
-			rm.M[1][2] = (float)dir1[1];
-			rm.M[2][0] = (float)dir2[2];
-			rm.M[2][1] = (float)dir2[0];
-			rm.M[2][2] = (float)dir2[1];
-			part->Rotation = rm.Rotator();
-			part->PrimaryDirection.X = float(dir0[2]);
-			part->PrimaryDirection.Y = float(dir0[0]);
-			part->PrimaryDirection.Z = float(dir0[1]);
-			part->SecondaryDirection.X = float(dir1[2]);
-			part->SecondaryDirection.Y = float(dir1[0]);
-			part->SecondaryDirection.Z = float(dir1[1]);
-			break;
-		case GestureRecognition_CoordinateSystem::Unreal_OculusVR:
-		case GestureRecognition_CoordinateSystem::Unreal_OpenXR:
-		case GestureRecognition_CoordinateSystem::Unreal_SteamVR:
-		default:
-			part->Position.X = float(position[0]);
-			part->Position.Y = float(position[1]);
-			part->Position.Z = float(position[2]);
-			part->Scale = float(scale);
-			rm.M[0][0] = (float)dir0[0];
-			rm.M[0][1] = (float)dir0[1];
-			rm.M[0][2] = (float)dir0[2];
-			rm.M[1][0] = (float)dir1[0];
-			rm.M[1][1] = (float)dir1[1];
-			rm.M[1][2] = (float)dir1[2];
-			rm.M[2][0] = (float)dir2[0];
-			rm.M[2][1] = (float)dir2[1];
-			rm.M[2][2] = (float)dir2[2];
-			part->Rotation = rm.Rotator();
-			part->PrimaryDirection.X = float(dir0[0]);
-			part->PrimaryDirection.Y = float(dir0[1]);
-			part->PrimaryDirection.Z = float(dir0[2]);
-			part->SecondaryDirection.X = float(dir1[0]);
-			part->SecondaryDirection.Y = float(dir1[1]);
-			part->SecondaryDirection.Z = float(dir1[2]);
-		}
+		part->parse(pos, scale, dir0, dir1, dir2, this->MivryCoordinateSystem);
 		if (this->side_active[1 - (uint8)side]) {
 			Result = GestureRecognition_Identification::WaitingForOtherHand;
-			// UE_LOG(LogTemp, Display, TEXT("[MiVRyActor] waiting for other hand on side %i"), (uint8)side);
 			return;
 		}
 		this->gesture_id = this->gco->identifyGestureCombination(nullptr, &this->similarity);
@@ -491,7 +549,7 @@ void AMiVRyActor::stopGesturing(GestureRecognition_Identification& Result, Gestu
 		this->getIdentifiedGestureInfo(Result2, GestureID, GestureName, Similarity, GestureParts);
 		this->OnGestureIdentifiedDelegate.Broadcast(
 			this,
-			(Result2 == GestureRecognition_Result::Error) ? GestureRecognition_Identification::FailedToIdentify : GestureRecognition_Identification::GestureIdentified,
+			GestureRecognition_Identification::GestureIdentified,
 			GestureID, GestureName, Similarity, GestureParts
 		);
 		return;
@@ -673,24 +731,7 @@ void AMiVRyActor::LeftTriggerInputReleased()
 {
 	GestureRecognition_Identification Result;
 	this->stopGesturing(Result, GestureRecognition_Side::Left);
-	if (Result == GestureRecognition_Identification::WaitingForOtherHand) {
-		return;
-	}
-	if (Result == GestureRecognition_Identification::FailedToIdentify) {
-		this->OnGestureIdentifiedDelegate.Broadcast(this, Result, -1, "", -1, TArray<FMiVRyGesturePart>());
-		return;
-	}
-	// else: GestureIdentified
-	GestureRecognition_Result Result2;
-	int GestureID = -1;
-	FString GestureName = "";
-	float Similarity = -1;
-	TArray<FMiVRyGesturePart> GestureParts;
-	this->getIdentifiedGestureInfo(Result2, GestureID, GestureName, Similarity, GestureParts);
-	this->OnGestureIdentifiedDelegate.Broadcast(
-		this,
-		(Result2 == GestureRecognition_Result::Error) ? GestureRecognition_Identification::FailedToIdentify : GestureRecognition_Identification::GestureIdentified,
-		GestureID, GestureName, Similarity, GestureParts);
+	
 }
 
 void AMiVRyActor::RightTriggerInputPressed()
@@ -704,22 +745,60 @@ void AMiVRyActor::RightTriggerInputReleased()
 {
 	GestureRecognition_Identification Result;
 	this->stopGesturing(Result, GestureRecognition_Side::Right);
-	if (Result == GestureRecognition_Identification::WaitingForOtherHand) {
-		return;
+}
+
+void AMiVRyActor::EnhancedInputLeftTrigger(const FInputActionValue& Value)
+{
+	float v = EnhancedInputTriggerValue(Value);
+	UE_LOG(LogTemp, Warning, TEXT("EnhancedInputLeftTrigger %f"), v);
+	if (this->side_active[(uint8)GestureRecognition_Side::Left]) {
+		// currently gesturing
+		if (v < this->LeftTriggerInputThreshold) {
+			this->LeftTriggerInputReleased();
+		}
+	} else {
+		// currently not gesturing
+		if (v >= this->LeftTriggerInputThreshold) {
+			this->LeftTriggerInputPressed();
+		}
 	}
-	if (Result == GestureRecognition_Identification::FailedToIdentify) {
-		this->OnGestureIdentifiedDelegate.Broadcast(this, Result, -1, "", -1, TArray<FMiVRyGesturePart>());
-		return;
+}
+
+void AMiVRyActor::EnhancedInputRightTrigger(const FInputActionValue& Value)
+{
+	float v = EnhancedInputTriggerValue(Value);
+	UE_LOG(LogTemp, Warning, TEXT("EnhancedInputRightTrigger %f"), v);
+	if (this->side_active[(uint8)GestureRecognition_Side::Right]) {
+		// currently gesturing
+		if (v < this->RightTriggerInputThreshold) {
+			this->RightTriggerInputReleased();
+		}
+	} else {
+		// currently not gesturing
+		if (v >= this->RightTriggerInputThreshold) {
+			this->RightTriggerInputPressed();
+		}
 	}
-	// else: GestureIdentified
-	GestureRecognition_Result Result2;
-	int GestureID = -1;
-	FString GestureName = "";
-	float Similarity = -1;
-	TArray<FMiVRyGesturePart> GestureParts;
-	this->getIdentifiedGestureInfo(Result2, GestureID, GestureName, Similarity, GestureParts);
-	this->OnGestureIdentifiedDelegate.Broadcast(
-		this,
-		(Result2 == GestureRecognition_Result::Error) ? GestureRecognition_Identification::FailedToIdentify : GestureRecognition_Identification::GestureIdentified,
-		GestureID, GestureName, Similarity, GestureParts);
+}
+
+float AMiVRyActor::EnhancedInputTriggerValue(const FInputActionValue& Value)
+{
+	const EInputActionValueType valueType = Value.GetValueType();
+	switch (valueType) {
+		case EInputActionValueType::Boolean:
+			return Value.Get<bool>() ? 1.0f : 2.0f;
+			break;
+		case EInputActionValueType::Axis1D:
+			return Value.Get<FInputActionValue::Axis1D>(); // FInputActionValue::Axis1D == float
+			break;
+		case EInputActionValueType::Axis2D:
+			return Value.Get<FInputActionValue::Axis2D>().Length(); // FInputActionValue::Axis2D == FVector2D
+			break;
+		case EInputActionValueType::Axis3D:
+			return Value.Get<FInputActionValue::Axis3D>().Length(); // FInputActionValue::Axis3D == FVector
+			break;
+		default:
+			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.EnhancedInputLeftTrigger] Unkown value type."));
+			return 0.0;
+	}
 }

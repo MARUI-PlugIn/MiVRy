@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -20,6 +20,7 @@
 #include "Misc/MessageDialog.h"
 #include "GestureRecognition.h"
 #include "Async/Async.h"
+#include "Misc/Paths.h"
 
 AGestureRecognitionActor::AGestureRecognitionActor()
 {
@@ -1099,7 +1100,7 @@ GestureRecognition_UpdateHeadPositionPolicy AGestureRecognitionActor::getUpdateH
 GestureRecognition_FrameOfReference AGestureRecognitionActor::getRotationalFrameOfReferenceRoll()
 {
 	if (!this->gro) {
-		return (GestureRecognition_FrameOfReference)-1;
+		return (GestureRecognition_FrameOfReference)-99;
 	}
     switch (this->MivryCoordinateSystem) {
         case GestureRecognition_CoordinateSystem::Unity_OpenXR:
@@ -1136,7 +1137,7 @@ void AGestureRecognitionActor::setRotationalFrameOfReferenceRoll(GestureRecognit
 GestureRecognition_FrameOfReference AGestureRecognitionActor::getRotationalFrameOfReferencePitch()
 {
 	if (!this->gro) {
-		return (GestureRecognition_FrameOfReference)-1;
+		return (GestureRecognition_FrameOfReference)-99;
 	}
     switch (this->MivryCoordinateSystem) {
         case GestureRecognition_CoordinateSystem::Unity_OpenXR:
@@ -1173,7 +1174,7 @@ void AGestureRecognitionActor::setRotationalFrameOfReferencePitch(GestureRecogni
 GestureRecognition_FrameOfReference AGestureRecognitionActor::getRotationalFrameOfReferenceYaw()
 {
 	if (!this->gro) {
-		return (GestureRecognition_FrameOfReference)-1;
+		return (GestureRecognition_FrameOfReference)-99;
 	}
     switch (this->MivryCoordinateSystem) {
         case GestureRecognition_CoordinateSystem::Unity_OpenXR:
@@ -1210,7 +1211,7 @@ void AGestureRecognitionActor::setRotationalFrameOfReferenceYaw(GestureRecogniti
 GestureRecognition_RotationOrder AGestureRecognitionActor::getRotationalFrameOfReferenceRotationOrder()
 {
 	if (!this->gro) {
-		return (GestureRecognition_RotationOrder)-1;
+		return (GestureRecognition_RotationOrder)-99;
 	}
 	return (GestureRecognition_RotationOrder)this->gro->rotationalFrameOfReference.rotationOrder;
 }

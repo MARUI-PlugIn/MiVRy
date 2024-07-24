@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -790,9 +790,7 @@ public class GestureCombinations
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="pos">[OUT] The position where the gesture was performed.</param>
     /// <param name="scale">[OUT] The scale at which the gesture was performed.</param>
-    /// <param name="dir0">[OUT] The primary direction in which the gesture was performed (ie. widest direction).</param>
-    /// <param name="dir1">[OUT] The secondary direction in which the gesture was performed.</param>
-    /// <param name="dir2">[OUT] The minor direction in which the gesture was performed (ie. narrowest direction).</param>
+    /// <param name="q">[OUT] The rotation (direction) of the performed gesture.</param>
     /// <returns>
     /// Zero on success, a negative error code on failure.
     /// </returns>
@@ -808,6 +806,13 @@ public class GestureCombinations
         pos.y = (float)_pos[1];
         pos.z = (float)_pos[2];
         scale = _scale[0];
+        _dirsToQuaternion(_dir0, _dir1, _dir2, ref q);
+        return ret;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     _dirsToQuaternion
+    private void _dirsToQuaternion(double[] _dir0, double[] _dir1, double[] _dir2, ref Quaternion q)
+    {
         double tr = _dir0[0] + _dir1[1] + _dir2[2];
         if (tr > 0) {
             double s = Math.Sqrt(tr + 1.0) * 2.0;
@@ -834,7 +839,6 @@ public class GestureCombinations
             q.y = (float)((_dir2[1] + _dir1[2]) / s);
             q.z = (float)(0.25 * s);
         }
-        return ret;
     }
     //                                                          ________________________________
     //_________________________________________________________/          endStroke()
@@ -1064,6 +1068,66 @@ public class GestureCombinations
         int gesture_id = GestureCombinations_contdIdentify(m_gc, _hmd_p, _hmd_q, _similarity, parts_probabilities, parts_similarities);
         similarity = _similarity[0];
         return gesture_id;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/ contdIdentifyGetLastStrokeInfo()
+    /// <summary>
+    /// Get detailed information about the stroke that was used in the last call to contdIdentify().
+    /// </summary>
+    /// <param name="part">The sub-gesture index (or side) of the gesture motion.</param>
+    /// <param name="pos">[OUT] The position where the gesture was performed.</param>
+    /// <param name="scale">[OUT] The scale (size) at which the gesture was performed.</param>
+    /// <param name="dir0">[OUT] The primary direction at which the gesture was performed.</param>
+    /// <param name="dir1">[OUT] The secondary direction at which the gesture was performed.</param>
+    /// <param name="dir2">[OUT] The least-significant direction at which the gesture was performed.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int contdIdentifyGetLastStrokeInfo(int part, ref Vector3 pos, ref double scale, ref Vector3 dir0, ref Vector3 dir1, ref Vector3 dir2)
+    {
+        double[] _pos = new double[3];
+        double[] _scale = new double[1];
+        double[] _dir0 = new double[3];
+        double[] _dir1 = new double[3];
+        double[] _dir2 = new double[3];
+        int ret = GestureCombinations_contdIdentifyGetLastStrokeInfo(m_gc, part, _pos, _scale, _dir0, _dir1, _dir2);
+        pos.x = (float)_pos[0];
+        pos.y = (float)_pos[1];
+        pos.z = (float)_pos[2];
+        scale = _scale[0];
+        dir0.x = (float)_dir0[0];
+        dir0.y = (float)_dir0[1];
+        dir0.z = (float)_dir0[2];
+        dir1.x = (float)_dir1[0];
+        dir1.y = (float)_dir1[1];
+        dir1.z = (float)_dir1[2];
+        dir2.x = (float)_dir2[0];
+        dir2.y = (float)_dir2[1];
+        dir2.z = (float)_dir2[2];
+        return ret;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/ contdIdentifyGetLastStrokeInfo()
+    /// <summary>
+    /// Get detailed information about the stroke that was used in the last call to contdIdentify().
+    /// </summary>
+    /// <param name="part">The sub-gesture index (or side) of the gesture motion.</param>
+    /// <param name="pos">[OUT] The position where the gesture was performed.</param>
+    /// <param name="scale">[OUT] The scale (size) at which the gesture was performed.</param>
+    /// <param name="q">[OUT] The rotation (direction) of the performed gesture.</param>
+    /// <returns>Zero on success, a negative error code on failure.</returns>
+    public int contdIdentifyGetLastStrokeInfo(int part, ref Vector3 pos, ref double scale, ref Quaternion q)
+    {
+        double[] _pos = new double[3];
+        double[] _scale = new double[1];
+        double[] _dir0 = new double[3];
+        double[] _dir1 = new double[3];
+        double[] _dir2 = new double[3];
+        int ret = GestureCombinations_contdIdentifyGetLastStrokeInfo(m_gc, part, _pos, _scale, _dir0, _dir1, _dir2);
+        pos.x = (float)_pos[0];
+        pos.y = (float)_pos[1];
+        pos.z = (float)_pos[2];
+        scale = _scale[0];
+        _dirsToQuaternion(_dir0, _dir1, _dir2, ref q);
+        return ret;
     }
     //                                                          ________________________________
     //_________________________________________________________/    contdRecord()
@@ -2361,6 +2425,8 @@ public class GestureCombinations
     public static extern int GestureCombinations_identifyGestureCombination(IntPtr gco, double[] probability, double[] similarity, double[] parts_probabilities, double[] parts_similarities);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdIdentify", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_contdIdentify(IntPtr gco, double[] hmd_p, double[] hmd_q, double[] similarity, double[] parts_probabilities, double[] parts_similarities);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_contdIdentifyGetLastStrokeInfo", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_contdIdentifyGetLastStrokeInfo(IntPtr gco, int part, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdRecord", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_contdRecord(IntPtr gco, double[] hmd_p, double[] hmd_q);
     [DllImport(libfile, EntryPoint = "GestureCombinations_getContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]

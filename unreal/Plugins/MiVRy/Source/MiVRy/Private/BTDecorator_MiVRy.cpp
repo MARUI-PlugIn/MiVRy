@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.10
+ * Version 2.11
  * Copyright (c) 2024 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -17,8 +17,11 @@
  */
 
 #include "BTDecorator_MiVRy.h"
+#include "Misc/Paths.h"
+#include "Misc/FileHelper.h"
 #include "GestureRecognition.h"
 #include "GestureCombinations.h"
+#include "Runtime/Launch/Resources/Version.h" // for ENGINE_MAJOR_VERSION / ENGINE_MINOR_VERSION
 
 UBTDecorator_MiVRy::UBTDecorator_MiVRy(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -37,7 +40,7 @@ UBTDecorator_MiVRy::UBTDecorator_MiVRy(const FObjectInitializer& ObjectInitializ
 	this->bNotifyActivation = true;
 	this->bNotifyProcessed = true;
 	this->Delegate.BindUFunction(this, "OnGestureIdentified");
-	if (!this->MiVRyActor.IsNull()) {
+	if (this->MiVRyActor.IsValid()) {
 		this->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		this->BoundMiVRyActor = this->MiVRyActor;
 	}
@@ -45,7 +48,7 @@ UBTDecorator_MiVRy::UBTDecorator_MiVRy(const FObjectInitializer& ObjectInitializ
 
 UBTDecorator_MiVRy::~UBTDecorator_MiVRy()
 {
-	if (!this->BoundMiVRyActor.IsNull()) {
+	if (this->BoundMiVRyActor.IsValid()) {
 		if (this->BoundMiVRyActor.IsValid()) {
 			this->BoundMiVRyActor->OnGestureIdentifiedDelegate.RemoveAll(this);
 		}
@@ -57,7 +60,7 @@ UBTDecorator_MiVRy::~UBTDecorator_MiVRy()
 void UBTDecorator_MiVRy::PostLoad()
 {
 	Super::PostLoad();
-	if (this->BoundMiVRyActor.IsNull() && !this->MiVRyActor.IsNull()) {
+	if (!this->BoundMiVRyActor.IsValid() && this->MiVRyActor.IsValid()) {
 		this->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		this->BoundMiVRyActor = this->MiVRyActor;
 	}
@@ -65,7 +68,7 @@ void UBTDecorator_MiVRy::PostLoad()
 
 void UBTDecorator_MiVRy::BeginDestroy()
 {
-	if (!this->BoundMiVRyActor.IsNull()) {
+	if (this->BoundMiVRyActor.IsValid()) {
 		if (this->BoundMiVRyActor.IsValid()) {
 			this->BoundMiVRyActor->OnGestureIdentifiedDelegate.RemoveAll(this);
 		}
@@ -77,12 +80,13 @@ void UBTDecorator_MiVRy::BeginDestroy()
 
 void UBTDecorator_MiVRy::OnNodeActivation(FBehaviorTreeSearchData& SearchData)
 {
-	if (this->BoundMiVRyActor.IsNull() && !this->MiVRyActor.IsNull()) {
+	if (!this->BoundMiVRyActor.IsValid() && this->MiVRyActor.IsValid()) {
 		this->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		this->BoundMiVRyActor = this->MiVRyActor;
 	}
 }
 
+#if WITH_EDITOR
 void UBTDecorator_MiVRy::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
 {
 	if (PropertyChangedEvent.Property == nullptr) {
@@ -93,18 +97,19 @@ void UBTDecorator_MiVRy::PostEditChangeProperty(struct FPropertyChangedEvent& Pr
 		Super::PostEditChangeProperty(PropertyChangedEvent);
 		return;
 	} // else:
-	if (!this->BoundMiVRyActor.IsNull()) {
+	if (this->BoundMiVRyActor.IsValid()) {
 		if (this->BoundMiVRyActor.IsValid()) {
 			this->BoundMiVRyActor->OnGestureIdentifiedDelegate.RemoveAll(this);
 		}
 		this->BoundMiVRyActor = nullptr;
 	}
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	if (!this->MiVRyActor.IsNull()) {
+	if (this->MiVRyActor.IsValid()) {
 		this->MiVRyActor->OnGestureIdentifiedDelegate.Add(this->Delegate);
 		this->BoundMiVRyActor = this->MiVRyActor;
 	}
 }
+#endif
 
 uint16 UBTDecorator_MiVRy::GetInstanceMemorySize() const
 {
@@ -113,11 +118,25 @@ uint16 UBTDecorator_MiVRy::GetInstanceMemorySize() const
 
 void UBTDecorator_MiVRy::InitializeMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryInit::Type InitType) const
 {
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
+	InitializeNodeMemory<UBTDecorator_MiVRyMemory>(NodeMemory, InitType);
+#else
+	Super::InitializeMemory(OwnerComp, NodeMemory, InitType);
+#endif
 	UBTDecorator_MiVRyMemory* Memory = CastInstanceNodeMemory<UBTDecorator_MiVRyMemory>(NodeMemory);
 	if (InitType == EBTMemoryInit::Initialize)
 	{
 		Memory->LatestGestureCounter = 0;
 	}
+}
+
+void UBTDecorator_MiVRy::CleanupMemory(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTMemoryClear::Type CleanupType) const
+{
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 4
+	CleanupNodeMemory<UBTDecorator_MiVRyMemory>(NodeMemory, CleanupType);
+#else
+	Super::CleanupMemory(OwnerComp, NodeMemory, CleanupType);
+#endif
 }
 
 bool UBTDecorator_MiVRy::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
