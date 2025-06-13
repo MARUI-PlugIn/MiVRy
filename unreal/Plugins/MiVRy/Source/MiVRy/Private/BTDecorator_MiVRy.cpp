@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -26,8 +26,9 @@
 UBTDecorator_MiVRy::UBTDecorator_MiVRy(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	NodeName = "MiVRy Gesture Recognition";
+#if ENGINE_MAJOR_VERSION >= 5
 	INIT_DECORATOR_NODE_NOTIFY_FLAGS();
-
+#endif
 	this->bNotifyTick = true;
 	this->bTickIntervals = 1;
 
@@ -151,11 +152,11 @@ bool UBTDecorator_MiVRy::CalculateRawConditionValue(UBehaviorTreeComponent& Owne
 	}
 
 	switch (this->GestureIdListUse) {
-		case UBTDecorator_MiVRy_GestureIdListUse::Whitelist:
+		case GestureRecognition_GestureIdListUse::Whitelist:
 			return this->GestureIDs.Contains((int32)this->LatestGestureId);
-		case UBTDecorator_MiVRy_GestureIdListUse::Blacklist:
+		case GestureRecognition_GestureIdListUse::Blacklist:
 			return !this->GestureIDs.Contains((int32)this->LatestGestureId);
-		case UBTDecorator_MiVRy_GestureIdListUse::Ignore:
+		case GestureRecognition_GestureIdListUse::Ignore:
 		default:
 			return true;
 	}
@@ -163,6 +164,7 @@ bool UBTDecorator_MiVRy::CalculateRawConditionValue(UBehaviorTreeComponent& Owne
 
 void UBTDecorator_MiVRy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
 {
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 1
 	UBTDecorator_MiVRyMemory* Memory = CastInstanceNodeMemory<UBTDecorator_MiVRyMemory>(NodeMemory);
 	if (this->LatestGestureCounter == Memory->LatestGestureCounter) { // already processed latest gesture
 		return;
@@ -180,6 +182,7 @@ void UBTDecorator_MiVRy::TickNode(UBehaviorTreeComponent& OwnerComp, uint8* Node
 	} else {
 		OwnerComp.RequestBranchDeactivation(*this);
 	}
+#endif
 }
 
 void UBTDecorator_MiVRy::OnGestureIdentified(
@@ -263,15 +266,15 @@ FString UBTDecorator_MiVRy::GetStaticDescription() const
 	}
 	FString SetStr, NotStr;
 	switch (this->GestureIdListUse) {
-		case UBTDecorator_MiVRy_GestureIdListUse::Whitelist:
+		case GestureRecognition_GestureIdListUse::Whitelist:
 			SetStr = TEXT("[o] PASS");
 			NotStr = TEXT("[x] MISS");
 			break;
-		case UBTDecorator_MiVRy_GestureIdListUse::Blacklist:
+		case GestureRecognition_GestureIdListUse::Blacklist:
 			SetStr = TEXT("[x] MISS");
 			NotStr = TEXT("[o] PASS");
 			break;
-		case UBTDecorator_MiVRy_GestureIdListUse::Ignore:
+		case GestureRecognition_GestureIdListUse::Ignore:
 		default:
 			SetStr = TEXT("[o] PASS");
 			NotStr = TEXT("[o] PASS");
@@ -293,13 +296,13 @@ void UBTDecorator_MiVRy::DescribeRuntimeValues(const UBehaviorTreeComponent& Own
 		Values.Add(FString::Printf(TEXT("MiVRyActor: %s"), this->MiVRyActor != nullptr ? TEXT("set") : TEXT("not set")));
 		Values.Add(FString::Printf(TEXT("SimilarityThreshold: %f"), this->SimilarityThreshold));
 		switch (this->GestureIdListUse) {
-			case UBTDecorator_MiVRy_GestureIdListUse::Whitelist:
+			case GestureRecognition_GestureIdListUse::Whitelist:
 				Values.Add(TEXT("Use of Gesture ID list: Whitelist"));
 				break;
-			case UBTDecorator_MiVRy_GestureIdListUse::Blacklist:
+			case GestureRecognition_GestureIdListUse::Blacklist:
 				Values.Add(TEXT("Use of Gesture ID list: Blacklist"));
 				break;
-			case UBTDecorator_MiVRy_GestureIdListUse::Ignore:
+			case GestureRecognition_GestureIdListUse::Ignore:
 			default:
 				Values.Add(TEXT("Use of Gesture ID list: Ignore"));
 				break;

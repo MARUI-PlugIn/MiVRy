@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -23,18 +23,15 @@
 #include "MiVRyActor.h"
 #include "BTComposite_MiVRy.generated.h"
 
-UENUM()
-namespace UBTComposite_MiVRy_ChildFinishReaction
+UENUM(BlueprintType)
+enum class GestureRecognition_ChildFinishReaction : uint8
 {
-	enum Type : int
-	{
-		StopExecution UMETA(DisplayName = "Stop Execution", ToolTip = "Stop executing child nodes.."),
-		ContinueExecution UMETA(DisplayName = "Continue Execution", ToolTip = "Continue executing child nodes."),
-	};
-}
+	StopExecution UMETA(DisplayName = "Stop Execution", ToolTip = "Stop executing child nodes.."),
+	ContinueExecution UMETA(DisplayName = "Continue Execution", ToolTip = "Continue executing child nodes."),
+};
 
 /**
-* Index/ID of the (hand) side (0=left, 1=right).
+* IDs for different types of gesture data.
 */
 UENUM(BlueprintType)
 enum class UBTComposite_MiVRy_LatestGestureData : uint8
@@ -117,19 +114,19 @@ public:
 	* What to do when the last executed child finishes with "Success".
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "MiVRy", meta = (DisplayName = "When child finishes with 'Success'"))
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildSuccess = UBTComposite_MiVRy_ChildFinishReaction::ContinueExecution;
+	GestureRecognition_ChildFinishReaction OnChildSuccess = GestureRecognition_ChildFinishReaction::ContinueExecution;
 
 	/**
 	* What to do when the last executed child finishes with "Failure".
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "MiVRy", meta = (DisplayName = "When child finishes with 'Failure'"))
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildFailure = UBTComposite_MiVRy_ChildFinishReaction::ContinueExecution;
+	GestureRecognition_ChildFinishReaction OnChildFailure = GestureRecognition_ChildFinishReaction::ContinueExecution;
 
 	/**
 	* What to do when the last executed child finishes with "Abort".
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "MiVRy", meta = (DisplayName = "When child finishes with 'Abort'"))
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> OnChildAborted = UBTComposite_MiVRy_ChildFinishReaction::StopExecution;
+	GestureRecognition_ChildFinishReaction OnChildAborted = GestureRecognition_ChildFinishReaction::StopExecution;
 
 	/** Which Gesture ID (first number) should lead to the execution of which child
 	* (second number, where "0" is the leftmost child). A Gesture ID of "-1" means "no gesture was identified".

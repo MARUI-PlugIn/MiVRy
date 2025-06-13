@@ -1,7 +1,7 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -230,6 +230,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_setCombinationPartGesture(void* gco, int multigesture_index, int part, int gesture_index); //!< Set which gesture this multi-gesture expects for step i.
     GESTURERECOGNITION_LIBEXPORT int GestureCombinations_getCombinationPartGesture(void* gco, int multigesture_index, int part); //!< Get which gesture this multi-gesture expects for step i.
 
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_getTrainingParameter(void* gco, int parameter); //!< Get current taining parameter.
+    GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_setTrainingParameter(void* gco, int parameter, int value); //!< Set taining parameter.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_startTraining(void* gco); //!< Start train the Neural Network based on the the currently collected data.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_isTraining(void* gco); //!< Whether the Neural Network is currently training.
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_stopTraining(void* gco); //!< Stop the training process (last best result will be used).
@@ -1037,6 +1039,21 @@ public:
     * \return                   Zero on success, a negative error code on failure.
     */
     virtual int setGestureCombinationMetadata(int index, IGestureRecognition::Metadata* metadata)=0;
+
+    /**
+    * Get current taining parameter.
+    * \param   parameter       The ID of training parameter to query.
+    * \return                  The value of the queried paramter. "Error_InvalidParameter" (-18) if no such parameter exists.
+    */
+    virtual int getTrainingParameter(IGestureRecognition::TrainingParameter parameter)=0;
+
+    /**
+    * Set taining parameter.
+    * \param   parameter       The ID of training parameter to set.
+    * \param   value           The desired value for the training parameter.
+    * \return                  Zero on success, a negative error code on failure.
+    */
+    virtual int setTrainingParameter(IGestureRecognition::TrainingParameter parameter, int value)=0;
 
     /**
     * Start train the Neural Network based on the the currently collected data.

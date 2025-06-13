@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -2049,6 +2049,64 @@ public class GestureRecognition
     {
         return GestureRecognition_cancelLoading(m_gro);
     }
+
+
+    //                                                                       ___________________
+    //______________________________________________________________________/   TrainingParameter
+    /// <summary>
+    /// IDs of the parameters that affect the training process.
+    /// </summary>
+    public enum TrainingParameter
+    {
+        TrainingParameter_Lambda = 0 //!< Training parameter for the lambda parameter. Use "-1" for "auto".
+        ,
+        TrainingParameter_NumberOfNodes = 1 //!< Training parameter for the number of neurons. Use "-1" for "auto".
+        ,
+        TrainingParameter_NumberOfLayers = 2 //!< Training parameter for the number of layers. Use "-1" for "auto".
+        ,
+        TrainingParameter_SampleResolution = 3 //!< Training parameter for the number of data points per sample. Use "-1" for "auto".
+        ,
+        TrainingParameter_ControllerRotation = 4 //!< Training parameter for whether to use controller rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
+        ,
+        TrainingParameter_RotatePath = 5 //!< Training parameter for whether to use path rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
+        ,
+        TrainingParameter_ProfileAlgorithm = 6 //!< Training parameter for which profile algorithm to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_OrientationAlgorithm = 7 //!< Training parameter for which orientation algorithm to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_PivotPoint = 8 //!< Training parameter for which pivot point to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_ActivationFunction = 9 //!< Training parameter for which activation function to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_ActivationFactor = 10 //!< Training parameter for which activation factor to use. Use "-1" for "auto".
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     getTrainingParameter()
+    /// <summary>
+    /// Get current taining parameter.
+    /// </summary>
+    /// <param name="parameter">The ID of training parameter to query.</param>
+    /// <returns>
+    /// The value of the queried paramter. "Error_InvalidParameter" (-18) if no such parameter exists. 
+    /// </returns>
+    public int getTrainingParameter(TrainingParameter parameter)
+    {
+        return GestureRecognition_getTrainingParameter(m_gro, (int)parameter);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     setTrainingParameter()
+    /// <summary>
+    /// Set taining parameter.
+    /// </summary>
+    /// <param name="parameter">The ID of training parameter to set.</param>
+    /// <param name="value">The desired value for the training parameter.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setTrainingParameter(TrainingParameter parameter, int value)
+    {
+        return GestureRecognition_setTrainingParameter(m_gro, (int)parameter, value);
+    }
     //                                                          ________________________________
     //_________________________________________________________/      startTraining()
     /// <summary>
@@ -2397,6 +2455,10 @@ public class GestureRecognition
     public static extern int GestureRecognition_isLoading(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_cancelLoading", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_cancelLoading(IntPtr gro);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getTrainingParameter", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getTrainingParameter(IntPtr gro, int parameter);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_setTrainingParameter", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_setTrainingParameter(IntPtr gro, int parameter, int value);
     [DllImport(libfile, EntryPoint = "GestureRecognition_startTraining", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_startTraining(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_isTraining", CallingConvention = CallingConvention.Cdecl)]

@@ -2052,7 +2052,9 @@ MonoBehaviour:
   file_save_gestures: Samples/Sample_OneHanded_MyGestures.dat
   create_combination_name: (new gesture combination name)
   create_gesture_name: (new gesture name)
-  create_gesture_names: []
+  create_gesture_names:
+  - (new gesture name)
+  - (new gesture name)
   record_gesture_id: -1
   record_combination_id: -1
   lefthand_combination_part: 0

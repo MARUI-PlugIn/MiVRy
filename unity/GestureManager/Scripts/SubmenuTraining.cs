@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -16,15 +16,16 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SubmenuTraining : MonoBehaviour
 {
     private bool initialized = false;
-    private TextMesh TrainingCurrentStatus;
-    private TextMesh TrainingCurrentPerformance;
+    public TextMesh TrainingCurrentStatus;
+    public TextMesh TrainingCurrentPerformance;
+    public SubmenuTrainingButton TrainingToggleButton; 
+    public SubmenuTrainingButton SettingsToggleButton;
+    public SubmenuTrainingSettings SubmenuTrainingSettings;
 
     void Start()
     {
@@ -33,18 +34,25 @@ public class SubmenuTraining : MonoBehaviour
 
     private void init()
     {
-        for (int i=0; i<this.transform.childCount; i++)
-        {
+        for (int i=0; i<this.transform.childCount; i++) {
             GameObject child = this.transform.GetChild(i).gameObject;
-            switch (child.name)
-            {
+            switch (child.name) {
                 case "SubmenuTrainingCurrentStatus":
                     TrainingCurrentStatus = child.GetComponent<TextMesh>();
                     break;
                 case "SubmenuTrainingCurrentPerformance":
                     TrainingCurrentPerformance = child.GetComponent<TextMesh>();
                     break;
+                case "SubmenuTrainingStartStopBtn":
+                    TrainingToggleButton = child.GetComponent<SubmenuTrainingButton>();
+                    break;
+                case "SubmenuTrainingSettingsBtn":
+                    SettingsToggleButton = child.GetComponent<SubmenuTrainingButton>();
+                    break;
             }
+        }
+        if (SubmenuTrainingSettings != null) {
+            SubmenuTrainingSettings.gameObject.SetActive(false);
         }
         this.initialized = true;
     }
@@ -55,31 +63,46 @@ public class SubmenuTraining : MonoBehaviour
             this.init();
         if (GestureManagerVR.me == null || GestureManagerVR.me.gestureManager == null)
             return;
+        if (GestureManagerVR.me.gestureManager.numberOfParts == 1) {
+            this.transform.localPosition = Vector3.forward * 0.135f;
+            if (SubmenuTrainingSettings != null) {
+                SubmenuTrainingSettings.transform.localPosition = Vector3.forward * 0.135f;
+            }
+        } else {
+            this.transform.localPosition = Vector3.zero;
+            if (SubmenuTrainingSettings != null) {
+                SubmenuTrainingSettings.transform.localPosition = Vector3.zero;
+            }
+        }
         double score = 0;
-        if (GestureManagerVR.me.gestureManager.gr != null)
-        {
-            if (GestureManagerVR.me.gestureManager.gr.isTraining() || GestureManagerVR.me.gestureManager.gr.isLoading())
-            {
+        if (GestureManagerVR.me.gestureManager.gr != null) {
+            if (GestureManagerVR.me.gestureManager.gr.isTraining() || GestureManagerVR.me.gestureManager.gr.isLoading()) {
                 TrainingCurrentStatus.text = "yes";
                 score = GestureManagerVR.me.gestureManager.last_performance_report;
-            } else
-            {
+            } else {
                 TrainingCurrentStatus.text = "no";
                 score = GestureManagerVR.me.gestureManager.gr.recognitionScore();
             }
-        } else if (GestureManagerVR.me.gestureManager.gc != null)
-        {
-            if (GestureManagerVR.me.gestureManager.gc.isTraining() || GestureManagerVR.me.gestureManager.gc.isLoading())
-            {
+        } else if (GestureManagerVR.me.gestureManager.gc != null) {
+            if (GestureManagerVR.me.gestureManager.gc.isTraining() || GestureManagerVR.me.gestureManager.gc.isLoading()) {
                 TrainingCurrentStatus.text = "yes";
                 score = GestureManagerVR.me.gestureManager.last_performance_report;
-            } else
-            {
+            } else {
                 TrainingCurrentStatus.text = "no";
                 score = GestureManagerVR.me.gestureManager.gc.recognitionScore();
             }
         }
         score *= 100.0;
         TrainingCurrentPerformance.text = score.ToString("0.00") + "%";
+
+        if (TrainingToggleButton != null) {
+            TrainingToggleButton.refreshText();
+        }
+        if (SettingsToggleButton != null) {
+            SettingsToggleButton.refreshText();
+        }
+        if (SubmenuTrainingSettings != null && SubmenuTrainingSettings.gameObject.activeSelf) {
+            SubmenuTrainingSettings.refresh();
+        }
     }
 }

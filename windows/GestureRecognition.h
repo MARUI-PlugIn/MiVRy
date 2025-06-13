@@ -1,7 +1,7 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -120,6 +120,18 @@
 #define GESTURERECOGNITION_RESULT_ERROR_CURRENTLYSAVING   -17  //!< Return code for: the operation could not be performed because the AI is currently being saved to database file.
 #define GESTURERECOGNITION_RESULT_ERROR_INVALIDPARAM      -18  //!< Return code for: invalid parameter(s) provided to function.
 #define GESTURERECOGNITION_RESULT_ERROR_IOFAILURE         -19  //!< Return code for: input/output failure.
+
+#define GESTURERECOGNITION_TRAININGPARAMETER_LAMBDA                 0 //!< Training parameter for the lambda parameter. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_NUMBEROFNODES          1 //!< Training parameter for the number of neurons. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_NUMBEROFLAYERS         2 //!< Training parameter for the number of layers. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_SAMPLERESOLUTION       3 //!< Training parameter for the number of data points per sample. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_CONTROLLERROTATION     4 //!< Training parameter for whether to use controller rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_ROTATEPATH             5 //!< Training parameter for whether to use path rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_PROFILEALGORITHM       6 //!< Training parameter for which profile algorithm to use. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_ORIENTATIONALGORITHM   7 //!< Training parameter for which orientation algorithm to use. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_PIVOTPOINT             8 //!< Training parameter for which pivot point to use. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_ACTIVATIONFUNCTION     9 //!< Training parameter for which activation function to use. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_ACTIVATIONFACTOR       10//!< Training parameter for which activation factor to use. Use "-1" for "auto".
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -248,6 +260,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importGestureSamples(void* gro, const void* from_gro, int from_gesture_index, int into_gesture_index); //!< Import recorded gesture samples from another gesture recognition object.
     GESTURERECOGNITION_LIBEXPORT int GestureRecognition_importGestures(void* gro, const void* from_gro); //!< Import recorded gesture samples from another gesture recognition object, merging gestures by name.
 
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_getTrainingParameter(void* gro, int parameter); //!< Get current taining parameter.
+    GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_setTrainingParameter(void* gro, int parameter, int value); //!< Set taining parameter.
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_startTraining(void* gro); //!< Start train the Neural Network based on the the currently collected data.
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_isTraining(void* gro); //!< Whether the Neural Network is currently training.
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_stopTraining(void* gro); //!< Stop the training process (last best result will be used).
@@ -1178,6 +1192,48 @@ public:
     * \return                  Zero on success, a negative error code on failure.
     */
     virtual int stopTraining()=0;
+
+    /**
+    * IDs of the parameters that affect the training process.
+    */
+    enum TrainingParameter {
+        TrainingParameter_Lambda               = GESTURERECOGNITION_TRAININGPARAMETER_LAMBDA //!< Training parameter for the lambda parameter. Use "-1" for "auto".
+        ,
+        TrainingParameter_NumberOfNodes        = GESTURERECOGNITION_TRAININGPARAMETER_NUMBEROFNODES //!< Training parameter for the number of neurons. Use "-1" for "auto".
+        ,
+        TrainingParameter_NumberOfLayers       = GESTURERECOGNITION_TRAININGPARAMETER_NUMBEROFLAYERS //!< Training parameter for the number of layers. Use "-1" for "auto".
+        ,
+        TrainingParameter_SampleResolution     = GESTURERECOGNITION_TRAININGPARAMETER_SAMPLERESOLUTION //!< Training parameter for the number of data points per sample. Use "-1" for "auto".
+        ,
+        TrainingParameter_ControllerRotation   = GESTURERECOGNITION_TRAININGPARAMETER_CONTROLLERROTATION //!< Training parameter for whether to use controller rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
+        ,
+        TrainingParameter_RotatePath           = GESTURERECOGNITION_TRAININGPARAMETER_ROTATEPATH //!< Training parameter for whether to use path rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
+        ,
+        TrainingParameter_ProfileAlgorithm     = GESTURERECOGNITION_TRAININGPARAMETER_PROFILEALGORITHM //!< Training parameter for which profile algorithm to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_OrientationAlgorithm = GESTURERECOGNITION_TRAININGPARAMETER_ORIENTATIONALGORITHM //!< Training parameter for which orientation algorithm to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_PivotPoint           = GESTURERECOGNITION_TRAININGPARAMETER_PIVOTPOINT //!< Training parameter for which pivot point to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_ActivationFunction   = GESTURERECOGNITION_TRAININGPARAMETER_ACTIVATIONFUNCTION //!< Training parameter for which activation function to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_ActivationFactor     = GESTURERECOGNITION_TRAININGPARAMETER_ACTIVATIONFACTOR //!< Training parameter for which activation factor to use. Use "-1" for "auto".
+    };
+
+    /**
+    * Get current taining parameter.
+    * \param   parameter       The ID of training parameter to query.
+    * \return                  The value of the queried paramter. "Error_InvalidParameter" (-18) if no such parameter exists. 
+    */
+    virtual int getTrainingParameter(TrainingParameter parameter)=0;
+
+    /**
+    * Set taining parameter.
+    * \param   parameter       The ID of training parameter to set.
+    * \param   value           The desired value for the training parameter.
+    * \return                  Zero on success, a negative error code on failure.
+    */
+    virtual int setTrainingParameter(TrainingParameter parameter, int value)=0;
 
     /**
     * Maximum training time in seconds.

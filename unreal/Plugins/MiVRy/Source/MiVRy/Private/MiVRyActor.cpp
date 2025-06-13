@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -792,10 +792,10 @@ float AMiVRyActor::EnhancedInputTriggerValue(const FInputActionValue& Value)
 			return Value.Get<FInputActionValue::Axis1D>(); // FInputActionValue::Axis1D == float
 			break;
 		case EInputActionValueType::Axis2D:
-			return Value.Get<FInputActionValue::Axis2D>().Length(); // FInputActionValue::Axis2D == FVector2D
+			return Value.Get<FInputActionValue::Axis2D>().Size(); // FInputActionValue::Axis2D == FVector2D
 			break;
 		case EInputActionValueType::Axis3D:
-			return Value.Get<FInputActionValue::Axis3D>().Length(); // FInputActionValue::Axis3D == FVector
+			return Value.Get<FInputActionValue::Axis3D>().Size(); // FInputActionValue::Axis3D == FVector
 			break;
 		default:
 			UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor.EnhancedInputLeftTrigger] Unkown value type."));

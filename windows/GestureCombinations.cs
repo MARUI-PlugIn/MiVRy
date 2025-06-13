@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -2117,6 +2117,33 @@ public class GestureCombinations
         return GestureCombinations_cancelLoading(m_gc);
     }
     //                                                          ________________________________
+    //_________________________________________________________/     getTrainingParameter()
+    /// <summary>
+    /// Get current taining parameter.
+    /// </summary>
+    /// <param name="parameter">The ID of training parameter to query.</param>
+    /// <returns>
+    /// The value of the queried paramter. "Error_InvalidParameter" (-18) if no such parameter exists. 
+    /// </returns>
+    public int getTrainingParameter(GestureRecognition.TrainingParameter parameter)
+    {
+        return GestureCombinations_getTrainingParameter(m_gc, (int)parameter);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/     setTrainingParameter()
+    /// <summary>
+    /// Set taining parameter.
+    /// </summary>
+    /// <param name="parameter">The ID of training parameter to set.</param>
+    /// <param name="value">The desired value for the training parameter.</param>
+    /// <returns>
+    /// Zero on success, a negative error code on failure.
+    /// </returns>
+    public int setTrainingParameter(GestureRecognition.TrainingParameter parameter, int value)
+    {
+        return GestureCombinations_setTrainingParameter(m_gc, (int)parameter, value);
+    }
+    //                                                          ________________________________
     //_________________________________________________________/      startTraining()
     /// <summary>
     /// Start the learning process.
@@ -2553,6 +2580,10 @@ public class GestureCombinations
     public static extern IntPtr GestureCombinations_getGestureCombinationMetadata(IntPtr gco, int index);
     [DllImport(libfile, EntryPoint = "GestureCombinations_setGestureCombinationMetadata", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_setGestureCombinationMetadata(IntPtr gco, int index, IntPtr metadata);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_getTrainingParameter", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_getTrainingParameter(IntPtr gco, int parameter);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_setTrainingParameter", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_setTrainingParameter(IntPtr gco, int parameter, int value);
     [DllImport(libfile, EntryPoint = "GestureCombinations_startTraining", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_startTraining(IntPtr gco); //!< Start train the artificial intelligence based on the the currently collected data.
     [DllImport(libfile, EntryPoint = "GestureCombinations_isTraining", CallingConvention = CallingConvention.Cdecl)]

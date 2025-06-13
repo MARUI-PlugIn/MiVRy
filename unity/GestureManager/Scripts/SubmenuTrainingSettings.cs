@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
  * Version 2.12
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
@@ -16,28 +16,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using System.Collections.Generic;
 using UnityEngine;
 
-public class SubmenuCoordinateSystem : MonoBehaviour
+public class SubmenuTrainingSettings : MonoBehaviour
 {
     private bool initialized = false;
-    private TextMesh SubmenuCoordinateSystemValue;
-    
+    public List<SubmenuTrainingButton> buttons = new List<SubmenuTrainingButton>();
+
+    // Start is called before the first frame update
     void Start()
     {
         this.init();
     }
 
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
     private void init()
     {
-        for (int i=0; i<this.transform.childCount; i++)
-        {
+        for (int i = 0; i < this.transform.childCount; i++) {
             GameObject child = this.transform.GetChild(i).gameObject;
-            switch (child.name)
-            {
-                case "SubmenuCoordinateSystemValue":
-                    this.SubmenuCoordinateSystemValue = child.GetComponent<TextMesh>();
-                    break;
+            SubmenuTrainingButton button = child.GetComponent<SubmenuTrainingButton>();
+            if (button != null) {
+                button.submenuTrainingSettings = this;
+                if (!buttons.Contains(button)) {
+                    buttons.Add(button);
+                }
             }
         }
         this.initialized = true;
@@ -50,26 +58,8 @@ public class SubmenuCoordinateSystem : MonoBehaviour
         GestureManager gm = GestureManagerVR.me?.gestureManager;
         if (gm == null)
             return;
-        switch (gm.mivryCoordinateSystem)
-        {
-            case Mivry.MivryCoordinateSystem.Unity_OpenXR:
-                SubmenuCoordinateSystemValue.text = "OpenXR";
-                break;
-            case Mivry.MivryCoordinateSystem.Unity_OculusVR:
-                SubmenuCoordinateSystemValue.text = "OculusVR";
-                break;
-            case Mivry.MivryCoordinateSystem.Unity_SteamVR:
-                SubmenuCoordinateSystemValue.text = "SteamVR";
-                break;
-            case Mivry.MivryCoordinateSystem.Unreal_OpenXR:
-                SubmenuCoordinateSystemValue.text = "UE OpenXR";
-                break;
-            case Mivry.MivryCoordinateSystem.Unreal_OculusVR:
-                SubmenuCoordinateSystemValue.text = "UE OculusVR";
-                break;
-            case Mivry.MivryCoordinateSystem.Unreal_SteamVR:
-                SubmenuCoordinateSystemValue.text = "UE SteamVR";
-                break;
+        foreach (SubmenuTrainingButton button in buttons) {
+            button.refreshText();
         }
     }
 }

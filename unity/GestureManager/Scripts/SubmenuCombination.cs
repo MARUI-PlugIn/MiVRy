@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -16,8 +16,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SubmenuCombination : MonoBehaviour
@@ -39,6 +37,8 @@ public class SubmenuCombination : MonoBehaviour
     private GameObject GestureNextBtn;
     private GameObject GesturePrevBtn;
     private GameObject GestureText;
+
+    public GameObject SubmenuCreateCombinationParts;
 
     private int currentCombination = -1;
 
@@ -126,6 +126,7 @@ public class SubmenuCombination : MonoBehaviour
                     break;
             }
         }
+        this.SubmenuCreateCombinationParts.SetActive(false);
         this.initialized = true;
     }
 

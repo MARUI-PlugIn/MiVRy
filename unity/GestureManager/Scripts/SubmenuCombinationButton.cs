@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -16,8 +16,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SubmenuCombinationButton : GestureManagerButton
@@ -32,15 +30,19 @@ public class SubmenuCombinationButton : GestureManagerButton
         PreviousPart,
         NextGesture,
         PreviousGesture,
+        CreatePartsForNewCombinationYes,
+        CreatePartsForNewCombinationNo,
     };
     public Operation operation;
 
-    private SubmenuCombination submenuCombination;
+    public SubmenuCombination submenuCombination;
 
     // Start is called before the first frame update
     void Start()
     {
-        this.submenuCombination = this.transform.parent.gameObject.GetComponent<SubmenuCombination>();
+        if (submenuCombination == null) {
+            this.submenuCombination = this.transform.parent.gameObject.GetComponent<SubmenuCombination>();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -61,6 +63,31 @@ public class SubmenuCombinationButton : GestureManagerButton
                 if (gm.record_combination_id >= 0) {
                     gm.record_combination_id = this.submenuCombination.CurrentCombination;
                 }
+                this.submenuCombination.SubmenuCreateCombinationParts.SetActive(true);
+                break;
+            case Operation.CreatePartsForNewCombinationYes:
+                SubmenuGesture submenuGesture = Component.FindAnyObjectByType<SubmenuGesture>();
+                if (gm.gc != null && this.submenuCombination.CurrentCombination >= 0) {
+                    int comboId = this.submenuCombination.CurrentCombination;
+                    string comboName = gm.gc.getGestureCombinationName(comboId);
+                    for (int part = gm.gc.numberOfParts()-1; part >=0; part--) {
+                        int gestureId = gm.gc.createGesture(part, comboName);
+                        gm.gc.setCombinationPartGesture(comboId, part, gestureId);
+                        if (submenuGesture != null) {
+                            if (submenuGesture.CurrentPart < 0  || submenuGesture.CurrentPart == part) {
+                                submenuGesture.CurrentPart = part;
+                                submenuGesture.CurrentGesture = gestureId;
+                                submenuGesture.refresh();
+                            }
+                        }
+                    }
+                }
+                this.submenuCombination.SubmenuCreateCombinationParts.SetActive(false);
+                this.submenuCombination.refresh();
+
+                break;
+            case Operation.CreatePartsForNewCombinationNo:
+                this.submenuCombination.SubmenuCreateCombinationParts.SetActive(false);
                 break;
             case Operation.DeleteCombination:
                 if (this.submenuCombination.CurrentCombination >= 0) {

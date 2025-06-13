@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -33,7 +33,9 @@
 UBTComposite_MiVRy::UBTComposite_MiVRy(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	this->NodeName = "MiVRy Gesture Recognition";
+#if ENGINE_MAJOR_VERSION >= 5
 	INIT_COMPOSITE_NODE_NOTIFY_FLAGS();
+#endif
 	this->bUseNodeActivationNotify = 1;
 	this->Delegate.BindUFunction(this, "OnGestureIdentified");
 	if (this->MiVRyActor.IsValid()) {
@@ -139,7 +141,7 @@ void UBTComposite_MiVRy::CleanupMemory(UBehaviorTreeComponent& OwnerComp, uint8*
 int32 UBTComposite_MiVRy::GetNextChildHandler(FBehaviorTreeSearchData& SearchData, int32 PrevChild, EBTNodeResult::Type LastResult) const
 {
 	UBTComposite_MiVRyMemory* Memory = GetNodeMemory<UBTComposite_MiVRyMemory>(SearchData);
-	TEnumAsByte<UBTComposite_MiVRy_ChildFinishReaction::Type> reaction = UBTComposite_MiVRy_ChildFinishReaction::ContinueExecution;
+	GestureRecognition_ChildFinishReaction reaction = GestureRecognition_ChildFinishReaction::ContinueExecution;
 	switch (LastResult) {
 	case EBTNodeResult::Succeeded:
 		reaction = this->OnChildSuccess;
@@ -151,7 +153,7 @@ int32 UBTComposite_MiVRy::GetNextChildHandler(FBehaviorTreeSearchData& SearchDat
 		reaction = this->OnChildAborted;
 		break;
 	}
-	if (reaction == UBTComposite_MiVRy_ChildFinishReaction::StopExecution) {
+	if (reaction == GestureRecognition_ChildFinishReaction::StopExecution) {
 		return BTSpecialChild::ReturnToParent;
 	}
 	// else:

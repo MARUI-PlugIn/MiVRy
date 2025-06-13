@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -17,9 +17,6 @@
  */
 
 #if UNITY_EDITOR
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using UnityEditor;
@@ -506,7 +503,7 @@ public class GestureManagerEditor : UnityEditor.Editor
 
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical(GUI.skin.box);
-        EditorGUILayout.LabelField("START/STOP TRAINING:");
+        EditorGUILayout.LabelField("TRAINING:");
         if (gm.gr != null)
         {
             EditorGUILayout.LabelField("Performance:", (gm.gr.recognitionScore() * 100.0).ToString("0.00") +"%");

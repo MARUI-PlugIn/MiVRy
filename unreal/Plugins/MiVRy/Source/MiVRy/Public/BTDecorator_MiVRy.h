@@ -1,7 +1,7 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.11
- * Copyright (c) 2024 MARUI-PlugIn (inc.)
+ * Version 2.12
+ * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
@@ -23,16 +23,13 @@
 #include "MiVRyActor.h"
 #include "BTDecorator_MiVRy.generated.h"
 
-UENUM()
-namespace UBTDecorator_MiVRy_GestureIdListUse
+UENUM(BlueprintType)
+enum class GestureRecognition_GestureIdListUse : uint8
 {
-	enum Type : int
-	{
-		Blacklist UMETA(DisplayName = "Blacklist", ToolTip = "Fail when identified gesture is in list."),
-		Whitelist UMETA(DisplayName = "Whitelist", ToolTip = "Pass only when identified gesture is in list."),
-		Ignore UMETA(DisplayName = "Ignore", ToolTip = "Ignore the list, always pass."),
-	};
-}
+	Blacklist UMETA(DisplayName = "Blacklist", ToolTip = "Fail when identified gesture is in list."),
+	Whitelist UMETA(DisplayName = "Whitelist", ToolTip = "Pass only when identified gesture is in list."),
+	Ignore UMETA(DisplayName = "Ignore", ToolTip = "Ignore the list, always pass."),
+};
 
 
 struct UBTDecorator_MiVRyMemory
@@ -87,7 +84,7 @@ public:
 	* How to interpret the "Gesture IDs" list below.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy", meta = (DisplayName = "Use of Gesture ID list"))
-	TEnumAsByte<UBTDecorator_MiVRy_GestureIdListUse::Type> GestureIdListUse = UBTDecorator_MiVRy_GestureIdListUse::Whitelist;
+	GestureRecognition_GestureIdListUse GestureIdListUse = GestureRecognition_GestureIdListUse::Whitelist;
 
 	/** Gesture IDs (or error IDs) accepted or rejected by this decorator. Use '-1' for 'no gesture' or 'identification failure'. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy", meta = (DisplayName = "Gesture IDs"))

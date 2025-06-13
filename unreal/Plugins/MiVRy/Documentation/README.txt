@@ -1,5 +1,5 @@
 MIVRY 3D GESTURE RECOGNITION PLUG-IN FOR UNREAL
-Copyright (c) 2024 MARUI-PlugIn (inc.)
+Copyright (c) 2025 MARUI-PlugIn (inc.)
 
 [IMPORTANT!] This plug-in is free to use. However, the “free” license use is limited to 100 gesture recognitions (or 100 seconds of continuous gesture recognition) per session. To unlock unlimited gesture recognition, please purchase a license at https://www.marui-plugin.com/mivry/ 
 
