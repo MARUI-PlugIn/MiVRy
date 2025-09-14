@@ -1,6 +1,6 @@
 /*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.12
+ * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -659,7 +659,7 @@ public class MivryQuestHands : MonoBehaviour
     {
         int[] trackingPointsIndices = getTrackingPointsIndices(trackingPoints);
         for (int i=trackingPointsIndices.Length-1; i>=0; i--) {
-            trackingPointsIndices[i] -= MivryQuestHands.leftHandPartsMin;
+            trackingPointsIndices[i] += MivryQuestHands.leftHandPartsMin;
         }
         return trackingPointsIndices;
     }
@@ -668,7 +668,7 @@ public class MivryQuestHands : MonoBehaviour
     {
         int[] trackingPointsIndices = getTrackingPointsIndices(trackingPoints);
         for (int i = trackingPointsIndices.Length - 1; i >= 0; i--) {
-            trackingPointsIndices[i] -= MivryQuestHands.rightHandPartsMin;
+            trackingPointsIndices[i] += MivryQuestHands.rightHandPartsMin;
         }
         return trackingPointsIndices;
     }

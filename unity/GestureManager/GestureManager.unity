@@ -2055,6 +2055,9 @@ MonoBehaviour:
   create_gesture_names:
   - (new gesture name)
   - (new gesture name)
+  - (new gesture name)
+  continous_gesturing: 0
+  continuous_gesturing_last_t: 0
   record_gesture_id: -1
   record_combination_id: -1
   lefthand_combination_part: 0

@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.12
+ * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -25,6 +25,8 @@ using AOT;
 using UnityEngine.UI;
 using UnityEngine.XR;
 using UnityEngine.Networking;
+using System.Linq;
+
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
@@ -474,7 +476,9 @@ public class GestureManager : MonoBehaviour
     public string create_combination_name = "(new gesture combination name)";
     public string create_gesture_name = "(new gesture name)";
     public string[] create_gesture_names = null;
-
+    public bool continous_gesturing = false;
+    public Dictionary<int,long> continuous_gesturing_started = new Dictionary<int,long>() { {0,0}, {1,0} };
+    public long continuous_gesturing_last_t = 0;
     public int record_gesture_id = -1;
     public int record_combination_id = -1;
     public int lefthand_combination_part = 0; // combination part performed with the left hand
@@ -525,11 +529,11 @@ public class GestureManager : MonoBehaviour
     // The path where the file was saved.
     private string saving_path = "";
 
-    // Temporary storage for objects to display the gesture stroke.
-    private List<string> stroke = new List<string>(); 
-
-    // Temporary counter variable when creating objects for the stroke display:
-    private int stroke_index = 0; 
+    // Temporary storage for objects to display the gesture stroke, indexed by 
+    private Dictionary<int,SortedDictionary<long,string>> stroke_trails = new() {
+        { 0,  new SortedDictionary<long, string>() },
+        { 1,  new SortedDictionary<long, string>() }
+    };
     
     // Handle to this object/script instance, so that callbacks from the plug-in arrive at the correct instance.
     private GCHandle me;
@@ -800,6 +804,9 @@ public class GestureManager : MonoBehaviour
         Quaternion hmd_q = hmd.transform.rotation;
         Mivry.convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
 
+        int gesture_id;
+        double similarity = 0; // This will receive the similarity value (0~1)
+
         // Single Gesture recognition / 1-handed operation
         if (this.gr != null) {
             // If the user is not yet dragging (pressing the trigger) on either controller, he hasn't started a gesture yet.
@@ -821,6 +828,9 @@ public class GestureManager : MonoBehaviour
                 // If we arrive here: either trigger was pressed, so we start the gesture.
                 gr.startStroke(hmd_p, hmd_q, record_gesture_id);
                 gesture_started = true;
+                if (continous_gesturing) {
+                    continuous_gesturing_started[0] = DateTime.Now.Ticks;
+                }
                 return;
             }
 
@@ -833,31 +843,48 @@ public class GestureManager : MonoBehaviour
                 Quaternion q = active_controller.transform.rotation;
                 Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                 gr.contdStrokeQ(p, q);
-                addToStrokeTrail(active_controller_pointer.transform.position);
+                addToStrokeTrail(active_controller_pointer.transform.position, 0);
+                if (continous_gesturing) {
+                    long now = DateTime.Now.Ticks;
+                    long ms_since_started = (now - continuous_gesturing_started[0]) / TimeSpan.TicksPerMillisecond;
+                    long ms_since_last_t = (now - continuous_gesturing_last_t) / TimeSpan.TicksPerMillisecond;
+                    if (ms_since_started > gr.contdIdentificationPeriod && ms_since_last_t > 100) {
+                        continuous_gesturing_last_t = now;
+                        if (record_gesture_id >= 0) {
+                            gr.contdRecord(hmd_p, hmd_q);
+                            int num_samples = gr.getGestureNumberOfSamples(record_gesture_id);
+                            consoleText = "Recorded " + num_samples + " gesture samples for " + gr.getGestureName(record_gesture_id) + ".\n";
+                        } else {
+                            gesture_id = gr.contdIdentify(hmd_p, hmd_q, ref similarity);
+                            if(gesture_id < 0) {
+                                consoleText = "Failed to identify gesture: " + GestureRecognition.getErrorMessage(gesture_id);
+                            } else {
+                                string gesture_name = gr.getGestureName(gesture_id);
+                                consoleText = "Identified gesture " + gesture_name + "(" + gesture_id + ")\n(Similarity: " + similarity.ToString("0.000") + ")";
+                            }
+                        }
+                        pruneStrokeTrail(0);
+                    }
+                }
                 return;
             }
             // else: if we arrive here, the user let go of the trigger, ending a gesture.
             active_controller = null;
 
             // Delete the objectes that we used to display the gesture.
-            foreach (string star in stroke) {
-                Destroy(GameObject.Find(star));
-                stroke_index = 0;
-            }
+            clearStrokeTrail(0);
 
-            double similarity = 0; // This will receive the similarity value (0~1)
             Vector3 pos = Vector3.zero; // This will receive the position where the gesture was performed.
             double scale = 0; // This will receive the scale at which the gesture was performed.
             Vector3 dir0 = Vector3.zero; // This will receive the primary direction in which the gesture was performed (greatest expansion).
             Vector3 dir1 = Vector3.zero; // This will receive the secondary direction of the gesture.
             Vector3 dir2 = Vector3.zero; // This will receive the minor direction of the gesture (direction of smallest expansion).
-            int gesture_id = gr.endStroke(ref similarity, ref pos, ref scale, ref dir0, ref dir1, ref dir2);
+            gesture_id = gr.endStroke(ref similarity, ref pos, ref scale, ref dir0, ref dir1, ref dir2);
             gesture_started = false;
             GestureManagerVR.refresh();
 
             // If we are currently recording samples for a custom gesture, check if we have recorded enough samples yet.
-            if (record_gesture_id >= 0)
-            {
+            if (record_gesture_id >= 0) {
                 // Currently recording samples for a custom gesture - check how many we have recorded so far.
                 consoleText = "Recorded a gesture sample for " + gr.getGestureName(record_gesture_id) + ".\n"
                                  + "Total number of recorded samples for this gesture: " + gr.getGestureNumberOfSamples(record_gesture_id) + ".\n";
@@ -881,22 +908,34 @@ public class GestureManager : MonoBehaviour
             if (trigger_pressed_left == false && trigger_left > 0.9) {
                 // Controller trigger pressed.
                 trigger_pressed_left = true;
-                int gesture_id = -1;
-                if (record_combination_id >= 0) {
-                    gesture_id = gc.getCombinationPartGesture(record_combination_id, lefthand_combination_part);
-                }
+                gesture_id = (record_combination_id >= 0) 
+                    ? gc.getCombinationPartGesture(record_combination_id, lefthand_combination_part)
+                    : - 1;
                 gc.startStroke(lefthand_combination_part, hmd_p, hmd_q, gesture_id);
                 gesture_started = true;
+                if (continous_gesturing) {
+                    if (continuous_gesturing_started.ContainsKey(lefthand_combination_part)) {
+                        continuous_gesturing_started[lefthand_combination_part] = DateTime.Now.Ticks;
+                    } else {
+                        continuous_gesturing_started.Add(lefthand_combination_part, DateTime.Now.Ticks);
+                    }
+                }
             }
             if (trigger_pressed_right == false && trigger_right > 0.9) {
                 // Controller trigger pressed.
                 trigger_pressed_right = true;
-                int gesture_id = -1;
-                if (record_combination_id >= 0) {
-                    gesture_id = gc.getCombinationPartGesture(record_combination_id, righthand_combination_part);
-                }
+                gesture_id = (record_combination_id >= 0)
+                    ? gc.getCombinationPartGesture(record_combination_id, righthand_combination_part)
+                    : - 1;
                 gc.startStroke(righthand_combination_part, hmd_p, hmd_q, gesture_id);
                 gesture_started = true;
+                if (continous_gesturing) {
+                    if (continuous_gesturing_started.ContainsKey(righthand_combination_part)) {
+                        continuous_gesturing_started[righthand_combination_part] = DateTime.Now.Ticks;
+                    } else {
+                        continuous_gesturing_started.Add(righthand_combination_part, DateTime.Now.Ticks);
+                    }
+                }
             }
             if (gesture_started == false) {
                 // nothing to do.
@@ -905,11 +944,14 @@ public class GestureManager : MonoBehaviour
 
             // If we arrive here, the user is currently dragging with one of the controllers.
             gc.updateHeadPosition(hmd_p, hmd_q);
+
             if (trigger_pressed_left == true) {
                 if (trigger_left < 0.85) {
                     // User let go of a trigger and held controller still
                     gc.endStroke(lefthand_combination_part);
                     trigger_pressed_left = false;
+                    // Delete the objectes that we used to display the gesture.
+                    clearStrokeTrail(lefthand_combination_part);
                 } else {
                     // User still dragging or still moving after trigger pressed
                     GameObject left_hand = GameObject.Find("Left Hand");
@@ -919,7 +961,8 @@ public class GestureManager : MonoBehaviour
                     gc.contdStrokeQ(lefthand_combination_part, p, q);
                     // Show the stroke by instatiating new objects
                     GameObject left_hand_pointer = GameObject.FindGameObjectWithTag("Left Pointer");
-                    addToStrokeTrail(left_hand_pointer.transform.position);
+                    addToStrokeTrail(left_hand_pointer.transform.position, lefthand_combination_part);
+                    pruneStrokeTrail(lefthand_combination_part);
                 }
             }
 
@@ -928,6 +971,8 @@ public class GestureManager : MonoBehaviour
                     // User let go of a trigger and held controller still
                     gc.endStroke(righthand_combination_part);
                     trigger_pressed_right = false;
+                    // Delete the objectes that we used to display the gesture.
+                    clearStrokeTrail(righthand_combination_part);
                 } else {
                     // User still dragging or still moving after trigger pressed
                     GameObject right_hand = GameObject.Find("Right Hand");
@@ -937,22 +982,46 @@ public class GestureManager : MonoBehaviour
                     gc.contdStrokeQ(righthand_combination_part, p, q);
                     // Show the stroke by instatiating new objects
                     GameObject right_hand_pointer = GameObject.FindGameObjectWithTag("Right Pointer");
-                    addToStrokeTrail(right_hand_pointer.transform.position);
+                    addToStrokeTrail(right_hand_pointer.transform.position, righthand_combination_part);
+                    pruneStrokeTrail(righthand_combination_part);
                 }
             }
+            int recognized_combination_id;
 
             if (trigger_pressed_left || trigger_pressed_right) {
-                // User still dragging with either hand - nothing left to do
+                if (continous_gesturing) {
+                    long now = DateTime.Now.Ticks;
+                    bool left_blocked = trigger_pressed_left
+                        && ((now - continuous_gesturing_started[lefthand_combination_part]) / TimeSpan.TicksPerMillisecond) < gc.getContdIdentificationPeriod(lefthand_combination_part);
+                    bool right_blocked = trigger_pressed_right
+                        && ((now - continuous_gesturing_started[righthand_combination_part]) / TimeSpan.TicksPerMillisecond) < gc.getContdIdentificationPeriod(righthand_combination_part);
+                    long ms_since_last_t = (now - continuous_gesturing_last_t) / TimeSpan.TicksPerMillisecond;
+                    if (!left_blocked && !right_blocked && ms_since_last_t > 100) {
+                        continuous_gesturing_last_t = now;
+                        if (record_combination_id >= 0) {
+                            gc.contdRecord(hmd_p, hmd_q);
+                            int connected_gesture_id_left = gc.getCombinationPartGesture(record_combination_id, lefthand_combination_part);
+                            int connected_gesture_id_right = gc.getCombinationPartGesture(record_combination_id, righthand_combination_part);
+                            int num_samples_left = gc.getGestureNumberOfSamples(lefthand_combination_part, connected_gesture_id_left);
+                            int num_samples_right = gc.getGestureNumberOfSamples(righthand_combination_part, connected_gesture_id_right);
+                            // Currently recording samples for a custom gesture - check how many we have recorded so far.
+                            consoleText = "Recorded " + num_samples_left + "/ " + num_samples_right + " samples for " + gc.getGestureCombinationName(record_combination_id) + ".\n";
+                        } else {
+                            recognized_combination_id = gc.contdIdentify(hmd_p, hmd_q, ref similarity);
+                            if (recognized_combination_id < 0) {
+                                // Error trying to identify any gesture
+                                consoleText = "Failed to identify gesture: " + GestureRecognition.getErrorMessage(recognized_combination_id);
+                            } else {
+                                string combination_name = gc.getGestureCombinationName(recognized_combination_id);
+                                consoleText = "Identified gesture combination '" + combination_name + "' (" + recognized_combination_id + ")\n(Similarity: " + similarity.ToString("0.000") + ")";
+                            }
+                        }
+                    }
+                }
                 return;
             }
             // else: if we arrive here, the user let go of both triggers, ending the gesture.
             gesture_started = false;
-
-            // Delete the objectes that we used to display the gesture.
-            foreach (string star in stroke) {
-                Destroy(GameObject.Find(star));
-                stroke_index = 0;
-            }
 
             // If we are currently recording samples for a custom gesture, check if we have recorded enough samples yet.
             if (record_combination_id >= 0) {
@@ -969,8 +1038,7 @@ public class GestureManager : MonoBehaviour
             }
             // else: if we arrive here, we're not recording new samples for a gesture,
             // but instead are trying to identify a gesture motion.
-            double similarity = 0; // This will receive a similarity value (0~1).
-            int recognized_combination_id = gc.identifyGestureCombination(ref similarity);
+            recognized_combination_id = gc.identifyGestureCombination(ref similarity);
             // Perform the action associated with that gesture.
             if (recognized_combination_id < 0) {
                 // Error trying to identify any gesture
@@ -1050,10 +1118,11 @@ public class GestureManager : MonoBehaviour
     }
 
     // Helper function to add a new star to the stroke trail.
-    public void addToStrokeTrail(Vector3 p)
+    public void addToStrokeTrail(Vector3 p, int part)
     {
         GameObject star_instance = Instantiate(GameObject.Find("star"));
-        GameObject star = new GameObject("stroke_" + stroke_index++);
+        long now = DateTime.Now.Ticks;
+        GameObject star = new GameObject($"stroke_{part}_{now}");
         star_instance.name = star.name + "_instance";
         star_instance.transform.SetParent(star.transform, false);
         System.Random random = new System.Random();
@@ -1065,7 +1134,46 @@ public class GestureManager : MonoBehaviour
         if (this.compensate_head_motion) {
             star.transform.SetParent(Camera.main.gameObject.transform);
         }
-        stroke.Add(star.name);
+        if (!stroke_trails.ContainsKey(part)) {
+            stroke_trails.Add(part, new SortedDictionary<long, string>());
+        }
+        stroke_trails[part].Add(now, star.name);
+    }
+
+    public void pruneStrokeTrail(int part)
+    {
+        int contd_identification_period;
+        if (gr != null) {
+            contd_identification_period = gr.contdIdentificationPeriod;
+        } else if (gc != null) {
+            contd_identification_period = gc.getContdIdentificationPeriod(part);
+        } else {
+            return;
+        }
+        long threshold = DateTime.Now.AddMilliseconds(-contd_identification_period).Ticks;
+        if (!stroke_trails.ContainsKey(part)) {
+            return;
+        }
+        while (stroke_trails[part].Count > 0) {
+            var first = stroke_trails[part].First();
+            if (first.Key > threshold) {
+                break;
+            } else {
+                Destroy(GameObject.Find(first.Value));
+                stroke_trails[part].Remove(first.Key);
+            }
+        }
+    }
+
+    public void clearStrokeTrail(int part)
+    {
+        if (!stroke_trails.ContainsKey(part)) {
+            return;
+        }
+        foreach (var star in stroke_trails[part]) {
+            Destroy(GameObject.Find(star.Value));
+        }
+        stroke_trails[part].Clear();
     }
 
     public bool importFromStreamingAssets(string file)

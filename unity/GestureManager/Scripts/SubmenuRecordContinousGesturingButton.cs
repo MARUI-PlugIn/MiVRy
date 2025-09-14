@@ -1,4 +1,4 @@
-﻿/*
+/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
  * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
@@ -18,15 +18,17 @@
 
 using UnityEngine;
 
-public class SubmenuGestureManagerButton : GestureManagerButton
+public class SubmenuRecordContinousGesturingButton : GestureManagerButton
 {
-    public enum Setting
+    public TextMesh buttonText;
+
+    void Start()
     {
-        FollowMe
-    };
-    public Setting setting;
-    public bool forward;
-    public TextMesh displayText;
+        GestureManager gm = GestureManagerVR.me?.gestureManager;
+        if (gm != null && buttonText != null) {
+            buttonText.text = gm.compensate_head_motion ? "Yes" : "No";
+        }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -39,16 +41,9 @@ public class SubmenuGestureManagerButton : GestureManagerButton
             return;
         GestureManagerVR.activeButton = this;
         this.material = activeButtonMaterial;
-        switch (this.setting)
-        {
-            case Setting.FollowMe:
-                if (GestureManagerVR.me == null)
-                {
-                    return;
-                }
-                GestureManagerVR.me.followUser = !GestureManagerVR.me.followUser;
-                displayText.text = GestureManagerVR.me.followUser ? "Yes" : "No";
-                break;
+        gm.continous_gesturing = !gm.continous_gesturing;
+        if (buttonText != null) {
+            buttonText.text = gm.continous_gesturing ? "Yes" : "No";
         }
         GestureManagerVR.setInputFocus(null);
     }

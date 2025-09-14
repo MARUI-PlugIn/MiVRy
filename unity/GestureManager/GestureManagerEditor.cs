@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.12
+ * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -49,6 +49,7 @@ public class GestureManagerEditor : UnityEditor.Editor
         var create_combination_name_prop = serializedObject.FindProperty("create_combination_name");
         var create_gesture_name_prop = serializedObject.FindProperty("create_gesture_name");
         // var create_gesture_names_prop = serializedObject.FindProperty("create_gesture_names");
+        var continous_gesturing_prop = serializedObject.FindProperty("continous_gesturing");
         var record_gesture_id_prop = serializedObject.FindProperty("record_gesture_id");
         var record_combination_id_prop = serializedObject.FindProperty("record_combination_id");
         var lefthand_combination_part_prop = serializedObject.FindProperty("lefthand_combination_part");
@@ -473,6 +474,31 @@ public class GestureManagerEditor : UnityEditor.Editor
         string[] rotationOrders = { "XYZ", "XZY", "YXZ (Unity)", "YZX", "ZXY", "ZYX (Unreal)" };
         gm.frameOfReferenceRotationOrder = (GestureRecognition.RotationOrder)EditorGUILayout.Popup("Rotation Order", (int)gm.frameOfReferenceRotationOrder, rotationOrders);
         EditorGUILayout.EndVertical();
+
+
+
+        EditorGUILayout.Space();
+        EditorGUILayout.BeginVertical(GUI.skin.box);
+        EditorGUILayout.LabelField("CONTINUOUS GESTURING:");
+        gm.continous_gesturing = EditorGUILayout.Toggle("Continuous Gesturing", gm.continous_gesturing);
+        if (gm.gr != null) {
+            gm.gr.contdIdentificationPeriod = EditorGUILayout.IntField("Gesture Period (ms)", gm.gr.contdIdentificationPeriod);
+            gm.gr.contdIdentificationSmoothing = EditorGUILayout.IntField("Smoothing (samples)", gm.gr.contdIdentificationSmoothing);
+        } else if (gm.gc != null) {
+            for (int part=0; part < gm.gc.numberOfParts(); part++) {
+                if (gm.lefthand_combination_part == part) {
+                    EditorGUILayout.LabelField("Left Hand:");
+                } else if (gm.righthand_combination_part == part) {
+                    EditorGUILayout.LabelField("Right Hand:");
+                } else {
+                    EditorGUILayout.LabelField("Part " + part + ":");
+                }
+                gm.gc.setContdIdentificationPeriod(part, EditorGUILayout.IntField("Gesture Period (ms)", gm.gc.getContdIdentificationPeriod(part)));
+                gm.gc.setContdIdentificationSmoothing(part, EditorGUILayout.IntField("Smoothing (samples)", gm.gc.getContdIdentificationSmoothing(part)));
+            }
+        }
+        EditorGUILayout.EndVertical();
+
 
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical(GUI.skin.box);
