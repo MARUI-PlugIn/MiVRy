@@ -28,7 +28,9 @@ public class EditableTextField : MonoBehaviour
         GestureName,
         CombinationName,
         LoadFile,
-        SaveFile
+        SaveFile,
+        ContinuousGesturingPeriod,
+        ContinuousGesturingSmoothing,
     }
     public Target target;
 
@@ -103,6 +105,24 @@ public class EditableTextField : MonoBehaviour
                 else
                     text = "";
                 break;
+            case Target.ContinuousGesturingPeriod:
+                if (gm.gr != null) {
+                    text = $"{gm.gr.contdIdentificationPeriod}";
+                } else if (gm.gc != null) {
+                    text = $"{gm.gc.getContdIdentificationPeriod(0)}";
+                } else {
+                    text = "";
+                }
+                break;
+            case Target.ContinuousGesturingSmoothing:
+                if (gm.gr != null) {
+                    text = $"{gm.gr.contdIdentificationSmoothing}";
+                } else if (gm.gc != null) {
+                    text = $"{gm.gc.getContdIdentificationSmoothing(0)}";
+                } else {
+                    text = "";
+                }
+                break;
             default:
                 text = "???";
                 break;
@@ -156,6 +176,20 @@ public class EditableTextField : MonoBehaviour
                 else if (gm.gc != null)
                     gm.fileSaveCombinations = text;
                 break;
+            case Target.ContinuousGesturingPeriod:
+                if (gm.gr != null)
+                    gm.gr.contdIdentificationPeriod = int.Parse(text);
+                else if (gm.gc != null)
+                    for (int part = 0; part < gm.gc.numberOfParts(); part++)
+                        gm.gc.setContdIdentificationPeriod(part, int.Parse(text));
+                break;
+            case Target.ContinuousGesturingSmoothing:
+                if (gm.gr != null)
+                    gm.gr.contdIdentificationSmoothing = int.Parse(text);
+                else if (gm.gc != null)
+                    for (int part = 0; part < gm.gc.numberOfParts(); part++)
+                        gm.gc.setContdIdentificationSmoothing(part, int.Parse(text));
+                break;
         }
         this.refreshText();
     }
@@ -201,6 +235,18 @@ public class EditableTextField : MonoBehaviour
                     return gm.fileSaveGestures;
                 else if (gm.gc != null)
                     return gm.fileSaveCombinations;
+                return "[ERROR]";
+            case Target.ContinuousGesturingPeriod:
+                if (gm.gr != null)
+                    return $"{gm.gr.contdIdentificationPeriod}";
+                else if (gm.gc != null)
+                    return $"{gm.gc.getContdIdentificationPeriod(0)}";
+                return "[ERROR]";
+            case Target.ContinuousGesturingSmoothing:
+                if (gm.gr != null)
+                    return $"{gm.gr.contdIdentificationSmoothing}";
+                else if (gm.gc != null)
+                    return $"{gm.gc.getContdIdentificationSmoothing(0)}";
                 return "[ERROR]";
         }
         return "[ERROR]";

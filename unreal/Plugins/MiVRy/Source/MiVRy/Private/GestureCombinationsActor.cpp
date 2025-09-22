@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.12
+ * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -398,6 +398,24 @@ int AGestureCombinationsActor::contdRecordQ(const FVector& HMD_Location, const F
 	double hmd_q[4];
 	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, hmd_p, hmd_q);
 	return this->gco->contdRecord(hmd_p, hmd_q);
+}
+
+int AGestureCombinationsActor::contdRecordPart(int part, const FVector& HMD_Location, const FRotator& HMD_Rotation)
+{
+	if (!this->gco)
+		return -99;
+	FQuat quaternion = HMD_Rotation.Quaternion();
+	return this->contdRecordPartQ(part, HMD_Location, quaternion);
+}
+
+int AGestureCombinationsActor::contdRecordPartQ(int part, const FVector& HMD_Location, const FQuat& HMD_Rotation)
+{
+	if (!this->gco)
+		return -99;
+	double hmd_p[3];
+	double hmd_q[4];
+	UMiVRyUtil::convertInput(HMD_Location, HMD_Rotation, GestureRecognition_DeviceType::Headset, this->UnrealVRPlugin, this->MivryCoordinateSystem, hmd_p, hmd_q);
+	return this->gco->contdRecordPart(part, hmd_p, hmd_q);
 }
 
 int AGestureCombinationsActor::getContdIdentificationPeriod(int part)

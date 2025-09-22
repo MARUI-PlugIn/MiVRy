@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.12
+ * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -1132,7 +1132,8 @@ public class GestureCombinations
     //                                                          ________________________________
     //_________________________________________________________/    contdRecord()
     /// <summary>
-    /// Record gesture while performing it continuously.
+    /// Record gesture while performing it continuously, for all actively gesturing parts
+    /// (where `startStroke` has been called).
     /// </summary>
     /// <param name="hmd_p">The current position of the headset.</param>
     /// <param name="hmd_q">The current rotation/orientation of the headset.</param>
@@ -1144,6 +1145,23 @@ public class GestureCombinations
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
         return GestureCombinations_contdRecord(m_gc, _hmd_p, _hmd_q);
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    contdRecordPart()
+    /// <summary>
+    /// Record gesture while performing it continuously.
+    /// </summary>
+    /// <param name="part">The gesture combination part (hand side) index.</param>
+    /// <param name="hmd_p">The current position of the headset.</param>
+    /// <param name="hmd_q">The current rotation/orientation of the headset.</param>
+    /// <returns>
+    /// Zero on success, a negative error code if an error occurred.
+    /// </returns>
+    public int contdRecordPart(int part, Vector3 hmd_p, Quaternion hmd_q)
+    {
+        double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
+        double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
+        return GestureCombinations_contdRecordPart(m_gc, part, _hmd_p, _hmd_q);
     }
     //                                                          ________________________________
     //_________________________________________________________/ getContdIdentificationPeriod()
@@ -2456,6 +2474,8 @@ public class GestureCombinations
     public static extern int GestureCombinations_contdIdentifyGetLastStrokeInfo(IntPtr gco, int part, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdRecord", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_contdRecord(IntPtr gco, double[] hmd_p, double[] hmd_q);
+    [DllImport(libfile, EntryPoint = "GestureCombinations_contdRecordPart", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureCombinations_contdRecordPart(IntPtr gco, int part, double[] hmd_p, double[] hmd_q);
     [DllImport(libfile, EntryPoint = "GestureCombinations_getContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getContdIdentificationPeriod(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_setContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]

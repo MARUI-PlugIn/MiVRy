@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.12
+ * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -92,8 +92,6 @@ enum class GestureRecognition_ContinuousIdentification : uint8
 	Always = 2 UMETA(DisplayName = "Always"),
 	// TriggerToggles = 3 UMETA(DisplayName = "Trigger Toggles On/Off"),
 };
-
-
 
 /**
 * High-level gesture recognition actor for quick and easy use of
@@ -224,7 +222,9 @@ public:
 	* Whether gestures should be identified continuously during gesturing,
 	* instead of after a gesture motion is finished.
 	* NOTE: Continous gesture recognition is running *while* the trigger is pressed.
-	* So if you want to XXX
+	* So you still have to use the controller trigger to start the gesture operation.
+    * If you want to start gesturing without pressing a trigger, consider
+    * setting the threshold for the trigger to zero.
 	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MiVRy")
 		GestureRecognition_ContinuousIdentification ContinuousGestureRecognition = GestureRecognition_ContinuousIdentification::Off;
@@ -279,6 +279,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "MiVRy", Meta=(DisplayName="Start Gesturing", ExpandEnumAsExecs="Result"))
 		void startGesturing(GestureRecognition_Result& Result, int& ErrorCode, GestureRecognition_Side side = GestureRecognition_Side::Left);
 
+	/**
+	* Check whether the user is currently performing a gesture motion.
+	* @param side Which hand (left or right) to check for gesturing.
+	* @return True if the user is currently performing a gesture motion, false if not.
+	*/
 	UFUNCTION(BlueprintCallable, Category = "MiVRy", Meta = (DisplayName = "Is Gesturing"))
 		bool IsGesturing(GestureRecognition_Side side = GestureRecognition_Side::Left);
 

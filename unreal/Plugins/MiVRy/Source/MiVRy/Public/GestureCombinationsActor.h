@@ -1,6 +1,6 @@
 /*
  * MiVRy - VR gesture recognition library plug-in for Unreal.
- * Version 2.12
+ * Version 2.13
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
@@ -290,7 +290,7 @@ public:
 	int contdIdentifyQ(const FVector& HMD_Location, const FQuat& HMD_Rotation, float& Similarity, TArray<float>& PartsProbabilities, TArray<float>& PartsSimilarities);
 
 	/**
-	* Continuous gesture recording.
+	* Continuous gesture recording, for all actively gesturing parts (where `startStroke` has been called).
 	* @param HMD_Location The current position of the headset.
 	* @param HMD_Rotation The current rotation of the headset.
 	* @return Zero on success, a negative error code on failure.
@@ -299,13 +299,33 @@ public:
 	int contdRecord(const FVector& HMD_Location, const FRotator& HMD_Rotation);
 
 	/**
-	* Continuous gesture recording.
+	* Continuous gesture recording, for all actively gesturing parts (where `startStroke` has been called).
 	* @param HMD_Location The current position of the headset.
 	* @param HMD_Rotation The current rotation of the headset.
 	* @return Zero on success, a negative error code on failure.
 	*/
 	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Continuous Record (Quaternion Rotation)"))
 	int contdRecordQ(const FVector& HMD_Location, const FQuat& HMD_Rotation);
+
+	/**
+	* Continuous gesture recording.
+	* @param part The hand side index or gesture part ID for which to record the gesture motion.
+	* @param HMD_Location The current position of the headset.
+	* @param HMD_Rotation The current rotation of the headset.
+	* @return Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Continuous Record Part"))
+	int contdRecordPart(int part, const FVector& HMD_Location, const FRotator& HMD_Rotation);
+
+	/**
+	* Continuous gesture recording.
+	* @param part The hand side index or gesture part ID for which to record the gesture motion.
+	* @param HMD_Location The current position of the headset.
+	* @param HMD_Rotation The current rotation of the headset.
+	* @return Zero on success, a negative error code on failure.
+	*/
+	UFUNCTION(BlueprintCallable, Category = "Gesture Combinations", meta = (DisplayName = "Continuous Record Part (Quaternion Rotation)"))
+	int contdRecordPartQ(int part, const FVector& HMD_Location, const FQuat& HMD_Rotation);
 
 	/**
 	* Get time frame for continuous gesture identification in milliseconds.
