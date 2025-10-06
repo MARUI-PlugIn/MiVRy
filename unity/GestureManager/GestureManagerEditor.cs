@@ -49,7 +49,7 @@ public class GestureManagerEditor : UnityEditor.Editor
         var create_combination_name_prop = serializedObject.FindProperty("create_combination_name");
         var create_gesture_name_prop = serializedObject.FindProperty("create_gesture_name");
         // var create_gesture_names_prop = serializedObject.FindProperty("create_gesture_names");
-        var continous_gesturing_prop = serializedObject.FindProperty("continous_gesturing");
+        var continuous_gesturing_prop = serializedObject.FindProperty("continuous_gesturing");
         var record_gesture_id_prop = serializedObject.FindProperty("record_gesture_id");
         var record_combination_id_prop = serializedObject.FindProperty("record_combination_id");
         var lefthand_combination_part_prop = serializedObject.FindProperty("lefthand_combination_part");
@@ -480,7 +480,8 @@ public class GestureManagerEditor : UnityEditor.Editor
         EditorGUILayout.Space();
         EditorGUILayout.BeginVertical(GUI.skin.box);
         EditorGUILayout.LabelField("CONTINUOUS GESTURING:");
-        gm.continous_gesturing = EditorGUILayout.Toggle("Continuous Gesturing", gm.continous_gesturing);
+        gm.continuous_gesturing = EditorGUILayout.Toggle("Continuous Gesturing", gm.continuous_gesturing);
+        gm.continuous_gesturing_samplingrate = EditorGUILayout.IntField("Samples/s", (int)gm.continuous_gesturing_samplingrate);
         if (gm.gr != null) {
             gm.gr.contdIdentificationPeriod = EditorGUILayout.IntField("Gesture Period (ms)", gm.gr.contdIdentificationPeriod);
             gm.gr.contdIdentificationSmoothing = EditorGUILayout.IntField("Smoothing (samples)", gm.gr.contdIdentificationSmoothing);

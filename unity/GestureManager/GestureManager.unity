@@ -2056,7 +2056,8 @@ MonoBehaviour:
   - (new gesture name)
   - (new gesture name)
   - (new gesture name)
-  continous_gesturing: 0
+  continuous_gesturing: 0
+  continuous_gesturing_samplingrate: 5
   continuous_gesturing_last_t: 0
   record_gesture_id: -1
   record_combination_id: -1
@@ -3343,6 +3344,26 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4328913116674779762, guid: aad7edf1c2546ed44ba01dfab4eb7f7c,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.07119513
+      objectReference: {fileID: 0}
+    - target: {fileID: 4328913116674779762, guid: aad7edf1c2546ed44ba01dfab4eb7f7c,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.43709
+      objectReference: {fileID: 0}
+    - target: {fileID: 6482209169468844213, guid: aad7edf1c2546ed44ba01dfab4eb7f7c,
+        type: 3}
+      propertyPath: m_Text
+      value: "Period            ms\nSmoothing\n          Samples/s"
+      objectReference: {fileID: 0}
+    - target: {fileID: 7269460104210113957, guid: aad7edf1c2546ed44ba01dfab4eb7f7c,
+        type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.044675075
       objectReference: {fileID: 0}
     - target: {fileID: 8828522958296548224, guid: aad7edf1c2546ed44ba01dfab4eb7f7c,
         type: 3}

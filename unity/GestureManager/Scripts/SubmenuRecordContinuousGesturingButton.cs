@@ -17,21 +17,17 @@
  */
 
 using UnityEngine;
+using UnityEngine.InputSystem.Composites;
 
-public class SubmenuRecordContinousGesturingButton : GestureManagerButton
+public class SubmenuRecordContinuousGesturingButton : GestureManagerButton
 {
     public TextMesh buttonText;
-
-    public GameObject submenuContinousGesturing;
 
     void Start()
     {
         GestureManager gm = GestureManagerVR.me?.gestureManager;
         if (gm != null && buttonText != null) {
             buttonText.text = gm.compensate_head_motion ? "Yes" : "No";
-        }
-        if (submenuContinousGesturing != null) {
-            submenuContinousGesturing.SetActive(false);
         }
     }
 
@@ -46,13 +42,11 @@ public class SubmenuRecordContinousGesturingButton : GestureManagerButton
             return;
         GestureManagerVR.activeButton = this;
         this.material = activeButtonMaterial;
-        gm.continous_gesturing = !gm.continous_gesturing;
+        gm.continuous_gesturing = !gm.continuous_gesturing;
         if (buttonText != null) {
-            buttonText.text = gm.continous_gesturing ? "Yes" : "No";
+            buttonText.text = gm.continuous_gesturing ? "Yes" : "No";
         }
-        if (submenuContinousGesturing != null) {
-            submenuContinousGesturing.SetActive(gm.continous_gesturing);
-        }
+        GestureManagerVR.refresh();
         GestureManagerVR.setInputFocus(null);
     }
 

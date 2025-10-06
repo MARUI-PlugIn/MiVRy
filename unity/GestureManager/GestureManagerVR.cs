@@ -42,6 +42,8 @@ public class GestureManagerVR : MonoBehaviour
     public GameObject submenuCoordinateSystem = null;
     public GameObject submenuFrameOfReference = null;
     public GameObject submenuTraining = null;
+    public GameObject submenuCreateCombinationParts = null;
+    public GameObject submenuContinuousGesturing = null;
 
     public static GestureManagerButton activeButton = null;
 
@@ -225,6 +227,12 @@ public class GestureManagerVR : MonoBehaviour
                 case "SubmenuTraining":
                     submenuTraining = child;
                     break;
+                case "SubmenuCreateCombinationParts":
+                    submenuCreateCombinationParts = child;
+                    break;
+                case "SubmenuContinuousGesturing":
+                    submenuContinuousGesturing = child;
+                    break;
                 case "SampleDisplayHeadset":
                     sampleDisplay.headsetModel = child;
                     break;
@@ -311,6 +319,8 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuCoordinateSystem.GetComponent<SubmenuCoordinateSystem>().refresh();
             me.submenuFrameOfReference.SetActive(false);
             me.submenuTraining.SetActive(false);
+            me.submenuCreateCombinationParts.SetActive(false);
+            me.submenuContinuousGesturing.SetActive(false);
         } else if (me.gestureManager.numberOfParts == 1) {
             me.submenuNumberOfParts.SetActive(true);
             me.submenuFiles.SetActive(true);
@@ -331,6 +341,9 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuRecord.transform.localPosition = Vector3.forward * 0.135f;
             me.submenuCoordinateSystem.transform.localPosition = Vector3.forward * 0.135f;
             me.submenuFrameOfReference.transform.localPosition = Vector3.forward * 0.135f;
+            me.submenuCreateCombinationParts.SetActive(false);
+            me.submenuContinuousGesturing.transform.localPosition = Vector3.forward * 0.135f;
+            me.submenuContinuousGesturing.SetActive(me.gestureManager.continuous_gesturing);
         } else {
             me.submenuNumberOfParts.SetActive(true);
             me.submenuFiles.SetActive(true);
@@ -352,12 +365,12 @@ public class GestureManagerVR : MonoBehaviour
             me.submenuRecord.transform.localPosition = Vector3.zero;
             me.submenuCoordinateSystem.transform.localPosition = Vector3.zero;
             me.submenuFrameOfReference.transform.localPosition = Vector3.zero;
+            me.submenuContinuousGesturing.transform.localPosition = Vector3.zero;
+            me.submenuContinuousGesturing.SetActive(me.gestureManager.continuous_gesturing);
         }
         var editableTextFields = FindObjectsOfType<EditableTextField>();
-        foreach (var editableTextField in editableTextFields)
-        {
-            if (editableTextField.gameObject.activeSelf)
-            {
+        foreach (var editableTextField in editableTextFields) {
+            if (editableTextField.gameObject.activeSelf) {
                 editableTextField.refreshText();
             }
         }

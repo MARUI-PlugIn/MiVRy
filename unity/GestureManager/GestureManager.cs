@@ -476,7 +476,9 @@ public class GestureManager : MonoBehaviour
     public string create_combination_name = "(new gesture combination name)";
     public string create_gesture_name = "(new gesture name)";
     public string[] create_gesture_names = null;
-    public bool continous_gesturing = false;
+    public bool continuous_gesturing = false;
+    public long continuous_gesturing_samplingrate = 5; // samples/sec
+    private long continuous_gesturing_samplingrate_ms => (continuous_gesturing_samplingrate <= 0) ? 0 : 1000 / continuous_gesturing_samplingrate;
     public Dictionary<int,long> continuous_gesturing_started = new Dictionary<int,long>() { {0,0}, {1,0} };
     public long continuous_gesturing_last_t = 0;
     public int record_gesture_id = -1;
@@ -828,7 +830,7 @@ public class GestureManager : MonoBehaviour
                 // If we arrive here: either trigger was pressed, so we start the gesture.
                 gr.startStroke(hmd_p, hmd_q, record_gesture_id);
                 gesture_started = true;
-                if (continous_gesturing) {
+                if (continuous_gesturing) {
                     continuous_gesturing_started[0] = DateTime.Now.Ticks;
                 }
                 return;
@@ -844,11 +846,11 @@ public class GestureManager : MonoBehaviour
                 Mivry.convertHandInput(this.unityXrPlugin, this.mivryCoordinateSystem, ref p, ref q);
                 gr.contdStrokeQ(p, q);
                 addToStrokeTrail(active_controller_pointer.transform.position, 0);
-                if (continous_gesturing) {
+                if (continuous_gesturing) {
                     long now = DateTime.Now.Ticks;
                     long ms_since_started = (now - continuous_gesturing_started[0]) / TimeSpan.TicksPerMillisecond;
                     long ms_since_last_t = (now - continuous_gesturing_last_t) / TimeSpan.TicksPerMillisecond;
-                    if (ms_since_started > gr.contdIdentificationPeriod && ms_since_last_t > 100) {
+                    if (ms_since_started > gr.contdIdentificationPeriod && ms_since_last_t > continuous_gesturing_samplingrate_ms) {
                         continuous_gesturing_last_t = now;
                         if (record_gesture_id >= 0) {
                             gr.contdRecord(hmd_p, hmd_q);
@@ -913,7 +915,7 @@ public class GestureManager : MonoBehaviour
                     : - 1;
                 gc.startStroke(lefthand_combination_part, hmd_p, hmd_q, gesture_id);
                 gesture_started = true;
-                if (continous_gesturing) {
+                if (continuous_gesturing) {
                     if (continuous_gesturing_started.ContainsKey(lefthand_combination_part)) {
                         continuous_gesturing_started[lefthand_combination_part] = DateTime.Now.Ticks;
                     } else {
@@ -929,7 +931,7 @@ public class GestureManager : MonoBehaviour
                     : - 1;
                 gc.startStroke(righthand_combination_part, hmd_p, hmd_q, gesture_id);
                 gesture_started = true;
-                if (continous_gesturing) {
+                if (continuous_gesturing) {
                     if (continuous_gesturing_started.ContainsKey(righthand_combination_part)) {
                         continuous_gesturing_started[righthand_combination_part] = DateTime.Now.Ticks;
                     } else {
@@ -989,14 +991,14 @@ public class GestureManager : MonoBehaviour
             int recognized_combination_id;
 
             if (trigger_pressed_left || trigger_pressed_right) {
-                if (continous_gesturing) {
+                if (continuous_gesturing) {
                     long now = DateTime.Now.Ticks;
                     bool left_blocked = trigger_pressed_left
                         && ((now - continuous_gesturing_started[lefthand_combination_part]) / TimeSpan.TicksPerMillisecond) < gc.getContdIdentificationPeriod(lefthand_combination_part);
                     bool right_blocked = trigger_pressed_right
                         && ((now - continuous_gesturing_started[righthand_combination_part]) / TimeSpan.TicksPerMillisecond) < gc.getContdIdentificationPeriod(righthand_combination_part);
                     long ms_since_last_t = (now - continuous_gesturing_last_t) / TimeSpan.TicksPerMillisecond;
-                    if (!left_blocked && !right_blocked && ms_since_last_t > 100) {
+                    if (!left_blocked && !right_blocked && ms_since_last_t > continuous_gesturing_samplingrate_ms) {
                         continuous_gesturing_last_t = now;
                         if (record_combination_id >= 0) {
                             gc.contdRecord(hmd_p, hmd_q);
