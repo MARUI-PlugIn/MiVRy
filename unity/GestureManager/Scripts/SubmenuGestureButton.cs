@@ -65,6 +65,7 @@ public class SubmenuGestureButton : GestureManagerButton
                 if (gm.record_gesture_id >= 0) {
                     gm.record_gesture_id = this.submenuGesture.CurrentGesture;
                 }
+                SampleDisplay.sampleId = -1;
                 break;
             case Operation.DeleteGesture:
                 if (this.submenuGesture.CurrentGesture >= 0)
@@ -75,6 +76,7 @@ public class SubmenuGestureButton : GestureManagerButton
                     if (gm.record_gesture_id >= 0) {
                         gm.record_gesture_id = this.submenuGesture.CurrentGesture;
                     }
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.DeleteLastSample:
@@ -88,6 +90,7 @@ public class SubmenuGestureButton : GestureManagerButton
                         if (numSamples > 0)
                             gm.gc.deleteGestureSample(this.submenuGesture.CurrentPart, this.submenuGesture.CurrentGesture, numSamples - 1);
                     }
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.DeleteAllSamples:
@@ -96,6 +99,7 @@ public class SubmenuGestureButton : GestureManagerButton
                         gm.gr.deleteAllGestureSamples(this.submenuGesture.CurrentGesture);
                     else if (gm.gc != null)
                         gm.gc.deleteAllGestureSamples(this.submenuGesture.CurrentPart, this.submenuGesture.CurrentGesture);
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.NextGesture:
@@ -114,6 +118,7 @@ public class SubmenuGestureButton : GestureManagerButton
                     if (gm.record_gesture_id >= 0) {
                         gm.record_gesture_id = this.submenuGesture.CurrentGesture;
                     }
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.PreviousGesture:
@@ -132,6 +137,7 @@ public class SubmenuGestureButton : GestureManagerButton
                     if (gm.record_gesture_id >= 0) {
                         gm.record_gesture_id = this.submenuGesture.CurrentGesture;
                     }
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.NextPart:
@@ -145,6 +151,7 @@ public class SubmenuGestureButton : GestureManagerButton
                         this.submenuGesture.CurrentPart = 0;
                     else
                         this.submenuGesture.CurrentPart++;
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.PreviousPart:
@@ -158,6 +165,7 @@ public class SubmenuGestureButton : GestureManagerButton
                         this.submenuGesture.CurrentPart = numParts - 1;
                     else
                         this.submenuGesture.CurrentPart--;
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
         }

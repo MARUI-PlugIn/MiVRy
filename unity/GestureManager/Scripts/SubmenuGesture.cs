@@ -20,6 +20,8 @@ using UnityEngine;
 
 public class SubmenuGesture : MonoBehaviour
 {
+    public static SubmenuGesture me;
+
     private bool initialized = false;
     private GameObject PartNextBtn;
     private GameObject PartPrevBtn;
@@ -34,12 +36,24 @@ public class SubmenuGesture : MonoBehaviour
     private GameObject GestureSamplesText;
     private GameObject GestureDeleteGestureBtn;
 
+    private GameObject SampleDisplayText;
+    private TextMesh SampleDisplayValue;
+    private SubmenuGestureSampleDisplayButton SampleDisplayNextButton;
+    private SubmenuGestureSampleDisplayButton SampleDisplayPrevButton;
+    private SubmenuGestureSampleDeleteButton SampleDeleteButton;
+
     private int currentPart = -1;
 
     public int CurrentPart
     {
         get { return currentPart; }
-        set { currentPart = value; refresh(); }
+        set {
+            if (value != currentPart) {
+                currentPart = value;
+                SampleDisplay.sampleId = -1;
+                refresh();
+            }
+        }
     }
 
     private int currentGesture = -1;
@@ -47,22 +61,27 @@ public class SubmenuGesture : MonoBehaviour
     public int CurrentGesture
     {
         get { return currentGesture; }
-        set { currentGesture = value; refresh(); }
+        set {
+            if (value != currentGesture) {
+                currentGesture = value;
+                SampleDisplay.sampleId = -1;
+                refresh();
+            }
+        }
     }
 
     void Start()
     {
+        me = this;
         this.init();
         this.refresh();
     }
 
     private void init()
     {
-        for (int i=0; i<this.transform.childCount; i++)
-        {
+        for (int i=0; i<this.transform.childCount; i++) {
             GameObject child = this.transform.GetChild(i).gameObject;
-            switch (child.name)
-            {
+            switch (child.name) {
                 case "SubmenuGesturePartNextBtn":
                     PartNextBtn = child;
                     break;
@@ -99,6 +118,21 @@ public class SubmenuGesture : MonoBehaviour
                 case "SubmenuGestureDeleteGestureBtn":
                     GestureDeleteGestureBtn = child;
                     break;
+                case "SubmenuGestureSampleDisplayText":
+                    SampleDisplayText = child;
+                    break;
+                case "SubmenuGestureSampleDisplayPrevBtn":
+                    SampleDisplayPrevButton = child.GetComponent<SubmenuGestureSampleDisplayButton>();
+                    break;
+                case "SubmenuGestureSampleDisplayValue":
+                    SampleDisplayValue = child.GetComponent<TextMesh>();
+                    break;
+                case "SubmenuGestureSampleDisplayNextBtn":
+                    SampleDisplayNextButton = child.GetComponent<SubmenuGestureSampleDisplayButton>();
+                    break;
+                case "SubmenuGestureDeleteSampleBtn":
+                    SampleDeleteButton = child.GetComponent<SubmenuGestureSampleDeleteButton>();
+                    break;
             }
         }
         this.initialized = true;
@@ -111,15 +145,13 @@ public class SubmenuGesture : MonoBehaviour
         GestureManager gm = GestureManagerVR.me?.gestureManager;
         if (gm == null)
             return;
-        if (gm.gr != null)
-        {
+        if (gm.gr != null) {
             PartNextBtn.SetActive(false);
             PartPrevBtn.SetActive(false);
             PartText.SetActive(false);
             GestureCreateBtn.SetActive(true);
             int numGestures = gm.gr.numberOfGestures();
-            if (numGestures <= 0)
-            {
+            if (numGestures <= 0) {
                 GestureNextBtn.SetActive(false);
                 GesturePrevBtn.SetActive(false);
                 GestureNameText.SetActive(false);
@@ -128,10 +160,16 @@ public class SubmenuGesture : MonoBehaviour
                 GestureDeleteAllSamplesBtn.SetActive(false);
                 GestureSamplesText.SetActive(false);
                 GestureDeleteGestureBtn.SetActive(false);
+                SampleDisplayText.SetActive(false);
+                SampleDisplayPrevButton.gameObject.SetActive(false);
+                SampleDisplayValue.gameObject.SetActive(false);
+                SampleDisplayNextButton.gameObject.SetActive(false);
+                SampleDeleteButton.gameObject.SetActive(false);
                 return;
             }
-            if (this.currentGesture < 0 || this.currentGesture >= numGestures)
+            if (this.currentGesture < 0 || this.currentGesture >= numGestures) {
                 this.currentGesture = 0;
+            }
             GestureNextBtn.SetActive(true);
             GesturePrevBtn.SetActive(true);
             GestureNameText.SetActive(true);
@@ -141,30 +179,52 @@ public class SubmenuGesture : MonoBehaviour
             GestureSamplesText.SetActive(true);
             GestureDeleteGestureBtn.SetActive(true);
             TextMesh tm = GestureNameText.GetComponent<TextMesh>();
-            if (tm != null)
+            if (tm != null) {
                 tm.text = gm.gr.getGestureName(this.currentGesture);
+            }
+            int numSamples = gm.gr.getGestureNumberOfSamples(this.currentGesture);
             tm = GestureSamplesText.GetComponent<TextMesh>();
-            if (tm != null)
-                tm.text = $"{gm.gr.getGestureNumberOfSamples(this.currentGesture)} samples";
+            if (tm != null) {
+                tm.text = $"{numSamples} samples";
+            }
+            if (numSamples <= 0) {
+                SampleDisplayText.SetActive(false);
+                SampleDisplayPrevButton.gameObject.SetActive(false);
+                SampleDisplayValue.gameObject.SetActive(false);
+                SampleDisplayNextButton.gameObject.SetActive(false);
+                SampleDeleteButton.gameObject.SetActive(false);
+            } else {
+                SampleDisplayText.SetActive(true);
+                SampleDisplayPrevButton.gameObject.SetActive(true);
+                SampleDisplayNextButton.gameObject.SetActive(true);
+                SampleDisplayValue.gameObject.SetActive(true);
+                if (SampleDisplay.sampleId < 0) {
+                    SampleDisplayValue.text = $"Off";
+                    SampleDeleteButton.gameObject.SetActive(false);
+                } else {
+                    SampleDeleteButton.gameObject.SetActive(true);
+                    SampleDisplayValue.text = $"{SampleDisplay.sampleId}";
+                }
+            }
             return;
-        } else if (gm.gc != null)
-        {
+        } else if (gm.gc != null) {
             int numParts = gm.gc.numberOfParts();
-            if (numParts <= 0)
+            if (numParts <= 0) {
                 return;
-            if (this.currentPart < 0 || this.currentPart >= numParts)
+            }
+            if (this.currentPart < 0 || this.currentPart >= numParts) {
                 this.currentPart = numParts - 1;
+            }
             PartNextBtn.SetActive(true);
             PartPrevBtn.SetActive(true);
             PartText.SetActive(true);
             TextMesh tm = PartText.GetComponent<TextMesh>();
-            if (tm != null)
+            if (tm != null) {
                 tm.text = (currentPart == 0) ? "Left (0)" : (currentPart == 1) ? "Right (1)" : $"Part {currentPart+1}";
-
+            }
             GestureCreateBtn.SetActive(true);
             int numGestures = gm.gc.numberOfGestures(this.currentPart);
-            if (numGestures <= 0)
-            {
+            if (numGestures <= 0) {
                 GestureNextBtn.SetActive(false);
                 GesturePrevBtn.SetActive(false);
                 GestureNameText.SetActive(false);
@@ -173,10 +233,16 @@ public class SubmenuGesture : MonoBehaviour
                 GestureDeleteAllSamplesBtn.SetActive(false);
                 GestureSamplesText.SetActive(false);
                 GestureDeleteGestureBtn.SetActive(false);
+                SampleDisplayText.SetActive(false);
+                SampleDisplayPrevButton.gameObject.SetActive(false);
+                SampleDisplayValue.gameObject.SetActive(false);
+                SampleDisplayNextButton.gameObject.SetActive(false);
+                SampleDeleteButton.gameObject.SetActive(false);
                 return;
             }
-            if (this.currentGesture < 0 || this.currentGesture >= numGestures)
+            if (this.currentGesture < 0 || this.currentGesture >= numGestures) {
                 this.currentGesture = 0;
+            }
             GestureNextBtn.SetActive(true);
             GesturePrevBtn.SetActive(true);
             GestureNameText.SetActive(true);
@@ -186,11 +252,33 @@ public class SubmenuGesture : MonoBehaviour
             GestureSamplesText.SetActive(true);
             GestureDeleteGestureBtn.SetActive(true);
             tm = GestureNameText.GetComponent<TextMesh>();
-            if (tm != null)
+            if (tm != null) {
                 tm.text = gm.gc.getGestureName(this.currentPart, this.currentGesture);
+            }
+            int numSamples = gm.gc.getGestureNumberOfSamples(this.currentPart, this.currentGesture);
             tm = GestureSamplesText.GetComponent<TextMesh>();
-            if (tm != null)
-                tm.text = $"{gm.gc.getGestureNumberOfSamples(this.currentPart, this.currentGesture)} samples";
+            if (tm != null) {
+                tm.text = $"{numSamples} samples";
+            }
+            if (numSamples <= 0) {
+                SampleDisplayText.SetActive(false);
+                SampleDisplayPrevButton.gameObject.SetActive(false);
+                SampleDisplayValue.gameObject.SetActive(false);
+                SampleDisplayNextButton.gameObject.SetActive(false);
+                SampleDeleteButton.gameObject.SetActive(false);
+            } else {
+                SampleDisplayText.SetActive(true);
+                SampleDisplayPrevButton.gameObject.SetActive(true);
+                SampleDisplayNextButton.gameObject.SetActive(true);
+                SampleDisplayValue.gameObject.SetActive(true);
+                if (SampleDisplay.sampleId < 0) {
+                    SampleDisplayValue.text = $"Off";
+                    SampleDeleteButton.gameObject.SetActive(false);
+                } else {
+                    SampleDeleteButton.gameObject.SetActive(true);
+                    SampleDisplayValue.text = $"{SampleDisplay.sampleId}";
+                }
+            }
             return;
         }
     }

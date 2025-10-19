@@ -17,6 +17,7 @@
  */
 
 using UnityEngine;
+using static GestureCompletionData;
 
 public class SubmenuCombinationButton : GestureManagerButton
 {
@@ -64,27 +65,22 @@ public class SubmenuCombinationButton : GestureManagerButton
                     gm.record_combination_id = this.submenuCombination.CurrentCombination;
                 }
                 this.submenuCombination.SubmenuCreateCombinationParts.SetActive(true);
+                refreshSubmenuGesture();
+                SampleDisplay.sampleId = -1;
                 break;
             case Operation.CreatePartsForNewCombinationYes:
-                SubmenuGesture submenuGesture = Component.FindAnyObjectByType<SubmenuGesture>();
                 if (gm.gc != null && this.submenuCombination.CurrentCombination >= 0) {
                     int comboId = this.submenuCombination.CurrentCombination;
                     string comboName = gm.gc.getGestureCombinationName(comboId);
                     for (int part = gm.gc.numberOfParts()-1; part >=0; part--) {
                         int gestureId = gm.gc.createGesture(part, comboName);
                         gm.gc.setCombinationPartGesture(comboId, part, gestureId);
-                        if (submenuGesture != null) {
-                            if (submenuGesture.CurrentPart < 0  || submenuGesture.CurrentPart == part) {
-                                submenuGesture.CurrentPart = part;
-                                submenuGesture.CurrentGesture = gestureId;
-                                submenuGesture.refresh();
-                            }
-                        }
                     }
                 }
                 this.submenuCombination.SubmenuCreateCombinationParts.SetActive(false);
                 this.submenuCombination.refresh();
-
+                refreshSubmenuGesture();
+                SampleDisplay.sampleId = -1;
                 break;
             case Operation.CreatePartsForNewCombinationNo:
                 this.submenuCombination.SubmenuCreateCombinationParts.SetActive(false);
@@ -97,6 +93,8 @@ public class SubmenuCombinationButton : GestureManagerButton
                         gm.record_combination_id = this.submenuCombination.CurrentCombination;
                     }
                 }
+                refreshSubmenuGesture();
+                SampleDisplay.sampleId = -1;
                 break;
             case Operation.NextCombination:
                 {
@@ -111,6 +109,8 @@ public class SubmenuCombinationButton : GestureManagerButton
                     if (gm.record_combination_id >= 0) {
                         gm.record_combination_id = this.submenuCombination.CurrentCombination;
                     }
+                    refreshSubmenuGesture();
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.PreviousCombination:
@@ -126,6 +126,8 @@ public class SubmenuCombinationButton : GestureManagerButton
                     if (gm.record_combination_id >= 0) {
                         gm.record_combination_id = this.submenuCombination.CurrentCombination;
                     }
+                    refreshSubmenuGesture();
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.NextPart:
@@ -162,6 +164,8 @@ public class SubmenuCombinationButton : GestureManagerButton
                     } else {
                         this.submenuCombination.CurrentGesture++;
                     }
+                    refreshSubmenuGesture();
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
             case Operation.PreviousGesture:
@@ -174,6 +178,8 @@ public class SubmenuCombinationButton : GestureManagerButton
                     } else {
                         this.submenuCombination.CurrentGesture--;
                     }
+                    refreshSubmenuGesture();
+                    SampleDisplay.sampleId = -1;
                 }
                 break;
         }
@@ -193,5 +199,15 @@ public class SubmenuCombinationButton : GestureManagerButton
         if ((Object)GestureManagerVR.activeButton == this)
             GestureManagerVR.activeButton = null;
         this.material = inactiveButtonMaterial;
+    }
+
+    private void refreshSubmenuGesture()
+    {
+        SubmenuGesture submenuGesture = Component.FindAnyObjectByType<SubmenuGesture>();
+        if (submenuGesture != null) {
+            submenuGesture.CurrentPart = this.submenuCombination.CurrentPart;
+            submenuGesture.CurrentGesture = this.submenuCombination.CurrentGesture;
+            submenuGesture.refresh();
+        }
     }
 }
