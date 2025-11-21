@@ -28,6 +28,7 @@
 #include "EnhancedInputComponent.h"
 #include "GestureRecognition.h"
 #include "GestureCombinations.h"
+#include "Runtime/Launch/Resources/Version.h" // for ENGINE_MAJOR_VERSION / ENGINE_MINOR_VERSION
 
 void FMiVRyGesturePart::parse(const double pos[3], double scale, const double dir0[3], const double dir1[3], const double dir2[3], GestureRecognition_CoordinateSystem coordsys)
 {
@@ -285,20 +286,38 @@ void AMiVRyActor::Tick(float DeltaTime)
 			continue;
 		}
 		FVector location;
-		FRotator rotation;
+		FQuat quaternion;
 		USceneComponent* motion_controller = motion_controllers[side];
 		AActor* hand_actor = hand_actors[side];
 		if (motion_controller) {
 			// motion_controller->Activate(true);
 			location = motion_controller->GetComponentLocation();
-			rotation = motion_controller->GetComponentRotation();
+			FRotator rotation = motion_controller->GetComponentRotation();
+			quaternion = rotation.Quaternion();
 		} else if (hand_actor) {
 			location = hand_actor->GetActorLocation();
-			rotation = hand_actor->GetActorRotation();
+			FRotator rotation = hand_actor->GetActorRotation();
+			quaternion = rotation.Quaternion();
 		} else {
 			if (GEngine == nullptr || !GEngine->XRSystem.IsValid()) {
 				continue;
 			}
+#if ENGINE_MAJOR_VERSION >= 5 && ENGINE_MINOR_VERSION >= 7
+			UObject* WorldContext = this; // Any object in the world (the player pawn would work).
+			EXRSpaceType XRSpaceType = EXRSpaceType::UnrealWorldSpace;
+			EControllerHand Hand = (side == 0) ? EControllerHand::Left : EControllerHand::Right;
+			EXRControllerPoseType XRControllerPoseType = EXRControllerPoseType::Grip;
+			FXRMotionControllerState MotionControllerState;
+			// FXRHandTrackingState HandTrackingState;
+			GEngine->XRSystem->GetMotionControllerState(WorldContext, XRSpaceType, Hand, XRControllerPoseType, MotionControllerState);
+			if (!MotionControllerState.bValid) {
+				UE_LOG(LogTemp, Warning, TEXT("[MiVRyActor] unable to track %s controller"),
+					(side == (uint8)GestureRecognition_Side::Left ? TEXT("left") : TEXT("right")));
+				continue;
+			}
+			location = MotionControllerState.ControllerLocation;
+			quaternion = MotionControllerState.ControllerRotation;
+#else
 			FXRMotionControllerData data;
 			GEngine->XRSystem->GetMotionControllerData(nullptr, controller_hand[side], data);
 			if (data.GripPosition.IsZero()) {
@@ -307,9 +326,10 @@ void AMiVRyActor::Tick(float DeltaTime)
 				continue;
 			}
 			location = data.GripPosition;
-			rotation = data.GripRotation.Rotator();
+			FRotator rotation = data.GripRotation.Rotator();
+			quaternion = rotation.Quaternion();
+#endif
 		}
-		FQuat quaternion = rotation.Quaternion();
 
 		double p[3];
 		double q[4];
