@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureRecognition - 3D gesture recognition library.
- * Version 2.13
+ * Version 2.14
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -131,7 +131,8 @@
 #define GESTURERECOGNITION_TRAININGPARAMETER_ORIENTATIONALGORITHM   7 //!< Training parameter for which orientation algorithm to use. Use "-1" for "auto".
 #define GESTURERECOGNITION_TRAININGPARAMETER_PIVOTPOINT             8 //!< Training parameter for which pivot point to use. Use "-1" for "auto".
 #define GESTURERECOGNITION_TRAININGPARAMETER_ACTIVATIONFUNCTION     9 //!< Training parameter for which activation function to use. Use "-1" for "auto".
-#define GESTURERECOGNITION_TRAININGPARAMETER_ACTIVATIONFACTOR       10//!< Training parameter for which activation factor to use. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_ACTIVATIONFACTOR       10 //!< Training parameter for which activation factor to use. Use "-1" for "auto".
+#define GESTURERECOGNITION_TRAININGPARAMETER_USETIMESTAMP           11//!< Training parameter for whether to use path rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
 
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONPERIOD       1000//!< Default time frame for continuous gesture identification in milliseconds.
 #define GESTURERECOGNITION_DEFAULT_CONTDIDENTIFICATIONSMOOTHING    3   //!< Default smoothing setting for continuous gesture identification in number of samples.
@@ -208,6 +209,9 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_deleteAllGestures(void* gro); //!< Delete recorded gestures.
     GESTURERECOGNITION_LIBEXPORT int  GestureRecognition_createGesture(void* gro, const char* name, void* metadata); //!< Create new gesture.
     GESTURERECOGNITION_LIBEXPORT double GestureRecognition_recognitionScore(void* gro); //!< Get the gesture recognition score of the current neural network (0~1).
+
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_getLastTrainingDetailsLength(void* gro); //!< Get the length of the string describing details about the latest training session.
+    GESTURERECOGNITION_LIBEXPORT int GestureRecognition_copyLastTrainingDetails(void* gro, char* buf, int buflen); //<! Copy the string describing details about the latest training session to a buffer.
         
     GESTURERECOGNITION_LIBEXPORT const char* GestureRecognition_getGestureName(void* gro, int index); //!< Get the name of a registered gesture.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureNameLength(void* gro, int index); //!< Get the length of the name of a registered gesture.
@@ -219,6 +223,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_setGestureSampleType(void* gro, int gesture_index, int sample_index, int type); //!< Set the stroke type of a previously recorded sample.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleLength(void* gro, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStroke(void* gro, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]); //!< Retrieve a sample stroke.
+    GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureSampleStrokeT(void* gro, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4], double t[]); //!< Retrieve a sample stroke.
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanLength(void* gro, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_getGestureMeanStroke(void* gro, int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double stroke_p[3], double stroke_q[4], double* scale); //!< Retrieve a gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureRecognition_deleteGestureSample(void* gro, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
@@ -826,6 +831,20 @@ public:
     virtual double recognitionScore(bool all_samples=false)=0;
 
     /**
+    * Get the length of the string describing details about the latest training session.
+    * \return                   The number of characters in the description string, a negative error code on failure.
+    */
+    virtual int getLastTrainingDetailsLength()=0;
+
+    /**
+    * Copy the string describing details about the latest training session to a buffer.
+    * \param    buf             The string buffer to which to write the details.
+    * \param    buflen          The length of the `buf` string buffer.
+    * \return                   The number of characters written to the buffer, zero on failure.
+    */
+    virtual int copyLastTrainingDetails(char* buf, int buflen)=0;
+
+    /**
     * Get the name of a registered gesture.
     * \param    index           The gesture ID of the gesture whose name to query.
     * \return                   String name of the gesture, zero on failure.
@@ -842,8 +861,8 @@ public:
     /**
     * Copy the name of a registered gesture to a buffer.
     * \param    index           The gesture ID of the gesture whose name to copy.
-    * \param    buf             [OUT] The string buffer to which to write the gesture name.
-    * \param    buflen          The length of the buf string buffer.
+    * \param    buf             The string buffer to which to write the gesture name.
+    * \param    buflen          The length of the `buf` string buffer.
     * \return                   The number of characters written to the buffer, zero on failure.
     */
     virtual int copyGestureName(int index, char* buf, int buflen)=0;
@@ -910,9 +929,10 @@ public:
     * \param   q               [OUT][OPTIONAL] A place to store the stroke rotational data. May be zero if this data is not required.
     * \param   hmd_p           [OUT][OPTIONAL] A place to store the HMD positional data. May be zero if this data is not required.
     * \param   hmd_q           [OUT][OPTIONAL] A place to store the HMD rotational data. May be zero if this data is not required.
+    * \param   t               [OUT][OPTIONAL] A place to store the timestamps (in seconds). May be zero if this data is not required.
     * \return  The number of stroke sample data points that have been written, 0 if an error occurred.
     */
-    virtual int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]) const =0;
+    virtual int getGestureSampleStroke(int gesture_index, int sample_index, bool processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4], double t[]=nullptr) const =0;
 
     /**
     * Get the number of samples of the gesture mean (average over samples).
@@ -1206,6 +1226,8 @@ public:
         TrainingParameter_SampleResolution     = GESTURERECOGNITION_TRAININGPARAMETER_SAMPLERESOLUTION //!< Training parameter for the number of data points per sample. Use "-1" for "auto".
         ,
         TrainingParameter_ControllerRotation   = GESTURERECOGNITION_TRAININGPARAMETER_CONTROLLERROTATION //!< Training parameter for whether to use controller rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
+        ,
+        TrainingParameter_UseTimestamp         = GESTURERECOGNITION_TRAININGPARAMETER_USETIMESTAMP //!< Training parameter for whether to use timestamps. "0" mean no, "1" means yes. Use "-1" for "auto".
         ,
         TrainingParameter_RotatePath           = GESTURERECOGNITION_TRAININGPARAMETER_ROTATEPATH //!< Training parameter for whether to use path rotation. "0" mean no, "1" means yes. Use "-1" for "auto".
         ,

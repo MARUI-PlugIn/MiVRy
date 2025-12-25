@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.13
+ * Version 2.14
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -1511,8 +1511,7 @@ public class GestureRecognition
         hmd_p = null;
         hmd_q = null;
         int sample_length = this.getGestureSampleLength(gesture_index, sample_index, processed);
-        if (sample_length <= 0)
-        {
+        if (sample_length <= 0) {
             return sample_length;
         }
         double[] _hmd_p = new double[3 * sample_length];
@@ -1520,16 +1519,14 @@ public class GestureRecognition
         double[] _p = new double[3 * sample_length];
         double[] _q = new double[4 * sample_length];
         int samples_written = GestureRecognition_getGestureSampleStroke(m_gro, gesture_index, sample_index, processed, sample_length, _p, _q, _hmd_p, _hmd_q);
-        if (samples_written <= 0)
-        {
+        if (samples_written <= 0) {
             return samples_written;
         }
         p = new Vector3[samples_written];
         q = new Quaternion[samples_written];
         hmd_p = new Vector3[samples_written];
         hmd_q = new Quaternion[samples_written];
-        for (int i = 0; i < samples_written; i++)
-        {
+        for (int i = 0; i < samples_written; i++) {
             p[i].x = (float)_p[i * 3 + 0];
             p[i].y = (float)_p[i * 3 + 1];
             p[i].z = (float)_p[i * 3 + 2];
@@ -1544,6 +1541,66 @@ public class GestureRecognition
             hmd_q[i].y = (float)_hmd_q[i * 4 + 1];
             hmd_q[i].z = (float)_hmd_q[i * 4 + 2];
             hmd_q[i].w = (float)_hmd_q[i * 4 + 3];
+        }
+        return samples_written;
+    }
+    //                                                          ________________________________
+    //_________________________________________________________/    getGestureSampleStroke()
+    /// <summary>
+    /// Retrieve a sample stroke.
+    /// </summary>
+    /// <param name="gesture_index">The zero-based index (ID) of the gesture from where to retrieve the sample.</param>
+    /// <param name="sample_index">The zero-based index(ID) of the sample to retrieve.</param>
+    /// <param name="processed">Whether the raw data points should be retrieved (0) or the processed data points (1).</param>
+    /// <param name="p">[OUT] A vector array to receive the positional data points of the stroke / recorded sample.</param>
+    /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
+    /// <param name="hmd_p">[OUT] A vector array to receive the position of the HMD at the time of the stroke sample recording.</param>
+    /// <param name="hmd_q">[OUT] A quaternion array to receive the rotation of the HMD at the time of the stroke sample recording.</param>
+    /// <param name="t">[OUT] A double array to receive the timestamps of the stroke sample recording (in seconds).</param>
+    /// <returns>
+    /// The number of data points on that sample (ie. resulting length of p and q).
+    /// </returns>
+    public int getGestureSampleStroke(int gesture_index, int sample_index, int processed, ref Vector3[] p, ref Quaternion[] q, ref Vector3[] hmd_p, ref Quaternion[] hmd_q, ref double[] t)
+    {
+        p = null;
+        q = null;
+        hmd_p = null;
+        hmd_q = null;
+        t = null;
+        int sample_length = this.getGestureSampleLength(gesture_index, sample_index, processed);
+        if (sample_length <= 0) {
+            return sample_length;
+        }
+        double[] _hmd_p = new double[3 * sample_length];
+        double[] _hmd_q = new double[4 * sample_length];
+        double[] _p = new double[3 * sample_length];
+        double[] _q = new double[4 * sample_length];
+        double[] _t = new double[sample_length];
+        int samples_written = GestureRecognition_getGestureSampleStrokeT(m_gro, gesture_index, sample_index, processed, sample_length, _p, _q, _hmd_p, _hmd_q, _t);
+        if (samples_written <= 0) {
+            return samples_written;
+        }
+        p = new Vector3[samples_written];
+        q = new Quaternion[samples_written];
+        hmd_p = new Vector3[samples_written];
+        hmd_q = new Quaternion[samples_written];
+        t = new double[samples_written];
+        for (int i = 0; i < samples_written; i++) {
+            p[i].x = (float)_p[i * 3 + 0];
+            p[i].y = (float)_p[i * 3 + 1];
+            p[i].z = (float)_p[i * 3 + 2];
+            q[i].x = (float)_q[i * 4 + 0];
+            q[i].y = (float)_q[i * 4 + 1];
+            q[i].z = (float)_q[i * 4 + 2];
+            q[i].w = (float)_q[i * 4 + 3];
+            hmd_p[i].x = (float)_hmd_p[i * 3 + 0];
+            hmd_p[i].y = (float)_hmd_p[i * 3 + 1];
+            hmd_p[i].z = (float)_hmd_p[i * 3 + 2];
+            hmd_q[i].x = (float)_hmd_q[i * 4 + 0];
+            hmd_q[i].y = (float)_hmd_q[i * 4 + 1];
+            hmd_q[i].z = (float)_hmd_q[i * 4 + 2];
+            hmd_q[i].w = (float)_hmd_q[i * 4 + 3];
+            t[i] = _t[i];
         }
         return samples_written;
     }
@@ -2079,6 +2136,8 @@ public class GestureRecognition
         TrainingParameter_ActivationFunction = 9 //!< Training parameter for which activation function to use. Use "-1" for "auto".
         ,
         TrainingParameter_ActivationFactor = 10 //!< Training parameter for which activation factor to use. Use "-1" for "auto".
+        ,
+        TrainingParameter_UseTimestamp = 11 //!< Training parameter for whether to use the sample timestamp (gesture speed). Use "-1" for "auto".
     }
     //                                                          ________________________________
     //_________________________________________________________/     getTrainingParameter()
@@ -2391,6 +2450,8 @@ public class GestureRecognition
     public static extern int GestureRecognition_getGestureSampleLength(IntPtr gro, int gesture_index, int sample_index, int processed);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureSampleStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getGestureSampleStroke(IntPtr gro, int gesture_index, int sample_index, int processed, int stroke_buf_size, double[] p, double[] q, double[] hmd_p, double[] hmd_q);
+    [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureSampleStrokeT", CallingConvention = CallingConvention.Cdecl)]
+    public static extern int GestureRecognition_getGestureSampleStrokeT(IntPtr gro, int gesture_index, int sample_index, int processed, int stroke_buf_size, double[] p, double[] q, double[] hmd_p, double[] hmd_q, double[] t);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureMeanLength", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getGestureMeanLength(IntPtr gro, int gesture_index);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getGestureMeanStroke", CallingConvention = CallingConvention.Cdecl)]

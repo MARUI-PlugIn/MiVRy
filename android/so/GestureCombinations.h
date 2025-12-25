@@ -1,6 +1,6 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.12
+ * Version 2.14
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -157,6 +157,8 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyGetLastStrokeInfo(void* gco, int part, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]);
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecord(void* gco, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordM(void* gco, const double hmd[4][4]); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordPart(void* gco, int part, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordPartM(void* gco, int part, const double hmd[4][4]); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationPeriod(void* gco, int part); //!< Get time frame for continuous gesture identification in milliseconds.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setContdIdentificationPeriod(void* gco, int part, int ms); //!< Set time frame for continuous gesture identification in milliseconds.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationSmoothing(void* gco, int part); //!< Get smoothing for continuous gesture identification in number of samples.
@@ -180,6 +182,7 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_setGestureSampleType(void* gco, int part, int gesture_index, int sample_index, int type); //!< Set the stroke type of a previously recorded sample.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleLength(void* gco, int part, int gesture_index, int sample_index, int processed); //!< Get the number of data points a sample has.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleStroke(void* gco, int part, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4]); //!< Retrieve a sample stroke.
+    GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureSampleStrokeT(void* gco, int part, int gesture_index, int sample_index, int processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4], double t[]); //!< Retrieve a sample stroke.
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureMeanLength(void* gco, int part, int gesture_index); //!< Get the number of samples of the gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_getGestureMeanStroke(void* gco, int part, int gesture_index, double p[][3], double q[][4], int stroke_buf_size, double stroke_p[3], double stroke_q[4], double* scale); //!< Retrieve a gesture mean (average over samples).
     GESTURERECOGNITION_LIBEXPORT int         GestureCombinations_deleteGestureSample(void* gco, int part, int gesture_index, int sample_index); //!< Delete a gesture sample recording from the set.
@@ -237,6 +240,9 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int  GestureCombinations_stopTraining(void* gco); //!< Stop the training process (last best result will be used).
     
     GESTURERECOGNITION_LIBEXPORT double GestureCombinations_recognitionScore(void* gco); //!< Get the gesture recognition score of the current neural networks (0~1).
+
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_getLastTrainingDetailsLength(void* gco, int part); //!< Get the length of the string describing details about the latest training session.
+    GESTURERECOGNITION_LIBEXPORT int GestureCombinations_copyLastTrainingDetails(void* gco, int part, char* buf, int buflen); //<! Copy the string describing details about the latest training session to a buffer.
 
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getMaxTrainingTime(void* gco); //!< Get maximum training time in seconds.
     GESTURERECOGNITION_LIBEXPORT void  GestureCombinations_setMaxTrainingTime(void* gco, int t); //!< Set maximum training time in seconds.
@@ -491,7 +497,7 @@ public:
     virtual int contdIdentifyGetLastStrokeInfo(int part, double pos[3]=0, double* scale=0, double dir0[3]=0, double dir1[3]=0, double dir2[3]=0)=0;
 
     /**
-    * Continuous gesture recording.
+    * Continuous gesture recording, for all actively gesturing parts (where `startStroke` has been called).
     * \param    hmd_p           Vector (x,y,z) of the current headset position.
     * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
     * \return                   The ID of the recorded gesture on success, a negative error code on failure.
@@ -499,11 +505,28 @@ public:
     virtual int contdRecord(const double hmd_p[3], const double hmd_q[4])=0;
 
     /**
-    * Continuous gesture recording.
+    * Continuous gesture recording, for all actively gesturing parts (where `startStroke` has been called).
     * \param    hmd             Transformation matrix of the current headset position.
     * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
     virtual int contdRecordM(const double hmd[4][4])=0;
+    
+    /**
+    * Continuous gesture recording.
+    * \param    part            The gesture combination part (hand side) index.
+    * \param    hmd_p           Vector (x,y,z) of the current headset position.
+    * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
+    * \return                   The ID of the recorded gesture on success, a negative error code on failure.
+    */
+    virtual int contdRecordPart(int part, const double hmd_p[3], const double hmd_q[4])=0;
+
+    /**
+    * Continuous gesture recording.
+    * \param    part            The gesture combination part (hand side) index.
+    * \param    hmd             Transformation matrix of the current headset position.
+    * \return                   The ID of the recorded gesture on success, a negative error code on failure.
+    */
+    virtual int contdRecordPartM(int part, const double hmd[4][4])=0;
 
     /**
     * Get time frame for continuous gesture identification in milliseconds.
@@ -678,9 +701,10 @@ public:
     * \param   q               [OUT][OPTIONAL] A place to store the stroke rotational data. May be zero if this data is not required.
     * \param   hmd_p           [OUT][OPTIONAL] A place to store the HMD positional data. May be zero if this data is not required.
     * \param   hmd_q           [OUT][OPTIONAL] A place to store the HMD rotational data. May be zero if this data is not required.
+    * \param   t               [OUT][OPTIONAL] A place to store the timestamps (in seconds). May be zero if this data is not required.
     * \return                  The number of stroke sample data points that have been written, 0 if an error occurred.
     */
-    virtual int getGestureSampleStroke(int part, int gesture_index, int sample_index, bool processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4])=0;
+    virtual int getGestureSampleStroke(int part, int gesture_index, int sample_index, bool processed, int stroke_buf_size, double p[][3], double q[][4], double hmd_p[][3], double hmd_q[][4], double t[]=nullptr) const =0;
 
     /**
     * Get the number of samples of the gesture mean (average over samples).
@@ -1080,6 +1104,22 @@ public:
     * \return                   The gesture recognition score of the current neural network (0~1).
     */
     virtual double recognitionScore()=0;
+
+    /**
+    * Get the length of the string describing details about the latest training session.
+    * \param    part            The sub-gesture index (or side).
+    * \return                   The number of characters in the description string, a negative error code on failure.
+    */
+    virtual int getLastTrainingDetailsLength(int part)=0;
+
+    /**
+    * Copy the string describing details about the latest training session to a buffer.
+    * \param    part            The sub-gesture index (or side).
+    * \param    buf             The string buffer to which to write the details.
+    * \param    buflen          The length of the `buf` string buffer.
+    * \return                   The number of characters written to the buffer, zero on failure.
+    */
+    virtual int copyLastTrainingDetails(int part, char* buf, int buflen)=0;
 
     /**
     * Maximum training time in seconds.

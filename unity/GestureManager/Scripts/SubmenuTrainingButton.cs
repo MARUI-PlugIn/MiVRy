@@ -1,6 +1,6 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.13
+ * Version 2.14
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -32,6 +32,7 @@ public class SubmenuTrainingButton : GestureManagerButton
         ToggleSampleResolution,
         ToggleControllerRotation,
         ToggleRotatePath,
+        ToggleUseTimestamp,
     }
     public Operation operation;
 
@@ -120,6 +121,9 @@ public class SubmenuTrainingButton : GestureManagerButton
             case Operation.ToggleRotatePath:
                 this.ToggleTrainingParameter(GestureRecognition.TrainingParameter.TrainingParameter_RotatePath, -1, 1, 1);
                 break;
+            case Operation.ToggleUseTimestamp:
+                this.ToggleTrainingParameter(GestureRecognition.TrainingParameter.TrainingParameter_UseTimestamp, -1, 1, 1);
+                break;
         }
         GestureManagerVR.setInputFocus(null);
         GestureManagerVR.refresh();
@@ -187,6 +191,16 @@ public class SubmenuTrainingButton : GestureManagerButton
                     value = gm.gr.getTrainingParameter(GestureRecognition.TrainingParameter.TrainingParameter_RotatePath);
                 } else if (gm.gc != null) {
                     value = gm.gc.getTrainingParameter(GestureRecognition.TrainingParameter.TrainingParameter_RotatePath);
+                } else {
+                    return;
+                }
+                buttonText.text = (value < 0) ? "Auto" : (value > 0) ? "On" : "Off";
+                break;
+            case Operation.ToggleUseTimestamp:
+                if (gm.gr != null) {
+                    value = gm.gr.getTrainingParameter(GestureRecognition.TrainingParameter.TrainingParameter_UseTimestamp);
+                } else if (gm.gc != null) {
+                    value = gm.gc.getTrainingParameter(GestureRecognition.TrainingParameter.TrainingParameter_UseTimestamp);
                 } else {
                     return;
                 }

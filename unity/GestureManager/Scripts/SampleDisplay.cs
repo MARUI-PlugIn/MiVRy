@@ -1,6 +1,6 @@
 /*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.13
+ * Version 2.14
  * Copyright (c) 2025 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
@@ -53,7 +53,6 @@ public class SampleDisplay : MonoBehaviour
             }
         }
     }
-    private static int dataPointIndex = 0;
     public GameObject headsetModel = null;
     public GameObject controllerModelLeft = null;
     public GameObject controllerModelRight = null;
@@ -63,8 +62,11 @@ public class SampleDisplay : MonoBehaviour
         public Quaternion[] hmd_q;
         public Vector3[] p;
         public Quaternion[] q;
+        public double[] t;
     };
-    public static Stroke stroke = new Stroke();
+    private static Stroke stroke = new Stroke();
+    private static double playTime = -1.0; 
+    private static int dataPointIndex = 0;
 
     private static void reloadStroke()
     {
@@ -87,17 +89,28 @@ public class SampleDisplay : MonoBehaviour
                 _sampleId = numSamples - 1;
             }
             if (numSamples >= 0) {
-                ret = gm.gr.getGestureSampleStroke(gm.record_gesture_id, _sampleId, 0,
-                    ref stroke.p, ref stroke.q, ref stroke.hmd_p, ref stroke.hmd_q
+                ret = gm.gr.getGestureSampleStroke(gestureId, _sampleId, 0,
+                    ref stroke.p, ref stroke.q, ref stroke.hmd_p, ref stroke.hmd_q, ref stroke.t
                 );
-                if (ret <= 0) {
+                if (ret <= 0 || stroke.t == null || stroke.t.Length == 0) {
                     gm.consoleText = $"Failed to get sample data ({ret}).";
                     return;
+                }
+                double t0 = stroke.t[0];
+                double tn = stroke.t[stroke.t.Length - 1];
+                double dt = tn - t0;
+                if (dt <= 0.0) { // old file, does not have time stamps
+                    dt = 1.0 / (double)stroke.t.Length; // display whole gesture in one second
+                    for (int i = 0; i < stroke.t.Length; i++) {
+                        stroke.t[i] = t0 + i * dt;
+                    }
                 }
                 for (int i = 0; i < stroke.p.Length; i++) {
                     Mivry.convertBackHandInput(gm.mivryCoordinateSystem, gm.unityXrPlugin, ref stroke.p[i], ref stroke.q[i]);
                     Mivry.convertBackHeadInput(gm.mivryCoordinateSystem, ref stroke.hmd_p[i], ref stroke.hmd_q[i]);
                 }
+                playTime = -1;
+                dataPointIndex = 0;
             }
         } else if (gm.gc != null) {
             int part = submenuGesture.CurrentPart;
@@ -106,16 +119,27 @@ public class SampleDisplay : MonoBehaviour
                 return;
             }
             ret = gm.gc.getGestureSampleStroke(part, gestureId, _sampleId, 0,
-                ref stroke.p, ref stroke.q, ref stroke.hmd_p, ref stroke.hmd_q
+                ref stroke.p, ref stroke.q, ref stroke.hmd_p, ref stroke.hmd_q, ref stroke.t
             );
-            if (ret <= 0) {
+            if (ret <= 0 || stroke.t == null || stroke.t.Length == 0) {
                 gm.consoleText = $"Failed to get sample data ({ret}).";
                 return;
+            }
+            double t0 = stroke.t[0];
+            double tn = stroke.t[stroke.t.Length - 1];
+            double dt = tn - t0;
+            if (dt <= 0.0) { // old file, does not have time stamps
+                dt = 1.0 / (double)stroke.t.Length; // display whole gesture in one second
+                for (int i = 0; i < stroke.t.Length; i++) {
+                    stroke.t[i] = t0 + i * dt;
+                }
             }
             for (int i = 0; i < stroke.p.Length; i++) {
                 Mivry.convertBackHandInput(gm.mivryCoordinateSystem, gm.unityXrPlugin, ref stroke.p[i], ref stroke.q[i]);
                 Mivry.convertBackHeadInput(gm.mivryCoordinateSystem, ref stroke.hmd_p[i], ref stroke.hmd_q[i]);
             }
+            playTime = -1;
+            dataPointIndex = 0;
         } else {
             gm.consoleText = "ERROR on reloadStroke: neither GR nor GC set.";
         }
@@ -177,8 +201,27 @@ public class SampleDisplay : MonoBehaviour
         if (controllerModelRight == null) {
             InitializeControllerModel(ref controllerModelRight, "Right Hand");
         }
-        int numDpi = stroke.p.Length;
-        int dpi = Math.Min(stroke.p.Length - 1, Math.Max(0, dataPointIndex));
+        if (stroke.t.Length == 0) {
+            this.controllerModelLeft.SetActive(false);
+            this.controllerModelRight.SetActive(false);
+            return;
+        }
+        if (dataPointIndex >= stroke.t.Length) {
+            dataPointIndex = 0;
+        }
+        playTime += Time.deltaTime;
+        while (playTime > stroke.t[dataPointIndex]) {
+            if (dataPointIndex < stroke.t.Length - 1) {
+                dataPointIndex++;
+            } else if (playTime < stroke.t[stroke.t.Length - 1] + 1.0) {
+                dataPointIndex = stroke.t.Length - 1; // hold last sample for one second after end
+                break;
+            } else { // more than one second after last sample
+                playTime = -1; // restart, but with one second hold-time before displaying motion
+                dataPointIndex = 0;
+                break;
+            }
+        }
         int part = submenuGesture.CurrentPart;
         GameObject controllerModel;
         if (part == GestureManagerVR.me.gestureManager.lefthand_combination_part) {
@@ -189,16 +232,10 @@ public class SampleDisplay : MonoBehaviour
             this.controllerModelLeft.SetActive(false);
         }
         controllerModel.SetActive(true);
-        controllerModel.transform.position = stroke.p[dpi];
-        controllerModel.transform.rotation = stroke.q[dpi];
+        controllerModel.transform.position = stroke.p[dataPointIndex];
+        controllerModel.transform.rotation = stroke.q[dataPointIndex];
         this.headsetModel.SetActive(true);
-        this.headsetModel.transform.position = stroke.hmd_p[dpi];
-        this.headsetModel.transform.rotation = stroke.hmd_q[dpi];
-
-        dataPointIndex++;
-        int fps = Math.Max(10, (int)(1.0f / Time.deltaTime));
-        if (dataPointIndex > numDpi + fps) { // allowing for one second before and after
-            dataPointIndex = -fps;
-        }
+        this.headsetModel.transform.position = stroke.hmd_p[dataPointIndex];
+        this.headsetModel.transform.rotation = stroke.hmd_q[dataPointIndex];
     }
 }
