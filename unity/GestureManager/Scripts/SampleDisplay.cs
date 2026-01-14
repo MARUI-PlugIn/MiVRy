@@ -1,7 +1,7 @@
 /*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.14
- * Copyright (c) 2025 MARUI-PlugIn (inc.)
+ * Version 2.15
+ * Copyright (c) 2026 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -18,6 +18,7 @@
 
 using System;
 using UnityEngine;
+namespace MiVRy {
 
 public class SampleDisplay : MonoBehaviour
 {
@@ -238,4 +239,5 @@ public class SampleDisplay : MonoBehaviour
         this.headsetModel.transform.position = stroke.hmd_p[dataPointIndex];
         this.headsetModel.transform.rotation = stroke.hmd_q[dataPointIndex];
     }
+}
 }

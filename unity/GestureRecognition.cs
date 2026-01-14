@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library.
- * Version 2.14
- * Copyright (c) 2025 MARUI-PlugIn (inc.)
+ * Version 2.15
+ * Copyright (c) 2026 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -124,6 +124,8 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
+namespace MiVRy
+{
 public class GestureRecognition
 {
     //                                                                       ___________________
@@ -1076,12 +1078,13 @@ public class GestureRecognition
     /// </summary>
     /// <param name="num">Number of tracking data points to retain. -1 for no numeric limit.</param>
     /// <param name="ms">Time frame (in milliseconds) of tracking data points to retain. -1 for no time limit.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// The number of tracking data points retained, a negative error code on failure.
     /// </returns>
-    public int pruneStroke(int num, int ms)
+    public int pruneStroke(int num, int ms, long timestamp=-1)
     {
-        return GestureRecognition_pruneStroke(m_gro, num, ms);
+        return GestureRecognition_pruneStroke(m_gro, num, ms, timestamp);
     }
     //                                                      ____________________________________
     //_____________________________________________________/        cancelStroke()
@@ -1103,15 +1106,16 @@ public class GestureRecognition
     /// <param name="hmd_p">The current position of the headset.</param>
     /// <param name="hmd_q">The current rotation (orientation) of the headset.</param>
     /// <param name="similarity">[OUT] Similarity between the performed stroke, and the identified gesture.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// The ID of the identified gesture. On failure, a negative error code.
     /// </returns>
-    public int contdIdentify(Vector3 hmd_p, Quaternion hmd_q, ref double similarity)
+    public int contdIdentify(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
         double[] _similarity = new double[1];
-        int ret = GestureRecognition_contdIdentify(m_gro, _hmd_p, _hmd_q, _similarity);
+        int ret = GestureRecognition_contdIdentify(m_gro, _hmd_p, _hmd_q, _similarity, timestamp);
         similarity = _similarity[0];
         return ret;
     }
@@ -1124,8 +1128,9 @@ public class GestureRecognition
     /// <param name="hmd_q">Quaternion(x, y, z, w) of the current headset rotation.</param>
     /// <param name="p">Array to which to write the probability values (each 0~1).</param>
     /// <param name="s">Array to which to write the similarity values (each 0~1).</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
-    public int contdIdentifyAndGetAllProbabilitiesAndSimilarities(Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s)
+    public int contdIdentifyAndGetAllProbabilitiesAndSimilarities(Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
@@ -1134,7 +1139,7 @@ public class GestureRecognition
         s = new double[num_gestures];
         int[] _n = new int[1];
         _n[0] = num_gestures;
-        return GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(m_gro, _hmd_p, _hmd_q, p, s, _n);
+        return GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(m_gro, _hmd_p, _hmd_q, p, s, _n, timestamp);
     }
     //                                                             _____________________________
     //____________________________________________________________/ contdIdentifyAndGetStroke()
@@ -1149,8 +1154,9 @@ public class GestureRecognition
     /// <param name="dir0">The primary direction at which the gesture was performed.</param>
     /// <param name="dir1">The secondary direction at which the gesture was performed.</param>
     /// <param name="dir2">The least-significant direction at which the gesture was performed.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
-    public int contdIdentifyAndGetStroke(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref Vector3 pos, ref double scale, ref Vector3 dir0, ref Vector3 dir1, ref Vector3 dir2)
+    public int contdIdentifyAndGetStroke(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref Vector3 pos, ref double scale, ref Vector3 dir0, ref Vector3 dir1, ref Vector3 dir2, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
@@ -1160,7 +1166,7 @@ public class GestureRecognition
         double[] _dir0 = new double[3];
         double[] _dir1 = new double[3];
         double[] _dir2 = new double[3];
-        int ret = GestureRecognition_contdIdentifyAndGetStroke(m_gro, _hmd_p, _hmd_q, _similarity, _pos, _scale, _dir0, _dir1, _dir2);
+        int ret = GestureRecognition_contdIdentifyAndGetStroke(m_gro, _hmd_p, _hmd_q, _similarity, _pos, _scale, _dir0, _dir1, _dir2, timestamp);
         similarity = _similarity[0];
         pos.x = (float)_pos[0];
         pos.y = (float)_pos[1];
@@ -1188,8 +1194,9 @@ public class GestureRecognition
     /// <param name="pos">[OUT] The position where the gesture was performed.</param>
     /// <param name="scale">[OUT] The scale (size) at which the gesture was performed.</param>
     /// <param name="q">[OUT] The orientation (direction) into which the gesture was performed.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
-    public int contdIdentifyAndGetStroke(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref Vector3 pos, ref double scale, ref Quaternion q)
+    public int contdIdentifyAndGetStroke(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref Vector3 pos, ref double scale, ref Quaternion q, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
@@ -1199,7 +1206,7 @@ public class GestureRecognition
         double[] _dir0 = new double[3];
         double[] _dir1 = new double[3];
         double[] _dir2 = new double[3];
-        int ret = GestureRecognition_contdIdentifyAndGetStroke(m_gro, _hmd_p, _hmd_q, _similarity, _pos, _scale, _dir0, _dir1, _dir2);
+        int ret = GestureRecognition_contdIdentifyAndGetStroke(m_gro, _hmd_p, _hmd_q, _similarity, _pos, _scale, _dir0, _dir1, _dir2, timestamp);
         similarity = _similarity[0];
         pos.x = (float)_pos[0];
         pos.y = (float)_pos[1];
@@ -1222,8 +1229,9 @@ public class GestureRecognition
     /// <param name="dir0">[OUT] The primary direction at which the gesture was performed.</param>
     /// <param name="dir1">[OUT] The secondary direction at which the gesture was performed.</param>
     /// <param name="dir2">[OUT] The least-significant direction at which the gesture was performed.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>The gesture ID of the identified gesture, or a negative error code on failure.</returns>
-    public int contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s, ref Vector3 pos, ref double scale, ref Vector3 dir0, ref Vector3 dir1, ref Vector3 dir2)
+    public int contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(Vector3 hmd_p, Quaternion hmd_q, ref double[] p, ref double[] s, ref Vector3 pos, ref double scale, ref Vector3 dir0, ref Vector3 dir1, ref Vector3 dir2, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
@@ -1237,7 +1245,7 @@ public class GestureRecognition
         double[] _dir0 = new double[3];
         double[] _dir1 = new double[3];
         double[] _dir2 = new double[3];
-        int ret = GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(m_gro, _hmd_p, _hmd_q, p, s, _n, _pos, _scale, _dir0, _dir1, _dir2);
+        int ret = GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(m_gro, _hmd_p, _hmd_q, p, s, _n, _pos, _scale, _dir0, _dir1, _dir2, timestamp);
         pos.x = (float)_pos[0];
         pos.y = (float)_pos[1];
         pos.z = (float)_pos[2];
@@ -1260,14 +1268,15 @@ public class GestureRecognition
     /// </summary>
     /// <param name="hmd_p">The current position of the headset.</param>
     /// <param name="hmd_q">The current rotation (orientation) of the headset.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use for the recorded sample. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// The ID of the recorded gesture, or a negative error code on failure.
     /// </returns>
-    public int contdRecord(Vector3 hmd_p, Quaternion hmd_q)
+    public int contdRecord(Vector3 hmd_p, Quaternion hmd_q, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
-        return GestureRecognition_contdRecord(m_gro, _hmd_p, _hmd_q);
+        return GestureRecognition_contdRecord(m_gro, _hmd_p, _hmd_q, timestamp);
     }
 
 
@@ -1556,7 +1565,7 @@ public class GestureRecognition
     /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
     /// <param name="hmd_p">[OUT] A vector array to receive the position of the HMD at the time of the stroke sample recording.</param>
     /// <param name="hmd_q">[OUT] A quaternion array to receive the rotation of the HMD at the time of the stroke sample recording.</param>
-    /// <param name="t">[OUT] A double array to receive the timestamps of the stroke sample recording (in seconds).</param>
+    /// <param name="t">[OUT] A double array to receive the timestamps (in seconds, starting with the beginning of the gesture motion) of the stroke sample recording (in seconds).</param>
     /// <returns>
     /// The number of data points on that sample (ie. resulting length of p and q).
     /// </returns>
@@ -2401,19 +2410,19 @@ public class GestureRecognition
     [DllImport(libfile, EntryPoint = "GestureRecognition_isStrokeStarted", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_isStrokeStarted(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_pruneStroke", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_pruneStroke(IntPtr gro, int num, int ms);
+    public static extern int GestureRecognition_pruneStroke(IntPtr gro, int num, int ms, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureRecognition_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_cancelStroke(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentify", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_contdIdentify(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] similarity);
+    public static extern int GestureRecognition_contdIdentify(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] similarity, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] p, double[] s, int[] n);
+    public static extern int GestureRecognition_contdIdentifyAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] p, double[] s, int[] n, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentifyAndGetStroke", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_contdIdentifyAndGetStroke(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] similarity, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
+    public static extern int GestureRecognition_contdIdentifyAndGetStroke(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] similarity, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] p, double[] s, int[] n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
+    public static extern int GestureRecognition_contdIdentifyAndGetStrokeAndGetAllProbabilitiesAndSimilarities(IntPtr gro, double[] hmd_p, double[] hmd_q, double[] p, double[] s, int[] n, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureRecognition_contdRecord", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureRecognition_contdRecord(IntPtr gro, double[] hmd_p, double[] hmd_q);
+    public static extern int GestureRecognition_contdRecord(IntPtr gro, double[] hmd_p, double[] hmd_q, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureRecognition_getContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureRecognition_getContdIdentificationPeriod(IntPtr gro);
     [DllImport(libfile, EntryPoint = "GestureRecognition_setContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]
@@ -2596,4 +2605,5 @@ public class GestureRecognition
     public static extern MetadataCreatorFunction GestureRecognition_getDefaultMetadataCreatorFunction();
 
     private IntPtr m_gro;
+}
 }

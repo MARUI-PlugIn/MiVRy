@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.14
- * Copyright (c) 2025 MARUI-PlugIn (inc.)
+ * Version 2.15
+ * Copyright (c) 2026 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -52,12 +52,17 @@
  * - "OnGestureCompletion":
  *   Event callback functions to be called when a gesture was performed.
  * 
- * (4) To use MiVRy in Bolt state graphs, uncomment the following line "#define MIVRY_USE_BOLT"
- * by removing the "//" at the beginning of the line, then use the Bolt "Unit Options Wizard"
+ * (4) To use MiVRy in 'VisualScripting' graphs or 'Bolt' graphs,
+ * edit the appropriate line below (either "//#define MIVRY_USE_VISUALSCRIPTING" or "//#define MIVRY_USE_BOLT")
+ * by removing the "//" at the beginning of the line of whichever you are using.
+ * When using Bolt, you must also use the "Bolt Unit Options Wizard"
  * to add the "MiVRy" script and "Gesture Completion Data" to the Bolt "Type Options".
- * Then you can use Custom Events with the name of the gesture in Bolt state graphs to trigger
- * transitions.
+ * When using Unity VisualScripting you may have to open the Unity Project Settings
+ * and under "VisualScripting" click "Regenerate Nodes".
+ * Then you can use Custom Events with the name of the gesture in VisualScripting Script Graphs
+ * or Bolt Flow Graphs to trigger events in your app or transitions in State Graphs.
  */
+//#define MIVRY_USE_VISUALSCRIPTING
 //#define MIVRY_USE_BOLT
 
 using System;
@@ -68,22 +73,28 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.UIElements;
-using static GestureCompletionData;
+using static MiVRy.GestureCompletionData;
 #endif
 #if UNITY_ANDROID
 using UnityEngine.Networking;
 #endif
 
-#if MIVRY_USE_BOLT
+#if MIVRY_USE_VISUALSCRIPTING
+using Unity.VisualScripting;
+#elif MIVRY_USE_BOLT
 using Ludiq;
 using Bolt;
 #endif
 
+namespace MiVRy {
 /// <summary>
 /// Data regarding the identified gesture.
 /// This will be provided to the registered event handler function.
 /// </summary>
 [System.Serializable]
+#if MIVRY_USE_VISUALSCRIPTING
+[IncludeInSettings(true)]
+#endif
 public class GestureCompletionData
 {
     /// <summary>
@@ -103,6 +114,9 @@ public class GestureCompletionData
     /// <summary>
     /// Data about the individual parts of the gesture (if two-handed / multi-part gesture).
     /// </summary>
+    #if MIVRY_USE_VISUALSCRIPTING
+    [IncludeInSettings(true)]
+    #endif
     public class Part
     {
         /// <summary>
@@ -796,7 +810,7 @@ public class Mivry : MonoBehaviour
                     ? gr.getGestureName(data.gestureID)
                     : GestureRecognition.getErrorMessage(data.gestureID);
                 OnGestureCompletion.Invoke(data);
-                #if MIVRY_USE_BOLT
+                #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
                 CustomEvent.Trigger(this.gameObject, data.gestureName, data);
                 #endif
             }
@@ -818,7 +832,7 @@ public class Mivry : MonoBehaviour
             ? gr.getGestureName(data.gestureID)
             : GestureRecognition.getErrorMessage(data.gestureID);
         OnGestureCompletion.Invoke(data);
-        #if MIVRY_USE_BOLT
+        #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
         CustomEvent.Trigger(this.gameObject, data.gestureName, data);
         #endif
         LeftHandActive = false;
@@ -886,7 +900,7 @@ public class Mivry : MonoBehaviour
                         }
                     }
                     OnGestureCompletion.Invoke(data);
-                    #if MIVRY_USE_BOLT
+                    #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);
                     #endif
                 }
@@ -920,7 +934,7 @@ public class Mivry : MonoBehaviour
                         ? gc.getGestureCombinationName(data.gestureID)
                         : GestureRecognition.getErrorMessage(data.gestureID);
                     OnGestureCompletion.Invoke(data);
-                    #if MIVRY_USE_BOLT
+                    #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);
                     #endif
                     data.parts = new GestureCompletionData.Part[0]; // reset
@@ -959,7 +973,7 @@ public class Mivry : MonoBehaviour
                         }
                     }
                     OnGestureCompletion.Invoke(data);
-                    #if MIVRY_USE_BOLT
+                    #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);
                     #endif
                 }
@@ -994,7 +1008,7 @@ public class Mivry : MonoBehaviour
                         ? gc.getGestureCombinationName(data.gestureID)
                         : GestureRecognition.getErrorMessage(data.gestureID);
                     OnGestureCompletion.Invoke(data);
-                    #if MIVRY_USE_BOLT
+                    #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
                     CustomEvent.Trigger(this.gameObject, data.gestureName, data);
                     #endif
                     data.parts = new GestureCompletionData.Part[0]; // reset
@@ -1225,4 +1239,5 @@ public class Mivry : MonoBehaviour
             q = RotateXYZ * q * RotateXZY;
         }
     }
+}
 }

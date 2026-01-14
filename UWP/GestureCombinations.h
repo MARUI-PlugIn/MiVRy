@@ -1,7 +1,7 @@
 /*
  * MiVRy GestureCombinations - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.14
- * Copyright (c) 2025 MARUI-PlugIn (inc.)
+ * Version 2.15
+ * Copyright (c) 2026 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -139,26 +139,28 @@ extern "C" {
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setPartEnabled(void* gco, int part, int enabled); //!< Set whether a subgestures / parts / hand is currently used (enabled) in this multi-gesture object.
 
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStroke(void* gco, int part, const double hmd_p[3], const double hmd_q[4], int record_as_sample); //!< Start new stroke.
+	GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStrokeT(void* gco, int part, const double hmd_p[3], const double hmd_q[4], int64_t timestamp, int record_as_sample); //!< Start new stroke at explicit timestamp.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_startStrokeM(void* gco, int part, const double hmd[4][4], int record_as_sample); //!< Start new stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_updateHeadPositionM(void* gco, const double hmd[4][4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_updateHeadPositionQ(void* gco, const double hmd_p[3], const double hmd_q[4]); //!< Update the current position of the HMD/headset during a gesture performance (stroke).
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStroke(void* gco, int part, const double p[3]); //!< Continue stroke data input - positional data only.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeQ(void* gco, int part, const double p[3], const double q[4]); //!< Continue stroke data input - rotation as quaternion.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeQT(void* gco, int part, const double p[3], const double q[4], const int64_t timestamp); //!< Continue stroke data input - rotation as quaternion, explicit timestamp.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeE(void* gco, int part, const double p[3], const double r[3]); //!< Continue stroke data input - rotation as Euler angles (rad).
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdStrokeM(void* gco, int part, const double m[4][4]); //!< Continue stroke data input - position and rotation as transformation matrix.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_endStroke(void* gco, int part, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]); //!< End the stroke and identify the gesture.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getPartProbabilitiesAndSimilarities(void* gco, int part, double p[], double s[], int* n); //!< Get all the probabilities and similarities (for each registered gesture) of the last gesture performance.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_isStrokeStarted(void* gco, int part); //!< Query whether a gesture performance (gesture motion, stroke) was started and is currently ongoing.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_pruneStroke(void* gco, int part, int num, int ms); //!< Prune the current (started) stroke.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_pruneStroke(void* gco, int part, int num, int ms, int64_t timestamp=-1); //!< Prune the current (started) stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_cancelStroke(void* gco, int part); //!< Cancel a started stroke.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_identifyGestureCombination(void* gco, double* probability, double* similarity, double parts_probabilities[], double parts_similarities[]); //!< Return the most likely gesture candidate for the previous multi-gesture.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[] = 0, double parts_similarities[] = 0); //!< Continuous gesture identification.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyM(void* gco, const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentify(void* gco, const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0, int64_t timestamp=-1); //!< Continuous gesture identification.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyM(void* gco, const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0, int64_t timestamp=-1); //!< Continuous gesture identification.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdIdentifyGetLastStrokeInfo(void* gco, int part, double pos[3], double* scale, double dir0[3], double dir1[3], double dir2[3]);
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecord(void* gco, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordM(void* gco, const double hmd[4][4]); //!< Continuous gesture recording.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordPart(void* gco, int part, const double hmd_p[3], const double hmd_q[4]); //!< Continuous gesture recording.
-    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordPartM(void* gco, int part, const double hmd[4][4]); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecord(void* gco, const double hmd_p[3], const double hmd_q[4], int64_t timestamp=-1); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordM(void* gco, const double hmd[4][4], int64_t timestamp=-1); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordPart(void* gco, int part, const double hmd_p[3], const double hmd_q[4], int64_t timestamp=-1); //!< Continuous gesture recording.
+    GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_contdRecordPartM(void* gco, int part, const double hmd[4][4], int64_t timestamp=-1); //!< Continuous gesture recording.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationPeriod(void* gco, int part); //!< Get time frame for continuous gesture identification in milliseconds.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_setContdIdentificationPeriod(void* gco, int part, int ms); //!< Set time frame for continuous gesture identification in milliseconds.
     GESTURERECOGNITION_LIBEXPORT int   GestureCombinations_getContdIdentificationSmoothing(void* gco, int part); //!< Get smoothing for continuous gesture identification in number of samples.
@@ -360,6 +362,17 @@ public:
     virtual int startStroke(int part, const double hmd_p[3], const double hmd_q[4], int record_as_sample=-1)=0;
 
     /**
+    * Start new stroke (gesture motion) at a specific timestamp.
+    * \param  part              The sub-gesture index (or side) of the gesture motion.
+    * \param  hmd_p             Vector (x,y,z) of the current headset position.
+    * \param  hmd_q             Quaternion (x,y,z,w) of the current headset rotation.
+	* \param  timestamp         The timestamp (milliseconds) when the gesture was started.
+    * \param  record_as_sample  Which gesture this stroke will be a sample for, or -1 to identify the gesture.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int startStrokeT(int part, const double hmd_p[3], const double hmd_q[4], int64_t timestamp, int record_as_sample = -1) = 0;
+
+    /**
      * Update the current position of the HMD/headset during a gesture performance (stroke).
     * \param  hmd               Transformation matrix (4x4) of the current headset position and rotation.
     * \return                   Zero on success, a negative error code on failure.
@@ -390,6 +403,17 @@ public:
     * \return                   Zero on success, a negative error code on failure.
     */
     virtual int contdStrokeQ(int part, const double p[3], const double q[4])=0;
+
+    /**
+    * Continue stroke (gesture motion) data input with rotational data in the form of a quaternion,
+	* and providing an explicit timestamp when the data point was recorded.
+    * \param    part            The sub-gesture index (or side) of the gesture motion.
+    * \param    p               Vector (x,y,z) of the current controller position.
+    * \param    q               Quaternion (x,y,z,w) of the current controller rotation.
+	* \param    timestamp       The timestamp (milliseconds) when this data point was recorded.
+    * \return                   Zero on success, a negative error code on failure.
+    */
+    virtual int contdStrokeQT(int part, const double p[3], const double q[4], const int64_t timestamp)=0;
 
     /**
     * Continue stroke (gesture motion) data input with rotational data in the form of a Euler rotation.
@@ -442,9 +466,10 @@ public:
     * \param    part            The sub-gesture index (or side) of the gesture motion.
     * \param    num             The number of tracking data points to retain. -1 for no numeric limit.
     * \param    ms              The time duration of tracking data to retain (in milliseconds). -1 for no time limit.
+	* \param    timestamp       The timestamp (milliseconds) at which to prune the stroke. -1 for current time (ie "now").
     * \return   The number of retained tracking data points, a negative error code on failure.
     */
-    virtual int pruneStroke(int part, int num, int ms)=0;
+    virtual int pruneStroke(int part, int num, int ms, int64_t timestamp=-1)=0;
 
     /**
     * Cancel a started stroke (gesture motion).
@@ -470,9 +495,10 @@ public:
     * \param    similarity      [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
     * \param    parts_probabilities [OUT][OPTIONAL] The probability values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
     * \param    parts_similarities  [OUT][OPTIONAL] The similarity values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
+	* \param    timestamp       [OPTIONAL] Timestamp (in milliseconds) to use when identifying the gesture, -1 for the current timestamp (ie "now").
     * \return                   The ID of the identified gesture combination, or a negative error code on failure.
     */
-    virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0)=0;
+    virtual int contdIdentify(const double hmd_p[3], const double hmd_q[4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0, int64_t timestamp=-1)=0;
 
     /**
     * Continuous gesture identification.
@@ -480,9 +506,10 @@ public:
     * \param    similarity      [OUT][OPTIONAL] The similarity (0~1) expressing how different the performed gesture motion was from the identified gesture.
     * \param    parts_probabilities [OUT][OPTIONAL] The probability values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
     * \param    parts_similarities  [OUT][OPTIONAL] The similarity values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).
+	* \param    timestamp       [OPTIONAL] Timestamp (in milliseconds) to use when identifying the gesture, -1 for the current timestamp (ie "now").
     * \return                   The ID of the identified gesture combination, or a negative error code on failure.
     */
-    virtual int contdIdentifyM(const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0)=0;
+    virtual int contdIdentifyM(const double hmd[4][4], double* similarity=0, double parts_probabilities[]=0, double parts_similarities[]=0, int64_t timestamp=-1)=0;
 
     /**
     * Get detailed information about the stroke that was used in the last call to contdIdentify().
@@ -500,33 +527,37 @@ public:
     * Continuous gesture recording, for all actively gesturing parts (where `startStroke` has been called).
     * \param    hmd_p           Vector (x,y,z) of the current headset position.
     * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
+	* \param    timestamp       [OPTIONAL] The timestamp (milliseconds) when this data point is to be placed in time. -1 for the current timestamp (ie "now").
     * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
-    virtual int contdRecord(const double hmd_p[3], const double hmd_q[4])=0;
+    virtual int contdRecord(const double hmd_p[3], const double hmd_q[4], int64_t timestamp=-1)=0;
 
     /**
     * Continuous gesture recording, for all actively gesturing parts (where `startStroke` has been called).
     * \param    hmd             Transformation matrix of the current headset position.
+	* \param    timestamp       [OPTIONAL] The timestamp (milliseconds) when this data point is to be placed in time. -1 for the current timestamp (ie "now").
     * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
-    virtual int contdRecordM(const double hmd[4][4])=0;
+    virtual int contdRecordM(const double hmd[4][4], int64_t timestamp=-1)=0;
     
     /**
     * Continuous gesture recording.
     * \param    part            The gesture combination part (hand side) index.
     * \param    hmd_p           Vector (x,y,z) of the current headset position.
     * \param    hmd_q           Quaternion (x,y,z,w) of the current headset rotation.
+	* \param    timestamp       The timestamp (milliseconds) when this data point is to be placed in time.
     * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
-    virtual int contdRecordPart(int part, const double hmd_p[3], const double hmd_q[4])=0;
+    virtual int contdRecordPart(int part, const double hmd_p[3], const double hmd_q[4], int64_t timestamp=-1)=0;
 
     /**
     * Continuous gesture recording.
     * \param    part            The gesture combination part (hand side) index.
     * \param    hmd             Transformation matrix of the current headset position.
+	* \param    timestamp       The timestamp (milliseconds) when this data point is to be placed in time.
     * \return                   The ID of the recorded gesture on success, a negative error code on failure.
     */
-    virtual int contdRecordPartM(int part, const double hmd[4][4])=0;
+    virtual int contdRecordPartM(int part, const double hmd[4][4], int64_t timestamp=-1)=0;
 
     /**
     * Get time frame for continuous gesture identification in milliseconds.

@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.14
- * Copyright (c) 2025 MARUI-PlugIn (inc.)
+ * Version 2.15
+ * Copyright (c) 2026 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -18,6 +18,7 @@
 
 using UnityEngine;
 using System;
+namespace MiVRy {
 
 public class SubmenuGestureSampleDisplayButton : GestureManagerButton
 {
@@ -111,4 +112,5 @@ public class SubmenuGestureSampleDisplayButton : GestureManagerButton
         this.material = inactiveButtonMaterial;
     }
 
+}
 }

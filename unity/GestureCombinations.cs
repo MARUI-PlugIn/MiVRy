@@ -1,7 +1,7 @@
 ﻿/*
  * MiVRy - 3D gesture recognition library for multi-part gesture combinations.
- * Version 2.14
- * Copyright (c) 2025 MARUI-PlugIn (inc.)
+ * Version 2.15
+ * Copyright (c) 2026 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -155,6 +155,8 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
+namespace MiVRy
+{
 public class GestureCombinations
 {
     //                                                                       ___________________
@@ -923,12 +925,13 @@ public class GestureCombinations
     /// <param name="part">The sub-gesture index of the gesture stroke to perform.</param>
     /// <param name="num">The number of tracking data points to retain, -1 for no numeric limit.</param>
     /// <param name="ms">The time duration to retain in milliseconds, -1 for no time limit.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) at which to prune the stroke. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// The number of tracking data points in the current gesture motion, a negative error code on failure.
     /// </returns>
-    public int pruneStroke(int part, int num, int ms)
+    public int pruneStroke(int part, int num, int ms, long timestamp=-1)
     {
-        return GestureCombinations_pruneStroke(m_gc, part, num, ms);
+        return GestureCombinations_pruneStroke(m_gc, part, num, ms, timestamp);
     }
     //                                                          ________________________________
     //_________________________________________________________/         cancelStroke()
@@ -1028,10 +1031,11 @@ public class GestureCombinations
     /// <param name="hmd_p">The current position of the headset.</param>
     /// <param name="hmd_q">The current rotation/orientation of the headset.</param>
     /// <param name="similarity">[OUT] How similar the gesture is to the recorded gesture samples.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// The ID of the identified multi-gesture. A negative error code if an error occurred.
     /// </returns>
-    public int contdIdentify(Vector3 hmd_p, Quaternion hmd_q, ref double similarity)
+    public int contdIdentify(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
@@ -1039,7 +1043,7 @@ public class GestureCombinations
         int num_parts = this.numberOfParts();
         double[] _parts_probabilities = new double[num_parts];
         double[] _parts_similarities = new double[num_parts];
-        int gesture_id = GestureCombinations_contdIdentify(m_gc, _hmd_p, _hmd_q, _similarity, _parts_probabilities, _parts_similarities);
+        int gesture_id = GestureCombinations_contdIdentify(m_gc, _hmd_p, _hmd_q, _similarity, _parts_probabilities, _parts_similarities, timestamp);
         similarity = _similarity[0];
         return gesture_id;
     }
@@ -1054,10 +1058,11 @@ public class GestureCombinations
     /// <param name="similarity">[OUT] How similar the gesture is to the recorded gesture samples on a scale from 0 to 1.</param>
     /// <param name="parts_probabilities">[OUT] The probability values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).</param>
     /// <param name="parts_similarities">[OUT] The similarity values (scale from 0 to 1) for each of the combination parts (eg. hands, sides).</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use as reference. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// The ID of the identified multi-gesture. A negative error code if an error occurred.
     /// </returns>
-    public int contdIdentify(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref double[] parts_probabilities, ref double[] parts_similarities)
+    public int contdIdentify(Vector3 hmd_p, Quaternion hmd_q, ref double similarity, ref double[] parts_probabilities, ref double[] parts_similarities, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
@@ -1065,7 +1070,7 @@ public class GestureCombinations
         int num_parts = this.numberOfParts();
         parts_probabilities = new double[num_parts];
         parts_similarities = new double[num_parts];
-        int gesture_id = GestureCombinations_contdIdentify(m_gc, _hmd_p, _hmd_q, _similarity, parts_probabilities, parts_similarities);
+        int gesture_id = GestureCombinations_contdIdentify(m_gc, _hmd_p, _hmd_q, _similarity, parts_probabilities, parts_similarities, timestamp);
         similarity = _similarity[0];
         return gesture_id;
     }
@@ -1137,14 +1142,15 @@ public class GestureCombinations
     /// </summary>
     /// <param name="hmd_p">The current position of the headset.</param>
     /// <param name="hmd_q">The current rotation/orientation of the headset.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use for the recorded sample. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// Zero on success, a negative error code if an error occurred.
     /// </returns>
-    public int contdRecord(Vector3 hmd_p, Quaternion hmd_q)
+    public int contdRecord(Vector3 hmd_p, Quaternion hmd_q, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
-        return GestureCombinations_contdRecord(m_gc, _hmd_p, _hmd_q);
+        return GestureCombinations_contdRecord(m_gc, _hmd_p, _hmd_q, timestamp);
     }
     //                                                          ________________________________
     //_________________________________________________________/    contdRecordPart()
@@ -1154,14 +1160,15 @@ public class GestureCombinations
     /// <param name="part">The gesture combination part (hand side) index.</param>
     /// <param name="hmd_p">The current position of the headset.</param>
     /// <param name="hmd_q">The current rotation/orientation of the headset.</param>
+    /// <param name="timestamp">The timestamp (in milliseconds) to use for the recorded sample. -1 for the current timestamp (ie "now").</param>
     /// <returns>
     /// Zero on success, a negative error code if an error occurred.
     /// </returns>
-    public int contdRecordPart(int part, Vector3 hmd_p, Quaternion hmd_q)
+    public int contdRecordPart(int part, Vector3 hmd_p, Quaternion hmd_q, long timestamp=-1)
     {
         double[] _hmd_p = new double[3] { hmd_p.x, hmd_p.y, hmd_p.z };
         double[] _hmd_q = new double[4] { hmd_q.x, hmd_q.y, hmd_q.z, hmd_q.w };
-        return GestureCombinations_contdRecordPart(m_gc, part, _hmd_p, _hmd_q);
+        return GestureCombinations_contdRecordPart(m_gc, part, _hmd_p, _hmd_q, timestamp);
     }
     //                                                          ________________________________
     //_________________________________________________________/ getContdIdentificationPeriod()
@@ -1681,7 +1688,7 @@ public class GestureCombinations
     /// <param name="q">[OUT] A quaternion array to receive the rotational data points of the stroke / recorded sample.</param>
     /// <param name="hmd_p">[OUT] A vector array to receive the position of the HMD at the time of the stroke sample recording.</param>
     /// <param name="hmd_q">[OUT] A quaternion array to receive the rotation of the HMD at the time of the stroke sample recording.</param>
-    /// <param name="t">[OUT] A double array to receive the timestamps of the stroke sample recording (in seconds).</param>
+    /// <param name="t">[OUT] A double array to receive the timestamps (in seconds, starting at the beginning of the gesture motion) of the stroke sample recording (in seconds).</param>
     /// <returns>
     /// The number of data points on that sample (ie. resulting length of p and q).
     /// </returns>
@@ -2520,19 +2527,19 @@ public class GestureCombinations
     [DllImport(libfile, EntryPoint = "GestureCombinations_isStrokeStarted", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_isStrokeStarted(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_pruneStroke", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_pruneStroke(IntPtr gco, int part, int num, int ms);
+    public static extern int GestureCombinations_pruneStroke(IntPtr gco, int part, int num, int ms, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureCombinations_cancelStroke", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_cancelStroke(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_identifyGestureCombination", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_identifyGestureCombination(IntPtr gco, double[] probability, double[] similarity, double[] parts_probabilities, double[] parts_similarities);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdIdentify", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_contdIdentify(IntPtr gco, double[] hmd_p, double[] hmd_q, double[] similarity, double[] parts_probabilities, double[] parts_similarities);
+    public static extern int GestureCombinations_contdIdentify(IntPtr gco, double[] hmd_p, double[] hmd_q, double[] similarity, double[] parts_probabilities, double[] parts_similarities, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdIdentifyGetLastStrokeInfo", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_contdIdentifyGetLastStrokeInfo(IntPtr gco, int part, double[] pos, double[] scale, double[] dir0, double[] dir1, double[] dir2);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdRecord", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_contdRecord(IntPtr gco, double[] hmd_p, double[] hmd_q);
+    public static extern int GestureCombinations_contdRecord(IntPtr gco, double[] hmd_p, double[] hmd_q, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureCombinations_contdRecordPart", CallingConvention = CallingConvention.Cdecl)]
-    public static extern int GestureCombinations_contdRecordPart(IntPtr gco, int part, double[] hmd_p, double[] hmd_q);
+    public static extern int GestureCombinations_contdRecordPart(IntPtr gco, int part, double[] hmd_p, double[] hmd_q, long timestamp);
     [DllImport(libfile, EntryPoint = "GestureCombinations_getContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]
     public static extern int GestureCombinations_getContdIdentificationPeriod(IntPtr gco, int part);
     [DllImport(libfile, EntryPoint = "GestureCombinations_setContdIdentificationPeriod", CallingConvention = CallingConvention.Cdecl)]
@@ -2731,4 +2738,5 @@ public class GestureCombinations
     public static extern int GestureCombinations_copyVersionString(StringBuilder buf, int buflen);
 
     private IntPtr m_gc;
+}
 }

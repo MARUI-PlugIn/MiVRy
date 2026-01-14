@@ -1,7 +1,7 @@
 /*
  * MiVRy - 3D gesture recognition library plug-in for Unity.
- * Version 2.14
- * Copyright (c) 2025 MARUI-PlugIn (inc.)
+ * Version 2.15
+ * Copyright (c) 2026 MARUI-PlugIn (inc.)
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, 
@@ -16,22 +16,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+//#define MIVRY_USE_VISUALSCRIPTING
 //#define MIVRY_USE_BOLT
 
+using Oculus.Interaction.Input;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using UnityEngine.Events;
-using System;
-using System.IO;
+using UnityEngine.InputSystem.HID;
 #if UNITY_ANDROID
 using UnityEngine.Networking;
 #endif
-#if MIVRY_USE_BOLT
+
+#if MIVRY_USE_VISUALSCRIPTING
+using Unity.VisualScripting;
+#elif MIVRY_USE_BOLT
 using Ludiq;
 using Bolt;
 #endif
 
+namespace MiVRy {
 /// <summary>
 /// Convenience Unity script that can be added as a component to any script
 /// for easy gesture recognition.
@@ -181,6 +188,28 @@ public class MivryQuestHands : MonoBehaviour
     public float rightGestureTriggerValue = 0;
 
     /// <summary>
+    /// Whether gestures should be identified continuously during gesturing,
+    /// instead of after a gesture motion is finished.
+    /// NOTE: You still need to start a gesture motion via the "trigger" for
+    /// continuous recognition to start. You can do so via a trigger input (button) or
+    /// by setting the trigger threshold to zero.
+    /// </summary>
+    [Tooltip("Whether gestures should be identified continuously during gesturing (instead of only after a gesture motion). NOTE: You still need to start a gesture motion via the \"trigger\" for continuous recognition to start. You can do so via a trigger input (button) or by setting the trigger threshold to zero.")]
+    public bool ContinuousGestureRecognition = false;
+
+    /// <summary>
+    /// Time frame (in milliseconds) that continuous gestures are expected to be.
+    /// </summary>
+    [Tooltip("Time frame (in milliseconds) that continuous gestures are expected to be.")]
+    public int ContinuousGesturePeriod = 1000;
+
+    /// <summary>
+    /// The number of samples to use for smoothing continuous gesture identification results.
+    /// </summary>
+    [Tooltip("The number of samples to use for smoothing continuous gesture identification results.")]
+    public int ContinuousGestureSmoothing = 3;
+
+    /// <summary>
     /// Event callback functions to be called when a gesture was performed.
     /// </summary>
     [Tooltip("Event to trigger when a gesture was performed.")]
@@ -240,6 +269,10 @@ public class MivryQuestHands : MonoBehaviour
 
         // Active license if set:
         gc = new GestureCombinations(numberOfParts);
+        for (int part = 0; part < numberOfParts; part++) {
+            gc.setContdIdentificationPeriod(part, this.ContinuousGesturePeriod);
+            gc.setContdIdentificationSmoothing(part, this.ContinuousGestureSmoothing);
+        }
         if (this.LicenseName != null && this.LicenseKey != null && this.LicenseName != "") {
             ret = gc.activateLicense(this.LicenseName, this.LicenseKey);
             if (ret != 0) {
@@ -301,6 +334,10 @@ public class MivryQuestHands : MonoBehaviour
                 }
             }
         }
+        for (int part = gc.numberOfParts() - 1; part >= 0; part--) {
+            gc.setContdIdentificationPeriod(part, this.ContinuousGesturePeriod);
+            gc.setContdIdentificationSmoothing(part, this.ContinuousGestureSmoothing);
+        }
 
         // Set the tracking points to what's described in the file's metadata
         string metadata = this.gc.getMetadataAsString();
@@ -357,40 +394,45 @@ public class MivryQuestHands : MonoBehaviour
         Quaternion q;
         int i;
 
+        bool isGesturingLeftOrRight = false;
+        Transform hmd = Camera.main.gameObject.transform;
+        Vector3 hmd_p = hmd.position;
+        Quaternion hmd_q = hmd.rotation;
+        Mivry.convertHeadInput(this.mivryCoordinateSystem, ref hmd_p, ref hmd_q);
+
         if (this.trackedHand == TrackedHand.LeftHand || this.trackedHand == TrackedHand.BothHands) {
             if (!this.isGesturingLeft) { // Not currently gesturing - check if a new gesture motion was started.
                 if (this.isLeftTriggerPressed) {
-                    p = Camera.main.transform.position;
-                    q = Camera.main.transform.rotation;
-                    Mivry.convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
                     switch (this.leftHandTrackingPoints) {
                         case TrackingPoints.AllBones:
                             for (i = leftHandPartsMax; i >= leftHandPartsMin; i--) {
-                                this.gc.startStroke(i, p, q, this.recordGestureSample);
+                                this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             }
                             break;
                         case TrackingPoints.AllFingerTips:
                             i = (int)OVRSkeleton.BoneId.Hand_ThumbTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = (int)OVRSkeleton.BoneId.Hand_IndexTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = (int)OVRSkeleton.BoneId.Hand_MiddleTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = (int)OVRSkeleton.BoneId.Hand_RingTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = (int)OVRSkeleton.BoneId.Hand_PinkyTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             break;
                         case TrackingPoints.IndexFingerTipOnly:
                         default:
                             i = (int)OVRSkeleton.BoneId.Hand_IndexTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             break;
                     }
                     this.isGesturingLeft = true;
                 }
             }
             if (this.isGesturingLeft) { // Currently gesturing - add latest data.
+                isGesturingLeftOrRight = true;
+                gc.updateHeadPosition(hmd_p, hmd_q);
                 switch (this.leftHandTrackingPoints) {
                     case TrackingPoints.AllBones:
                         for (i = leftHandPartsMax; i >= leftHandPartsMin; i--) {
@@ -479,7 +521,7 @@ public class MivryQuestHands : MonoBehaviour
                             ? gc.getGestureCombinationName(data.gestureID)
                             : GestureRecognition.getErrorMessage(data.gestureID);
                         OnGestureCompletion.Invoke(data);
-                        #if MIVRY_USE_BOLT
+                        #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
                         CustomEvent.Trigger(this.gameObject, data.gestureName, data);
                         #endif
                         data.parts = new GestureCompletionData.Part[0]; // reset
@@ -487,42 +529,42 @@ public class MivryQuestHands : MonoBehaviour
                 }
             }
         }
-
         
         if (this.trackedHand == TrackedHand.RightHand || this.trackedHand == TrackedHand.BothHands) {
             if (!this.isGesturingRight) { // Not currently gesturing - check if a new gesture motion was started.
                 if (this.isRightTriggerPressed) {
-                    p = Camera.main.transform.position;
-                    q = Camera.main.transform.rotation;
-                    Mivry.convertHeadInput(this.mivryCoordinateSystem, ref p, ref q);
                     switch (this.rightHandTrackingPoints) {
                         case TrackingPoints.AllBones:
                             for (i = rightHandPartsMax; i >= rightHandPartsMin; i--) {
-                                this.gc.startStroke(i, p, q, this.recordGestureSample);
+                                this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             }
                             break;
                         case TrackingPoints.AllFingerTips:
                             i = rightHandPartsMin + (int)OVRSkeleton.BoneId.Hand_ThumbTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = rightHandPartsMin + (int)OVRSkeleton.BoneId.Hand_IndexTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = rightHandPartsMin + (int)OVRSkeleton.BoneId.Hand_MiddleTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = rightHandPartsMin + (int)OVRSkeleton.BoneId.Hand_RingTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             i = rightHandPartsMin + (int)OVRSkeleton.BoneId.Hand_PinkyTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             break;
                         case TrackingPoints.IndexFingerTipOnly:
                         default:
                             i = rightHandPartsMin + (int)OVRSkeleton.BoneId.Hand_IndexTip;
-                            this.gc.startStroke(i, p, q, this.recordGestureSample);
+                            this.gc.startStroke(i, hmd_p, hmd_q, this.recordGestureSample);
                             break;
                     }
                     this.isGesturingRight = true;
                 }
             }
             if (this.isGesturingRight) { // Currently gesturing - add latest data.
+                if (!isGesturingLeftOrRight) {
+                    isGesturingLeftOrRight = true;
+                    gc.updateHeadPosition(hmd_p, hmd_q);
+                }
                 switch (this.rightHandTrackingPoints) {
                     case TrackingPoints.AllBones:
                         for (i = rightHandPartsMax; i >= rightHandPartsMin; i--) {
@@ -611,13 +653,24 @@ public class MivryQuestHands : MonoBehaviour
                             ? gc.getGestureCombinationName(data.gestureID)
                             : GestureRecognition.getErrorMessage(data.gestureID);
                         OnGestureCompletion.Invoke(data);
-                        #if MIVRY_USE_BOLT
+                        #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
                         CustomEvent.Trigger(this.gameObject, data.gestureName, data);
                         #endif
                         data.parts = new GestureCompletionData.Part[0]; // reset
                     }
                 }
             }
+        }
+        
+        if (this.ContinuousGestureRecognition && isGesturingLeftOrRight) {
+            data.gestureID = gc.contdIdentify(hmd_p, hmd_q, ref data.similarity);
+            data.gestureName = (data.gestureID >= 0)
+                ? gc.getGestureCombinationName(data.gestureID)
+                : GestureRecognition.getErrorMessage(data.gestureID);
+            OnGestureCompletion.Invoke(data);
+            #if MIVRY_USE_VISUALSCRIPTING || MIVRY_USE_BOLT
+            CustomEvent.Trigger(this.gameObject, data.gestureName, data);
+            #endif
         }
     }
 
@@ -826,4 +879,5 @@ public class MivryQuestHands : MonoBehaviour
     }
 
     #endregion
+}
 }
